@@ -144,6 +144,14 @@ List directory contents with file sizes.
 ### python_execute
 Execute Python code directly.
 
+### scrapling_fetch ⭐ PREFERRED FOR WEB SCRAPING
+Advanced web scraping powered by Scrapling framework. Use this instead of scrape_webpage for ANY website scraping.
+- **mode="basic"** — Fast HTTP with TLS fingerprint spoofing. Use for simple pages.
+- **mode="stealth"** — Headless browser that BYPASSES Cloudflare, anti-bot systems. Use for protected sites.
+- **mode="dynamic"** — Full Playwright browser rendering. Use for JS-heavy SPAs (React/Vue/Angular).
+- Supports CSS selectors, XPath, proxy rotation.
+- Returns: page text, title, links, or targeted elements with attributes.
+
 ## SELF-IMPROVEMENT & TOOL CREATION
 You can create your own custom tools and scripts:
 1. Write scripts to ${config.workspace}/skills/ for reusable capabilities

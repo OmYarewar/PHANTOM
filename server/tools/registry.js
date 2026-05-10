@@ -334,5 +334,45 @@ export function getToolDefinitions() {
         },
       },
     },
+    {
+      type: 'function',
+      function: {
+        name: 'scrapling_fetch',
+        description: 'Advanced web scraping powered by Scrapling. Supports 3 modes: "basic" (fast HTTP with TLS fingerprint spoofing), "stealth" (headless browser that bypasses Cloudflare/anti-bot), "dynamic" (full Playwright browser for JS-heavy sites). Can extract data with CSS/XPath selectors or return full page text, title, and links.',
+        parameters: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'URL to scrape.',
+            },
+            mode: {
+              type: 'string',
+              enum: ['basic', 'stealth', 'dynamic'],
+              description: 'Fetcher mode. "basic" = fast HTTP. "stealth" = anti-bot bypass (Cloudflare). "dynamic" = full browser rendering.',
+              default: 'basic',
+            },
+            css_selector: {
+              type: 'string',
+              description: 'CSS selector to extract specific elements (e.g. ".product h2", "table tr").',
+            },
+            xpath: {
+              type: 'string',
+              description: 'XPath selector to extract specific elements.',
+            },
+            proxy: {
+              type: 'string',
+              description: 'Proxy URL (e.g. "http://user:pass@proxy:8080").',
+            },
+            solve_cloudflare: {
+              type: 'boolean',
+              description: 'Whether to solve Cloudflare challenges in stealth mode. Default true.',
+              default: true,
+            },
+          },
+          required: ['url'],
+        },
+      },
+    },
   ];
 }

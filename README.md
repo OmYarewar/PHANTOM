@@ -33,6 +33,7 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 | 🧩 **MCP Integration** | Model Context Protocol server management for extended capabilities |
 | 📦 **Skills System** | Import, manage, and create reusable skill packages (.zip import supported) |
 | 🌐 **Web Research** | Built-in web search and webpage scraping for real-time information |
+| 🕷️ **Scrapling Integration** | Anti-bot bypass, Cloudflare solving, JS rendering via [Scrapling](https://github.com/D4Vinci/Scrapling) |
 | 💾 **Persistent Memory** | Remembers targets, credentials, findings across sessions |
 | 🛑 **Emergency Stop** | Instant abort button to halt any running operation |
 | 🎨 **Premium Dark UI** | Glassmorphism, matrix background, smooth animations |
@@ -42,6 +43,7 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 ### Prerequisites
 
 - **Node.js** 18+ ([install](https://nodejs.org))
+- **Python** 3.10+ (for Scrapling integration)
 - **npm** (comes with Node.js)
 - Any **OpenAI-compatible API** key
 
@@ -128,7 +130,7 @@ PHANTOM/
 
 ## 🛠️ Available Tools
 
-PHANTOM has **14 built-in tools** that the AI uses autonomously:
+PHANTOM has **15 built-in tools** that the AI uses autonomously:
 
 | Tool | Purpose |
 |------|---------|
@@ -140,6 +142,7 @@ PHANTOM has **14 built-in tools** that the AI uses autonomously:
 | `web_request` | HTTP requests for recon & API testing |
 | `search_web` | Web search via DuckDuckGo |
 | `scrape_webpage` | Fetch & parse webpage content |
+| `scrapling_fetch` | ⭐ Advanced scraping — anti-bot bypass, Cloudflare, JS rendering ([Scrapling](https://github.com/D4Vinci/Scrapling)) |
 | `python_execute` | Execute Python code directly |
 | `save_memory` | Store findings to persistent memory |
 | `recall_memory` | Search persistent memory |

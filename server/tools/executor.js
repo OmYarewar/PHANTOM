@@ -25,6 +25,7 @@ export async function executeTool(name, args, onProgress) {
     case 'python_execute': return await pythonExecute(args);
     case 'edit_source_code': return await editSourceCode(args);
     case 'save_trace': return await saveTrace(args);
+    case 'scrapling_fetch': return await scraplingFetch(args, onProgress);
     default:
       return `Unknown tool: ${name}`;
   }
@@ -514,4 +515,19 @@ async function saveTrace({ task, approach, outcome, score, notes }) {
   } catch (err) {
     return `Error saving trace: ${err.message}`;
   }
+}
+
+/**
+ * Scrapling-powered web fetching — bypasses anti-bot, renders JS, extracts data
+ */
+async function scraplingFetch({ url, mode = 'basic', css_selector, xpath, proxy, solve_cloudflare = true }, onProgress) {
+  const bridgePath = resolve(import.meta.dirname, 'scrapling_bridge.py');
+
+  let cmd = `python3 "${bridgePath}" "${url}" --mode ${mode}`;
+  if (css_selector) cmd += ` --css "${css_selector}"`;
+  if (xpath) cmd += ` --xpath "${xpath}"`;
+  if (proxy) cmd += ` --proxy "${proxy}"`;
+  if (!solve_cloudflare) cmd += ` --no-cloudflare`;
+
+  return await executeCommand({ command: cmd, timeout: 60 }, onProgress);
 }
