@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets
+.env
+*.env.local
+
+# Database (contains API keys, sudo passwords, conversations)
+phantom.db
+phantom.db-wal
+phantom.db-shm
+
+# Workspace data (user-specific)
+workspace/
+!workspace/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Build artifacts
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp
+/tmp/
+.cache/
+
+# Backups created by PHANTOM self-edit
+*.bak

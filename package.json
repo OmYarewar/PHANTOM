@@ -1,0 +1,26 @@
+{
+  "name": "phantom",
+  "version": "1.0.0",
+  "description": "PHANTOM — AI-Powered Pentesting Command Center",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"node server/index.js\" \"vite --port 5173\"",
+    "start": "node server/index.js",
+    "build": "vite build frontend"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17",
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "multer": "^2.1.1",
+    "openai": "^4.78.0",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "vite": "^6.3.0"
+  }
+}

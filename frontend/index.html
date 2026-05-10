@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PHANTOM — AI-Powered Pentesting Command Center. Your Swiss-army knife for red teaming and ethical hacking.">
+  <title>PHANTOM — AI Pentesting Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>">
+</head>
+<body>
+  <!-- Matrix Rain Background -->
+  <canvas id="matrix-bg"></canvas>
+
+  <div id="app">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">👻</span>
+          <span class="logo-text">PHANTOM</span>
+        </div>
+        <button id="new-chat-btn" class="btn-icon" title="New Chat">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="sidebar-search">
+        <input type="text" id="search-conversations" placeholder="Search conversations..." />
+      </div>
+
+      <div id="conversation-list" class="conversation-list">
+        <!-- Conversations will be rendered here -->
+      </div>
+
+      <div class="sidebar-footer">
+        <div id="system-status" class="system-status">
+          <span class="status-dot offline"></span>
+          <span class="status-text">Disconnected</span>
+        </div>
+        <button id="settings-btn" class="btn-icon" title="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main-content">
+      <!-- Top Bar -->
+      <div id="top-bar" class="top-bar">
+        <button id="sidebar-toggle" class="btn-icon mobile-only" title="Toggle Sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+        </button>
+        <div class="top-bar-actions">
+          <button id="manage-btn" class="btn btn-sm btn-secondary" title="MCP & Skills">🧩 Manage</button>
+        </div>
+        <div class="top-bar-info">
+          <span id="current-model" class="model-badge">No Model</span>
+          <span id="connection-status" class="connection-badge offline">● Offline</span>
+        </div>
+      </div>
+
+      <!-- Chat Area -->
+      <div id="chat-area" class="chat-area">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="welcome-screen">
+          <div class="welcome-ghost">👻</div>
+          <h1 class="welcome-title">PHANTOM</h1>
+          <p class="welcome-subtitle">AI-Powered Pentesting Command Center</p>
+          <div class="welcome-features">
+            <div class="feature-card">
+              <span class="feature-icon">🔍</span>
+              <span class="feature-text">Network Scanning & Recon</span>
+            </div>
+            <div class="feature-card">
+              <span class="feature-icon">💉</span>
+              <span class="feature-text">Exploitation & Payloads</span>
+            </div>
+            <div class="feature-card">
+              <span class="feature-icon">🌐</span>
+              <span class="feature-text">Web Access & Research</span>
+            </div>
+            <div class="feature-card">
+              <span class="feature-icon">🔐</span>
+              <span class="feature-text">Password Cracking</span>
+            </div>
+            <div class="feature-card">
+              <span class="feature-icon">🕵️</span>
+              <span class="feature-text">OSINT & Social Engineering</span>
+            </div>
+            <div class="feature-card">
+              <span class="feature-icon">♾️</span>
+              <span class="feature-text">Unlimited Tool Iterations</span>
+            </div>
+          </div>
+          <p class="welcome-hint">Configure your API key in <button id="welcome-settings-btn" class="inline-link">Settings</button> to get started</p>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="messages" class="messages"></div>
+      </div>
+
+      <!-- Input Area -->
+      <div id="input-area" class="input-area">
+        <div class="input-container">
+          <textarea
+            id="message-input"
+            placeholder="Ask PHANTOM anything... (Ctrl+Enter to send)"
+            rows="1"
+            autofocus
+          ></textarea>
+          <button id="stop-btn" class="stop-btn" title="Stop AI (Abort)" style="display:none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+            </svg>
+          </button>
+          <button id="send-btn" class="send-btn" title="Send Message (Ctrl+Enter)" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-footer">
+          <span class="input-hint">PHANTOM has full system access • Unlimited iterations • Use responsibly</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Sudo Password Modal -->
+    <div id="sudo-modal" class="sudo-modal" style="display:none;">
+      <div class="sudo-modal-backdrop"></div>
+      <div class="sudo-modal-content">
+        <div class="sudo-modal-icon">🔑</div>
+        <h2 class="sudo-modal-title">Sudo Access</h2>
+        <p class="sudo-modal-desc">Enter your sudo password to grant PHANTOM elevated privileges for tool installation and system operations. This is validated once and stored in memory only.</p>
+        <div class="sudo-modal-input-wrap">
+          <input type="password" id="sudo-modal-password" placeholder="Enter sudo password..." autocomplete="off" />
+          <button id="sudo-modal-toggle-eye" class="btn-icon-sm" title="Show/Hide">👁️</button>
+        </div>
+        <div id="sudo-modal-feedback" class="sudo-modal-feedback"></div>
+        <div class="sudo-modal-actions">
+          <button id="sudo-modal-validate" class="btn btn-primary">🔓 Validate & Grant Access</button>
+          <button id="sudo-modal-skip" class="btn btn-secondary">Skip for now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="settings-panel hidden">
+      <div class="settings-overlay" id="settings-overlay"></div>
+      <div class="settings-drawer">
+        <div class="settings-header">
+          <h2>⚙️ Settings</h2>
+          <button id="settings-close" class="btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="settings-body">
+          <!-- API Configuration -->
+          <section class="settings-section">
+            <h3>🤖 API Configuration</h3>
+            <div class="form-group">
+              <label for="setting-base-url">Base URL</label>
+              <input type="url" id="setting-base-url" placeholder="https://api.openai.com/v1" />
+              <small>OpenAI, OpenRouter, Ollama, LM Studio, etc.</small>
+            </div>
+            <div class="form-group">
+              <label for="setting-api-key">API Key</label>
+              <div class="input-with-toggle">
+                <input type="password" id="setting-api-key" placeholder="sk-..." />
+                <button id="toggle-api-key" class="btn-icon-sm" title="Show/Hide">👁️</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="setting-model">Model ID</label>
+              <input type="text" id="setting-model" placeholder="gpt-4o" list="model-suggestions" />
+              <datalist id="model-suggestions">
+                <option value="gpt-4o">
+                <option value="gpt-4o-mini">
+                <option value="gpt-4-turbo">
+                <option value="claude-3-opus-20240229">
+                <option value="claude-3-5-sonnet-20241022">
+                <option value="deepseek-chat">
+                <option value="deepseek-reasoner">
+                <option value="meta-llama/llama-3-70b-instruct">
+                <option value="mistralai/mixtral-8x22b-instruct">
+                <option value="qwen/qwen-2.5-72b-instruct">
+              </datalist>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="setting-temperature">Temperature</label>
+                <input type="range" id="setting-temperature" min="0" max="2" step="0.1" value="0.7" />
+                <span id="temperature-value">0.7</span>
+              </div>
+              <div class="form-group">
+                <label for="setting-max-tokens">Max Tokens</label>
+                <input type="number" id="setting-max-tokens" value="4096" min="256" max="128000" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button id="test-connection" class="btn btn-secondary">🔌 Test Connection</button>
+              <span id="test-result" class="test-result"></span>
+            </div>
+          </section>
+
+          <!-- System Access -->
+          <section class="settings-section">
+            <h3>🔑 System Access</h3>
+            <div class="form-group">
+              <label for="setting-sudo-password">Sudo Password</label>
+              <div class="input-with-toggle">
+                <input type="password" id="setting-sudo-password" placeholder="For tool installation & privileged commands" />
+                <button id="toggle-sudo-pass" class="btn-icon-sm" title="Show/Hide">👁️</button>
+              </div>
+              <small>Persisted securely in local database across restarts</small>
+            </div>
+          </section>
+
+          <!-- Workspace -->
+          <section class="settings-section">
+            <h3>📁 Workspace</h3>
+            <div class="form-group">
+              <label for="setting-workspace">Workspace Directory</label>
+              <input type="text" id="setting-workspace" placeholder="/home/user/phantom-workspace" />
+              <small>Default working directory for AI operations, scripts, saved files, and reports</small>
+            </div>
+          </section>
+
+          <!-- MCP Servers -->
+          <section class="settings-section">
+            <h3>🔌 MCP Servers</h3>
+            <div id="mcp-server-list" class="mcp-list">
+              <p class="mcp-empty">No MCP servers configured</p>
+            </div>
+            <button id="add-mcp-btn" class="btn btn-secondary btn-sm">+ Add MCP Server</button>
+          </section>
+
+          <!-- Save Button -->
+          <div class="settings-footer">
+            <button id="save-settings" class="btn btn-primary">💾 Save Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Management Panel (MCP + Skills) -->
+    <div id="manage-panel" class="manage-panel hidden">
+      <div class="manage-overlay" id="manage-overlay"></div>
+      <div class="manage-drawer">
+        <div class="manage-header">
+          <h2>🧩 Management</h2>
+          <button id="manage-close" class="btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="manage-tabs">
+          <button class="manage-tab active" data-tab="mcp-tab">🔌 MCP Servers</button>
+          <button class="manage-tab" data-tab="skills-tab">🧠 Skills</button>
+        </div>
+
+        <div class="manage-body">
+          <!-- MCP Tab -->
+          <div id="mcp-tab" class="manage-tab-content active">
+            <p class="tab-desc">Configure Model Context Protocol servers to extend AI capabilities.</p>
+            <div id="manage-mcp-list" class="manage-list"></div>
+            <div class="manage-add-form" id="mcp-add-form" style="display:none;">
+              <div class="form-group">
+                <label>Server Name</label>
+                <input type="text" id="mcp-name-input" placeholder="e.g. filesystem-server" />
+              </div>
+              <div class="form-group">
+                <label>Command</label>
+                <input type="text" id="mcp-command-input" placeholder="e.g. npx -y @modelcontextprotocol/server-filesystem /home" />
+              </div>
+              <div class="form-group">
+                <label>Transport</label>
+                <select id="mcp-transport-input">
+                  <option value="stdio">stdio</option>
+                  <option value="sse">SSE</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button id="mcp-save-btn" class="btn btn-primary btn-sm">💾 Save Server</button>
+                <button id="mcp-cancel-btn" class="btn btn-secondary btn-sm">Cancel</button>
+              </div>
+            </div>
+            <button id="manage-add-mcp" class="btn btn-secondary btn-sm" style="margin-top:10px;">+ Add MCP Server</button>
+          </div>
+
+          <!-- Skills Tab -->
+          <div id="skills-tab" class="manage-tab-content">
+            <p class="tab-desc">Import and manage AI skills. Skills are stored in your workspace.</p>
+            <div id="manage-skills-list" class="manage-list"></div>
+            <div class="manage-skill-actions">
+              <label class="btn btn-secondary btn-sm" for="skill-zip-input">📦 Import Skill (.zip)</label>
+              <input type="file" id="skill-zip-input" accept=".zip" style="display:none;" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/markdown.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/management.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
