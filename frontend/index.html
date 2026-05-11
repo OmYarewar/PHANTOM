@@ -62,7 +62,7 @@
           </svg>
         </button>
         <div class="top-bar-actions">
-          <button id="manage-btn" class="btn btn-sm btn-secondary" title="MCP & Skills">🧩 Manage</button>
+          <button id="manage-btn" class="btn btn-sm btn-secondary" title="MCP &amp; Skills">🧩 Manage</button>
         </div>
         <div class="top-bar-info">
           <span id="current-model" class="model-badge">No Model</span>
@@ -70,8 +70,16 @@
         </div>
       </div>
 
-      <!-- Chat Area -->
+      <!-- Chat Area (also drop zone) -->
       <div id="chat-area" class="chat-area">
+        <!-- Drop overlay -->
+        <div class="drop-overlay" id="drop-overlay">
+          <div class="drop-overlay-inner">
+            <span style="font-size:48px;">🖼️</span>
+            <p>Drop image for OSINT Investigation</p>
+          </div>
+        </div>
+
         <!-- Welcome Screen -->
         <div id="welcome-screen" class="welcome-screen">
           <div class="welcome-ghost">👻</div>
@@ -80,15 +88,15 @@
           <div class="welcome-features">
             <div class="feature-card">
               <span class="feature-icon">🔍</span>
-              <span class="feature-text">Network Scanning & Recon</span>
+              <span class="feature-text">Network Scanning &amp; Recon</span>
             </div>
             <div class="feature-card">
               <span class="feature-icon">💉</span>
-              <span class="feature-text">Exploitation & Payloads</span>
+              <span class="feature-text">Exploitation &amp; Payloads</span>
             </div>
             <div class="feature-card">
               <span class="feature-icon">🌐</span>
-              <span class="feature-text">Web Access & Research</span>
+              <span class="feature-text">Web Access &amp; Research</span>
             </div>
             <div class="feature-card">
               <span class="feature-icon">🔐</span>
@@ -96,7 +104,7 @@
             </div>
             <div class="feature-card">
               <span class="feature-icon">🕵️</span>
-              <span class="feature-text">OSINT & Social Engineering</span>
+              <span class="feature-text">OSINT &amp; Image Search</span>
             </div>
             <div class="feature-card">
               <span class="feature-icon">♾️</span>
@@ -104,6 +112,7 @@
             </div>
           </div>
           <p class="welcome-hint">Configure your API key in <button id="welcome-settings-btn" class="inline-link">Settings</button> to get started</p>
+          <p class="welcome-hint" style="margin-top:4px; color: var(--text-muted);">🖼️ Drag &amp; drop an image to start OSINT investigation</p>
         </div>
 
         <!-- Messages Container -->
@@ -112,10 +121,12 @@
 
       <!-- Input Area -->
       <div id="input-area" class="input-area">
+        <!-- Image preview bar (injected by app.js) -->
         <div class="input-container">
+          <!-- image-osint-btn injected by app.js before textarea -->
           <textarea
             id="message-input"
-            placeholder="Ask PHANTOM anything... (Ctrl+Enter to send)"
+            placeholder="Ask PHANTOM anything... or drop an image for OSINT (Ctrl+Enter to send)"
             rows="1"
             autofocus
           ></textarea>
@@ -131,7 +142,7 @@
           </button>
         </div>
         <div class="input-footer">
-          <span class="input-hint">PHANTOM has full system access • Unlimited iterations • Use responsibly</span>
+          <span class="input-hint">PHANTOM has full system access • Unlimited iterations • 🖼️ Drop image for OSINT • Use responsibly</span>
         </div>
       </div>
     </main>
@@ -149,7 +160,7 @@
         </div>
         <div id="sudo-modal-feedback" class="sudo-modal-feedback"></div>
         <div class="sudo-modal-actions">
-          <button id="sudo-modal-validate" class="btn btn-primary">🔓 Validate & Grant Access</button>
+          <button id="sudo-modal-validate" class="btn btn-primary">🔓 Validate &amp; Grant Access</button>
           <button id="sudo-modal-skip" class="btn btn-secondary">Skip for now</button>
         </div>
       </div>
@@ -169,6 +180,17 @@
         </div>
 
         <div class="settings-body">
+          <!-- AI Doctor Section -->
+          <section class="settings-section">
+            <h3>🏥 AI Doctor</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.6;">
+              A temporary AI assistant with its own API credentials that diagnoses and fixes system issues. Your main API key is not used.
+            </p>
+            <button id="ai-doctor-btn" class="btn btn-secondary" style="width:100%;justify-content:center;">
+              🏥 Launch AI Doctor
+            </button>
+          </section>
+
           <!-- API Configuration -->
           <section class="settings-section">
             <h3>🤖 API Configuration</h3>
@@ -223,7 +245,7 @@
             <div class="form-group">
               <label for="setting-sudo-password">Sudo Password</label>
               <div class="input-with-toggle">
-                <input type="password" id="setting-sudo-password" placeholder="For tool installation & privileged commands" />
+                <input type="password" id="setting-sudo-password" placeholder="For tool installation &amp; privileged commands" />
                 <button id="toggle-sudo-pass" class="btn-icon-sm" title="Show/Hide">👁️</button>
               </div>
               <small>Persisted securely in local database across restarts</small>
@@ -252,6 +274,69 @@
           <!-- Save Button -->
           <div class="settings-footer">
             <button id="save-settings" class="btn btn-primary">💾 Save Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Doctor Modal -->
+    <div id="ai-doctor-modal" class="ai-doctor-modal hidden">
+      <div class="ai-doctor-overlay" id="ai-doctor-overlay"></div>
+      <div class="ai-doctor-dialog">
+        <div class="ai-doctor-header">
+          <div class="ai-doctor-title-row">
+            <span class="ai-doctor-icon">🏥</span>
+            <div>
+              <h2 class="ai-doctor-title">AI Doctor</h2>
+              <p class="ai-doctor-subtitle">Temporary AI system diagnostics & repair</p>
+            </div>
+          </div>
+          <button id="ai-doctor-close" class="btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Config Screen -->
+        <div id="doctor-config-screen" class="doctor-config-screen">
+          <p class="doctor-config-desc">
+            🔒 Enter temporary API credentials — separate from your main PHANTOM config. These are used only for this session.
+          </p>
+          <div class="form-group">
+            <label>Base URL</label>
+            <input type="url" id="doctor-base-url" placeholder="https://api.openai.com/v1" value="https://api.openai.com/v1" />
+          </div>
+          <div class="form-group">
+            <label>API Key</label>
+            <div class="input-with-toggle">
+              <input type="password" id="doctor-api-key" placeholder="sk-..." />
+              <button id="doctor-toggle-key" class="btn-icon-sm" title="Show/Hide">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Model ID</label>
+            <input type="text" id="doctor-model" placeholder="gpt-4o" value="gpt-4o" list="model-suggestions" />
+          </div>
+          <div id="doctor-config-feedback" class="doctor-config-feedback"></div>
+          <button id="doctor-start-btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;">
+            🏥 Start Diagnosis
+          </button>
+        </div>
+
+        <!-- Chat Screen -->
+        <div id="doctor-chat-screen" class="doctor-chat-screen" style="display:none;">
+          <div id="doctor-messages" class="doctor-messages"></div>
+          <div class="doctor-input-row">
+            <input type="text" id="doctor-chat-input" placeholder="Ask the AI Doctor..." class="doctor-input" />
+            <button id="doctor-stop-btn" class="stop-btn" style="display:none;padding:8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+            </button>
+            <button id="doctor-send-btn" class="send-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>

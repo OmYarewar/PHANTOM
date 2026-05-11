@@ -3,6 +3,8 @@
  * Enhanced with:
  *  - Real-time typing animation (character by character)
  *  - AI thinking/reasoning display (shown before the answer)
+ *  - FIXED: Auto-scroll now works correctly during streaming
+ *  - Image message support (OSINT)
  */
 window.Chat = {
   messagesEl: null,
@@ -17,9 +19,19 @@ window.Chat = {
   // Thinking state
   currentThinkingEl: null,
   thinkingContent: '',
+  // Auto-scroll control: user can scroll up to pause, near-bottom = resume
+  _userScrolled: false,
 
   init() {
     this.messagesEl = document.getElementById('messages');
+    this._chatArea = document.getElementById('chat-area');
+
+    // Detect when user manually scrolls up (pause auto-scroll)
+    this._chatArea.addEventListener('scroll', () => {
+      const threshold = 80;
+      const distFromBottom = this._chatArea.scrollHeight - this._chatArea.scrollTop - this._chatArea.clientHeight;
+      this._userScrolled = distFromBottom > threshold;
+    });
   },
 
   clear() {
@@ -30,6 +42,7 @@ window.Chat = {
     this.currentThinkingEl = null;
     this.thinkingContent = '';
     this.typingQueue = [];
+    this._userScrolled = false;
     if (this.typingTimer) {
       cancelAnimationFrame(this.typingTimer);
       this.typingTimer = null;
@@ -46,13 +59,28 @@ window.Chat = {
     this.messagesEl.style.display = 'flex';
   },
 
-  addUserMessage(content) {
+  addUserMessage(content, imageDataUrl) {
     this.hideWelcome();
+    this._userScrolled = false; // reset on new user message
     const el = document.createElement('div');
     el.className = 'message user';
-    el.textContent = content;
+    if (imageDataUrl) {
+      const img = document.createElement('img');
+      img.src = imageDataUrl;
+      img.className = 'msg-image';
+      img.alt = 'Uploaded image';
+      el.appendChild(img);
+      if (content) {
+        const textEl = document.createElement('div');
+        textEl.textContent = content;
+        textEl.style.marginTop = '8px';
+        el.appendChild(textEl);
+      }
+    } else {
+      el.textContent = content;
+    }
     this.messagesEl.appendChild(el);
-    this.scrollToBottom();
+    this.scrollToBottom(true);
   },
 
   /**
@@ -82,6 +110,8 @@ window.Chat = {
     const contentEl = this.currentThinkingEl.querySelector('.thinking-content');
     if (contentEl) {
       contentEl.textContent = this.thinkingContent;
+      // Auto-scroll the thinking content box itself
+      contentEl.scrollTop = contentEl.scrollHeight;
     }
     this.scrollToBottom();
   },
@@ -119,7 +149,7 @@ window.Chat = {
 
     this.messagesEl.appendChild(this.currentAssistantEl);
     this.isStreaming = true;
-    this.scrollToBottom();
+    this.scrollToBottom(true);
 
     // Start the typing animation loop
     this._startTypingLoop();
@@ -145,6 +175,7 @@ window.Chat = {
 
   /**
    * Typing animation loop — renders characters gradually, not all at once
+   * FIXED: scrollToBottom now called after every render to keep up
    */
   _startTypingLoop() {
     let lastTime = 0;
@@ -185,6 +216,7 @@ window.Chat = {
             this.currentAssistantEl.innerHTML = window.renderMarkdown(this.renderedContent);
           }
 
+          // FIXED: Force scroll to bottom after each render frame
           this.scrollToBottom();
           lastTime = timestamp;
         }
@@ -223,9 +255,12 @@ window.Chat = {
     this.currentContent = '';
     this.renderedContent = '';
     this.isStreaming = false;
+    this._userScrolled = false;
 
     // End thinking too
     this.endThinking();
+    // Final scroll to bottom
+    this.scrollToBottom(true);
   },
 
   addToolCall(data) {
@@ -248,7 +283,7 @@ window.Chat = {
     `;
 
     this.messagesEl.appendChild(card);
-    this.scrollToBottom();
+    this.scrollToBottom(true);
   },
 
   /**
@@ -286,7 +321,7 @@ window.Chat = {
     el.className = 'message system';
     el.textContent = content;
     this.messagesEl.appendChild(el);
-    this.scrollToBottom();
+    this.scrollToBottom(true);
   },
 
   addErrorMessage(content) {
@@ -294,7 +329,7 @@ window.Chat = {
     el.className = 'message error';
     el.textContent = content;
     this.messagesEl.appendChild(el);
-    this.scrollToBottom();
+    this.scrollToBottom(true);
   },
 
   /**
@@ -362,14 +397,25 @@ window.Chat = {
         }
       }
     }
-    this.scrollToBottom();
+    this.scrollToBottom(true);
   },
 
-  scrollToBottom() {
-    const chatArea = document.getElementById('chat-area');
-    requestAnimationFrame(() => {
-      chatArea.scrollTop = chatArea.scrollHeight;
-    });
+  /**
+   * FIXED: Reliable scroll to bottom
+   * force=true bypasses the user-scrolled check (use on new messages)
+   */
+  scrollToBottom(force = false) {
+    if (!this._chatArea) return;
+    if (force || !this._userScrolled) {
+      // Use double rAF to ensure DOM has updated before scrolling
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (this._chatArea) {
+            this._chatArea.scrollTop = this._chatArea.scrollHeight;
+          }
+        });
+      });
+    }
   },
 
   escapeHtml(str) {

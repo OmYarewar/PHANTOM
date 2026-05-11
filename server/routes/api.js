@@ -242,4 +242,80 @@ router.delete('/skills/:name', (req, res) => {
   }
 });
 
+
+// ─── AI Doctor ───
+// Uses temporary API credentials provided by user — not the main PHANTOM config
+router.post('/doctor/chat', async (req, res) => {
+  const { message, config: doctorConfig, systemPrompt } = req.body;
+
+  if (!doctorConfig?.apiKey) {
+    return res.status(400).json({ error: 'API key required' });
+  }
+
+  const baseUrl = doctorConfig.baseUrl || 'https://api.openai.com/v1';
+  const apiKey = doctorConfig.apiKey;
+  const model = doctorConfig.model || 'gpt-4o';
+
+  // Get system context for the doctor
+  let systemContext = '';
+  try {
+    const { execSync } = await import('child_process');
+    const sysInfo = [];
+    try { sysInfo.push('OS: ' + execSync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }).trim()); } catch {}
+    try { sysInfo.push('Kernel: ' + execSync('uname -r', { encoding: 'utf8' }).trim()); } catch {}
+    try { sysInfo.push('Uptime: ' + execSync('uptime -p', { encoding: 'utf8' }).trim()); } catch {}
+    try { sysInfo.push('Disk: ' + execSync('df -h / | tail -1', { encoding: 'utf8' }).trim()); } catch {}
+    try { sysInfo.push('Memory: ' + execSync('free -h | head -2 | tail -1', { encoding: 'utf8' }).trim()); } catch {}
+    try {
+      const failed = execSync('systemctl --failed --no-legend 2>/dev/null | head -10', { encoding: 'utf8' }).trim();
+      if (failed) sysInfo.push('Failed services: ' + failed);
+    } catch {}
+    systemContext = sysInfo.join('\n');
+  } catch {}
+
+  const messages = [
+    {
+      role: 'system',
+      content: (systemPrompt || 'You are Dr. AI, an expert Linux system administrator and diagnostics AI.') +
+        (systemContext ? `\n\n## CURRENT SYSTEM STATE\n${systemContext}` : ''),
+    },
+    { role: 'user', content: message },
+  ];
+
+  try {
+    // Set SSE headers for streaming
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const OpenAI = (await import('openai')).default;
+    const client = new OpenAI({ apiKey, baseURL: baseUrl });
+
+    const stream = await client.chat.completions.create({
+      model,
+      messages,
+      stream: true,
+      temperature: 0.7,
+      max_tokens: 4096,
+    });
+
+    for await (const chunk of stream) {
+      if (req.socket.destroyed) break;
+      const text = chunk.choices?.[0]?.delta?.content || '';
+      res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`);
+    }
+
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      res.end();
+    }
+  }
+});
+
 export default router;

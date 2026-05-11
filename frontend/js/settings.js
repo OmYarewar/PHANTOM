@@ -1,5 +1,6 @@
 /**
  * Settings panel logic
+ * Added: AI Doctor — temporary AI to diagnose & fix system issues
  */
 window.Settings = {
   panel: null,
@@ -39,6 +40,9 @@ window.Settings = {
     // Save settings
     document.getElementById('save-settings').addEventListener('click', () => this.save());
 
+    // AI Doctor button
+    document.getElementById('ai-doctor-btn').addEventListener('click', () => this.openDoctor());
+
     // Load settings on init
     this.load();
 
@@ -46,6 +50,9 @@ window.Settings = {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.isOpen) this.close();
     });
+
+    // Init AI Doctor modal logic
+    this._initDoctorModal();
   },
 
   open() {
@@ -105,10 +112,8 @@ window.Settings = {
       });
 
       if (res.ok) {
-        // Update model badge
         document.getElementById('current-model').textContent = settings.model || 'No Model';
 
-        // Flash save button green briefly
         const btn = document.getElementById('save-settings');
         btn.textContent = '✓ Saved';
         btn.style.background = '#16a34a';
@@ -127,7 +132,6 @@ window.Settings = {
     resultEl.className = 'test-result';
     resultEl.textContent = 'Testing...';
 
-    // First save current settings
     await this.save();
 
     try {
@@ -147,5 +151,206 @@ window.Settings = {
     }
 
     setTimeout(() => { resultEl.textContent = ''; }, 5000);
+  },
+
+  // ─── AI Doctor ───
+  openDoctor() {
+    const modal = document.getElementById('ai-doctor-modal');
+    modal.classList.remove('hidden');
+    // Reset to config screen
+    document.getElementById('doctor-config-screen').style.display = 'block';
+    document.getElementById('doctor-chat-screen').style.display = 'none';
+  },
+
+  _initDoctorModal() {
+    const modal = document.getElementById('ai-doctor-modal');
+    const overlay = document.getElementById('ai-doctor-overlay');
+    const closeBtn = document.getElementById('ai-doctor-close');
+    const startBtn = document.getElementById('doctor-start-btn');
+    const sendBtn = document.getElementById('doctor-send-btn');
+    const stopBtn = document.getElementById('doctor-stop-btn');
+    const chatInput = document.getElementById('doctor-chat-input');
+
+    overlay?.addEventListener('click', () => modal.classList.add('hidden'));
+    closeBtn?.addEventListener('click', () => modal.classList.add('hidden'));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+      }
+    });
+
+    // Doctor API key toggle
+    document.getElementById('doctor-toggle-key')?.addEventListener('click', () => {
+      const inp = document.getElementById('doctor-api-key');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    });
+
+    let doctorAbortController = null;
+
+    startBtn?.addEventListener('click', async () => {
+      const baseUrl = document.getElementById('doctor-base-url').value.trim() || 'https://api.openai.com/v1';
+      const apiKey = document.getElementById('doctor-api-key').value.trim();
+      const model = document.getElementById('doctor-model').value.trim() || 'gpt-4o';
+
+      if (!apiKey) {
+        document.getElementById('doctor-config-feedback').textContent = '⚠️ API Key is required';
+        return;
+      }
+
+      document.getElementById('doctor-config-feedback').textContent = '';
+      document.getElementById('doctor-config-screen').style.display = 'none';
+      document.getElementById('doctor-chat-screen').style.display = 'flex';
+
+      // Store temp config
+      modal._doctorConfig = { baseUrl, apiKey, model };
+
+      // Clear chat
+      const messagesEl = document.getElementById('doctor-messages');
+      messagesEl.innerHTML = '';
+
+      // Auto-start diagnosis
+      await runDoctorMessage('Diagnose my system: check for common issues, broken services, high CPU/memory usage, disk space problems, failed systemd services, and any security concerns. Then suggest and apply fixes where safe to do automatically.', modal._doctorConfig);
+    });
+
+    sendBtn?.addEventListener('click', () => {
+      const msg = chatInput.value.trim();
+      if (!msg) return;
+      chatInput.value = '';
+      runDoctorMessage(msg, modal._doctorConfig);
+    });
+
+    chatInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const msg = chatInput.value.trim();
+        if (msg) {
+          chatInput.value = '';
+          runDoctorMessage(msg, modal._doctorConfig);
+        }
+      }
+    });
+
+    stopBtn?.addEventListener('click', () => {
+      if (doctorAbortController) {
+        doctorAbortController.abort();
+        doctorAbortController = null;
+      }
+      sendBtn.disabled = false;
+      stopBtn.style.display = 'none';
+      sendBtn.style.display = 'flex';
+    });
+
+    async function runDoctorMessage(userMsg, config) {
+      const messagesEl = document.getElementById('doctor-messages');
+
+      // Show user message
+      const userEl = document.createElement('div');
+      userEl.className = 'doctor-msg doctor-msg-user';
+      userEl.textContent = userMsg;
+      messagesEl.appendChild(userEl);
+      scrollDoctorToBottom();
+
+      // Show thinking indicator
+      const thinkEl = document.createElement('div');
+      thinkEl.className = 'doctor-msg doctor-msg-ai doctor-thinking';
+      thinkEl.innerHTML = '<span class="spinner"></span> Dr. AI is analyzing...';
+      messagesEl.appendChild(thinkEl);
+      scrollDoctorToBottom();
+
+      sendBtn.disabled = true;
+      sendBtn.style.display = 'none';
+      stopBtn.style.display = 'flex';
+
+      doctorAbortController = new AbortController();
+
+      try {
+        const systemPrompt = `You are Dr. AI — an expert system doctor and Linux/system administrator AI. 
+You diagnose and fix system problems. You can:
+- Analyze system logs, processes, and services
+- Identify performance issues, broken services, security problems
+- Execute diagnostic commands via the PHANTOM server
+- Suggest and apply fixes autonomously
+- Explain everything clearly to the user
+
+Be proactive, thorough, and fix issues automatically when safe to do so.
+Use your tool access through PHANTOM's execute_command and read_file capabilities when needed.`;
+
+        const response = await fetch('/api/doctor/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userMsg,
+            config,
+            systemPrompt,
+          }),
+          signal: doctorAbortController.signal,
+        });
+
+        thinkEl.remove();
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        // Stream the response
+        const aiEl = document.createElement('div');
+        aiEl.className = 'doctor-msg doctor-msg-ai';
+        aiEl.innerHTML = '';
+        messagesEl.appendChild(aiEl);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+              try {
+                const parsed = JSON.parse(data);
+                const text = parsed.choices?.[0]?.delta?.content || '';
+                if (text) {
+                  fullText += text;
+                  aiEl.innerHTML = window.renderMarkdown(fullText);
+                  scrollDoctorToBottom();
+                }
+              } catch {}
+            }
+          }
+        }
+
+      } catch (err) {
+        thinkEl.remove();
+        if (err.name !== 'AbortError') {
+          const errEl = document.createElement('div');
+          errEl.className = 'doctor-msg doctor-msg-error';
+          errEl.textContent = '❌ Error: ' + err.message;
+          messagesEl.appendChild(errEl);
+          scrollDoctorToBottom();
+        }
+      }
+
+      doctorAbortController = null;
+      sendBtn.disabled = false;
+      sendBtn.style.display = 'flex';
+      stopBtn.style.display = 'none';
+    }
+
+    function scrollDoctorToBottom() {
+      const messagesEl = document.getElementById('doctor-messages');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        });
+      });
+    }
   },
 };
