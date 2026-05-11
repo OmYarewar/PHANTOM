@@ -244,75 +244,93 @@ router.delete('/skills/:name', (req, res) => {
 
 
 // ─── AI Doctor ───
-// Uses temporary API credentials provided by user — not the main PHANTOM config
+// Uses temporary API credentials — completely separate from main PHANTOM config.
+// Uses raw fetch to call any OpenAI-compatible API and pipes the SSE stream to the client.
 router.post('/doctor/chat', async (req, res) => {
-  const { message, config: doctorConfig, systemPrompt } = req.body;
+  const { message, config: doctorCfg, systemPrompt } = req.body;
 
-  if (!doctorConfig?.apiKey) {
+  if (!doctorCfg?.apiKey) {
     return res.status(400).json({ error: 'API key required' });
   }
 
-  const baseUrl = doctorConfig.baseUrl || 'https://api.openai.com/v1';
-  const apiKey = doctorConfig.apiKey;
-  const model = doctorConfig.model || 'gpt-4o';
+  const baseUrl = (doctorCfg.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const apiKey  = doctorCfg.apiKey;
+  const model   = doctorCfg.model || 'gpt-4o';
 
-  // Get system context for the doctor
-  let systemContext = '';
+  // Gather live system context using already-imported execSync
+  const sysInfo = [];
+  try { sysInfo.push('OS: '     + execSync("cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'", { encoding: 'utf8' }).trim()); } catch {}
+  try { sysInfo.push('Kernel: ' + execSync('uname -r', { encoding: 'utf8' }).trim()); } catch {}
+  try { sysInfo.push('Uptime: ' + execSync('uptime -p', { encoding: 'utf8' }).trim()); } catch {}
+  try { sysInfo.push('Disk: '   + execSync('df -h / | tail -1', { encoding: 'utf8' }).trim()); } catch {}
+  try { sysInfo.push('Memory: ' + execSync('free -h | head -2 | tail -1', { encoding: 'utf8' }).trim()); } catch {}
   try {
-    const { execSync } = await import('child_process');
-    const sysInfo = [];
-    try { sysInfo.push('OS: ' + execSync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }).trim()); } catch {}
-    try { sysInfo.push('Kernel: ' + execSync('uname -r', { encoding: 'utf8' }).trim()); } catch {}
-    try { sysInfo.push('Uptime: ' + execSync('uptime -p', { encoding: 'utf8' }).trim()); } catch {}
-    try { sysInfo.push('Disk: ' + execSync('df -h / | tail -1', { encoding: 'utf8' }).trim()); } catch {}
-    try { sysInfo.push('Memory: ' + execSync('free -h | head -2 | tail -1', { encoding: 'utf8' }).trim()); } catch {}
-    try {
-      const failed = execSync('systemctl --failed --no-legend 2>/dev/null | head -10', { encoding: 'utf8' }).trim();
-      if (failed) sysInfo.push('Failed services: ' + failed);
-    } catch {}
-    systemContext = sysInfo.join('\n');
+    const failed = execSync('systemctl --failed --no-legend 2>/dev/null | head -10', { encoding: 'utf8' }).trim();
+    if (failed) sysInfo.push('Failed services:\n' + failed);
   } catch {}
 
+  const fullSystemPrompt =
+    (systemPrompt || 'You are Dr. AI — an expert Linux system administrator and diagnostics AI. Diagnose and fix system issues proactively.') +
+    (sysInfo.length ? `\n\n## LIVE SYSTEM STATE\n${sysInfo.join('\n')}` : '');
+
   const messages = [
-    {
-      role: 'system',
-      content: (systemPrompt || 'You are Dr. AI, an expert Linux system administrator and diagnostics AI.') +
-        (systemContext ? `\n\n## CURRENT SYSTEM STATE\n${systemContext}` : ''),
-    },
-    { role: 'user', content: message },
+    { role: 'system', content: fullSystemPrompt },
+    { role: 'user',   content: message },
   ];
 
+  // Send SSE headers immediately
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
   try {
-    // Set SSE headers for streaming
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders();
-
-    const OpenAI = (await import('openai')).default;
-    const client = new OpenAI({ apiKey, baseURL: baseUrl });
-
-    const stream = await client.chat.completions.create({
-      model,
-      messages,
-      stream: true,
-      temperature: 0.7,
-      max_tokens: 4096,
+    // Call OpenAI-compatible API directly via fetch — no SDK, no dynamic import issues
+    const apiRes = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true,
+        temperature: 0.7,
+        max_tokens: 4096,
+      }),
     });
 
-    for await (const chunk of stream) {
-      if (req.socket.destroyed) break;
-      const text = chunk.choices?.[0]?.delta?.content || '';
-      res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`);
+    if (!apiRes.ok) {
+      const errText = await apiRes.text();
+      const errContent = `\n\n❌ **API Error ${apiRes.status}**\n\`\`\`\n${errText.substring(0, 400)}\n\`\`\``;
+      res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: errContent } }] })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
+      return;
+    }
+
+    // Pipe SSE bytes directly from OpenAI API → client (format is already correct)
+    const reader = apiRes.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done || req.socket.destroyed) break;
+      res.write(decoder.decode(value, { stream: true }));
     }
 
     res.write('data: [DONE]\n\n');
     res.end();
+
   } catch (err) {
+    console.error('[AI Doctor] Error:', err.message);
+    const errContent = `\n\n❌ **Error:** ${err.message}`;
     if (!res.headersSent) {
       res.status(500).json({ error: err.message });
     } else {
-      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: errContent } }] })}\n\n`);
+      res.write('data: [DONE]\n\n');
       res.end();
     }
   }
