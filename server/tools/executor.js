@@ -99,7 +99,11 @@ async function executeCommand({ command, timeout = 120, working_directory, use_s
     });
 
     setTimeout(() => {
-      try { proc.kill('SIGTERM'); } catch {}
+      try {
+        proc.kill('SIGTERM');
+      } catch (err) {
+        console.warn(`Failed to kill process: ${err.message}`);
+      }
       resolvePromise(stdout + stderr + `\n[TIMEOUT] Command timed out after ${timeout}s`);
     }, timeout * 1000);
   });
