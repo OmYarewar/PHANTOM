@@ -4,8 +4,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 let db;
 
-export function initDB() {
-  db = new Database(config.db.path);
+export function initDB(dbPath = config.db.path) {
+  if (db) db.close();
+  db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
