@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "concurrently \"node server/index.js\" \"vite --port 5173\"",
     "start": "node server/index.js",
-    "build": "vite build frontend"
+    "build": "vite build frontend",
+    "test": "node --test server/**/*.test.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.17",
