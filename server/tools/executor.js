@@ -344,34 +344,41 @@ async function scrapeWebpage({ url, max_length = 30000 }) {
     const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
     const title = titleMatch ? titleMatch[1].trim() : 'No title';
 
-    // Remove script and style tags and their content
-    let text = html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '');
+    // Remove script, style, nav, footer, header, and svg tags and their content
+    let text = html.replace(/<(script|style|nav|footer|header|svg)[^>]*>[\s\S]*?<\/\1>/gi, '');
 
     // Convert common HTML elements to readable format
+    text = text.replace(/<br\s*\/?>|<\/p>|<\/div>|<\/li>|<li[^>]*>|<\/h[1-6]>|<h[1-6][^>]*>|<\/tr>|<td[^>]*>|<th[^>]*>/gi, (match) => {
+      const lower = match.toLowerCase();
+      if (lower.startsWith('<br')) return '\n';
+      if (lower.startsWith('</p')) return '\n\n';
+      if (lower.startsWith('</div') || lower.startsWith('</li') || lower.startsWith('</tr')) return '\n';
+      if (lower.startsWith('<li')) return '• ';
+      if (lower.startsWith('</h')) return '\n\n';
+      if (lower.startsWith('<h')) return '\n## ';
+      if (lower.startsWith('<td') || lower.startsWith('<th')) return ' | ';
+      return '';
+    });
+
+    // Special case for links to keep text and URL
+    text = text.replace(/<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/gi, '$2 ($1)');
+
+    // Remove all remaining tags
+    text = text.replace(/<[^>]+>/g, '');
+
+    // Replace HTML entities in one pass
+    const entities = {
+      'nbsp': ' ',
+      'amp': '&',
+      'lt': '<',
+      'gt': '>',
+      'quot': '"',
+      '#39': "'"
+    };
+    text = text.replace(/&(nbsp|amp|lt|gt|quot|#39);/g, (m, p1) => entities[p1] || m);
+
+    // Final cleanup
     text = text
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<\/div>/gi, '\n')
-      .replace(/<\/li>/gi, '\n')
-      .replace(/<li[^>]*>/gi, '• ')
-      .replace(/<\/h[1-6]>/gi, '\n\n')
-      .replace(/<h[1-6][^>]*>/gi, '\n## ')
-      .replace(/<\/tr>/gi, '\n')
-      .replace(/<td[^>]*>/gi, ' | ')
-      .replace(/<th[^>]*>/gi, ' | ')
-      .replace(/<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/gi, '$2 ($1)')
-      .replace(/<[^>]+>/g, '') // Remove remaining tags
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
       .replace(/\n{3,}/g, '\n\n') // Collapse multiple newlines
       .replace(/[ \t]+/g, ' ') // Collapse spaces
       .trim();
