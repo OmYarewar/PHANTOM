@@ -12,7 +12,7 @@ import { getToolDefinitions } from '../tools/registry.js';
 import os from 'os';
 import { execSync } from 'child_process';
 import { readdirSync, statSync, rmSync, mkdirSync, existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
 
@@ -215,7 +215,14 @@ router.post('/skills/upload', upload.single('file'), (req, res) => {
     const entries = zip.getEntries();
     // Determine skill name from zip
     const firstDir = entries.find(e => e.isDirectory);
-    const skillName = firstDir ? firstDir.entryName.split('/')[0] : req.file.originalname.replace(/\.zip$/i, '');
+    let skillName = firstDir ? firstDir.entryName.split('/')[0] : req.file.originalname.replace(/\.zip$/i, '');
+
+    // Sanitize skillName to prevent path traversal
+    skillName = basename(skillName);
+    if (!skillName || skillName === '.' || skillName === '..') {
+      return res.status(400).json({ error: 'Invalid skill name' });
+    }
+
     const extractTo = join(skillsDir, skillName);
     if (!existsSync(extractTo)) mkdirSync(extractTo, { recursive: true });
     zip.extractAllTo(extractTo, true);
