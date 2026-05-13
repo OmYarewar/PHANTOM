@@ -10,8 +10,11 @@ import {
 } from '../memory/store.js';
 import { getToolDefinitions } from '../tools/registry.js';
 import os from 'os';
-import { execSync } from 'child_process';
+import { execSync, exec } from 'child_process';
+import { promisify } from 'util';
 import { readdirSync, statSync, rmSync, mkdirSync, existsSync, readFileSync } from 'fs';
+
+const execAsync = promisify(exec);
 import { join, basename } from 'path';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
@@ -144,7 +147,7 @@ router.post('/sudo/validate', async (req, res) => {
 });
 
 // ─── System Info ───
-router.get('/system/info', (req, res) => {
+router.get('/system/info', async (req, res) => {
   const info = {
     hostname: os.hostname(),
     platform: os.platform(),
@@ -160,13 +163,17 @@ router.get('/system/info', (req, res) => {
     cpus: os.cpus().length,
   };
 
-  try {
-    info.distro = execSync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }).trim();
-  } catch {}
+  const results = await Promise.allSettled([
+    execAsync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }),
+    execAsync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' })
+  ]);
 
-  try {
-    info.ip = execSync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' }).trim();
-  } catch {}
+  if (results[0].status === 'fulfilled') {
+    info.distro = results[0].value.stdout.trim();
+  }
+  if (results[1].status === 'fulfilled') {
+    info.ip = results[1].value.stdout.trim();
+  }
 
   // Check if sudo password is stored
   info.sudoConfigured = !!getSetting('sudo_password', '');
@@ -264,17 +271,28 @@ router.post('/doctor/chat', async (req, res) => {
   const apiKey  = doctorCfg.apiKey;
   const model   = doctorCfg.model || 'gpt-4o';
 
-  // Gather live system context using already-imported execSync
+  // Gather live system context asynchronously in parallel
   const sysInfo = [];
-  try { sysInfo.push('OS: '     + execSync("cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'", { encoding: 'utf8' }).trim()); } catch {}
-  try { sysInfo.push('Kernel: ' + execSync('uname -r', { encoding: 'utf8' }).trim()); } catch {}
-  try { sysInfo.push('Uptime: ' + execSync('uptime -p', { encoding: 'utf8' }).trim()); } catch {}
-  try { sysInfo.push('Disk: '   + execSync('df -h / | tail -1', { encoding: 'utf8' }).trim()); } catch {}
-  try { sysInfo.push('Memory: ' + execSync('free -h | head -2 | tail -1', { encoding: 'utf8' }).trim()); } catch {}
-  try {
-    const failed = execSync('systemctl --failed --no-legend 2>/dev/null | head -10', { encoding: 'utf8' }).trim();
-    if (failed) sysInfo.push('Failed services:\n' + failed);
-  } catch {}
+  const commands = [
+    { label: 'OS', cmd: "cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '\"'" },
+    { label: 'Kernel', cmd: 'uname -r' },
+    { label: 'Uptime', cmd: 'uptime -p' },
+    { label: 'Disk', cmd: 'df -h / | tail -1' },
+    { label: 'Memory', cmd: 'free -h | head -2 | tail -1' },
+    { label: 'Failed services', cmd: 'systemctl --failed --no-legend 2>/dev/null | head -10' }
+  ];
+
+  const results = await Promise.allSettled(commands.map(c => execAsync(c.cmd, { encoding: 'utf8' })));
+
+  results.forEach((res, index) => {
+    if (res.status === 'fulfilled' && res.value.stdout.trim()) {
+      if (commands[index].label === 'Failed services') {
+        sysInfo.push('Failed services:\n' + res.value.stdout.trim());
+      } else {
+        sysInfo.push(`${commands[index].label}: ${res.value.stdout.trim()}`);
+      }
+    }
+  });
 
   const fullSystemPrompt =
     (systemPrompt || 'You are Dr. AI — an expert Linux system administrator and diagnostics AI. Diagnose and fix system issues proactively.') +
