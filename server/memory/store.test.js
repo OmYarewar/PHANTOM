@@ -41,7 +41,7 @@ describe('Database Store Initialization', () => {
   test('initDB should set foreign_keys pragma', () => {
     const db = initDB(':memory:');
 
-    const foreignKeys = db.pragma('foreign_keys');
+    const foreignKeys = db.pragma('foreign_keys', { simple: true });
     assert.strictEqual(foreignKeys, 1);
   });
 
