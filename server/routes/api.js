@@ -15,6 +15,10 @@ import { readdirSync, statSync, rmSync, mkdirSync, existsSync, readFileSync } fr
 import { join, basename } from 'path';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const router = Router();
 
@@ -144,7 +148,7 @@ router.post('/sudo/validate', async (req, res) => {
 });
 
 // ─── System Info ───
-router.get('/system/info', (req, res) => {
+router.get('/system/info', async (req, res) => {
   const info = {
     hostname: os.hostname(),
     platform: os.platform(),
@@ -161,11 +165,22 @@ router.get('/system/info', (req, res) => {
   };
 
   try {
-    info.distro = execSync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }).trim();
-  } catch {}
+    const commands = [
+      { key: 'distro', cmd: 'cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'' },
+      { key: 'ip', cmd: "hostname -I 2>/dev/null | awk '{print $1}'" }
+    ];
 
-  try {
-    info.ip = execSync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' }).trim();
+    // Performance optimization: use Promise.allSettled for parallel asynchronous process execution instead of sequential synchronous execSync
+    const results = await Promise.allSettled(commands.map(async c => {
+      const { stdout } = await execAsync(c.cmd);
+      return { key: c.key, output: stdout.trim() };
+    }));
+
+    results.forEach(r => {
+      if (r.status === 'fulfilled' && r.value.output) {
+        info[r.value.key] = r.value.output;
+      }
+    });
   } catch {}
 
   // Check if sudo password is stored
