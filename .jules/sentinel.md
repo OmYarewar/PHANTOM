@@ -1,0 +1,4 @@
+## 2024-05-16 - [Fix Path Traversal in File Deletion]
+**Vulnerability:** A path traversal vulnerability existed in the `/api/skills/:name` DELETE endpoint because user input (`req.params.name`) was being passed directly into `path.join()`. This allowed the deletion of arbitrary files on the server (e.g., passing `..%2f..%2fetc%2fpasswd`).
+**Learning:** Even when the intent is to construct a path within a specific directory, any user-provided path segment must be strictly sanitized to ensure it doesn't navigate upwards or outside the intended root.
+**Prevention:** Always use `path.basename()` on user-provided path parameters meant to refer strictly to file names or leaf directories. Additionally, explicitly reject `.` and `..` to prevent unexpected relative resolutions.
