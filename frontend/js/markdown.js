@@ -2,14 +2,15 @@
  * Lightweight Markdown renderer — no dependencies
  * Handles: headers, bold, italic, code, code blocks, links, lists, tables, blockquotes, hr
  */
+
+// HTML entity map for escaping
+const escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
+
 window.renderMarkdown = function(text) {
   if (!text) return '';
 
   // Escape HTML
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  let html = text.replace(/[&<>]/g, match => escapeMap[match]);
 
   // Code blocks (``` ... ```)
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
@@ -34,10 +35,7 @@ window.renderMarkdown = function(text) {
   });
 
   // Headers
-  html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
-  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  html = html.replace(/^(#{1,4}) (.+)$/gm, (match, hashes, content) => `<h${hashes.length}>${content}</h${hashes.length}>`);
 
   // Blockquotes
   html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
