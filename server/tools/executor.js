@@ -7,6 +7,14 @@ import { getSetting } from '../memory/store.js';
 import config from '../config.js';
 
 /**
+ * Helper to securely escape arguments for bash shell
+ */
+function escapeShellArg(arg) {
+  if (arg === undefined || arg === null) return "''";
+  return "'" + String(arg).replace(/'/g, "'\\''") + "'";
+}
+
+/**
  * Execute a tool by name with given arguments
  * @param {Function} onProgress - optional callback for live output streaming
  */
@@ -464,7 +472,7 @@ function formatSize(bytes) {
  */
 async function pythonExecute({ code, timeout = 60 }) {
   return await executeCommand({
-    command: `python3 -c ${JSON.stringify(code)}`,
+    command: `python3 -c ${escapeShellArg(code)}`,
     timeout,
   });
 }
@@ -534,10 +542,10 @@ async function saveTrace({ task, approach, outcome, score, notes }) {
 async function scraplingFetch({ url, mode = 'basic', css_selector, xpath, proxy, solve_cloudflare = true }, onProgress) {
   const bridgePath = resolve(import.meta.dirname, 'scrapling_bridge.py');
 
-  let cmd = `python3 "${bridgePath}" "${url}" --mode ${mode}`;
-  if (css_selector) cmd += ` --css "${css_selector}"`;
-  if (xpath) cmd += ` --xpath "${xpath}"`;
-  if (proxy) cmd += ` --proxy "${proxy}"`;
+  let cmd = `python3 ${escapeShellArg(bridgePath)} ${escapeShellArg(url)} --mode ${escapeShellArg(mode)}`;
+  if (css_selector) cmd += ` --css ${escapeShellArg(css_selector)}`;
+  if (xpath) cmd += ` --xpath ${escapeShellArg(xpath)}`;
+  if (proxy) cmd += ` --proxy ${escapeShellArg(proxy)}`;
   if (!solve_cloudflare) cmd += ` --no-cloudflare`;
 
   return await executeCommand({ command: cmd, timeout: 60 }, onProgress);
