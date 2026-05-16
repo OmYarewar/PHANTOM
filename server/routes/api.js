@@ -237,10 +237,14 @@ router.post('/skills/upload', upload.single('file'), (req, res) => {
 router.delete('/skills/:name', (req, res) => {
   try {
     const skillsDir = getSkillsDir();
-    const skillPath = join(skillsDir, req.params.name);
+    const skillName = basename(req.params.name);
+    if (!skillName || skillName === '.' || skillName === '..') {
+      return res.status(400).json({ error: 'Invalid skill name' });
+    }
+    const skillPath = join(skillsDir, skillName);
     if (existsSync(skillPath)) {
       rmSync(skillPath, { recursive: true, force: true });
-      res.json({ success: true, message: `Skill "${req.params.name}" deleted` });
+      res.json({ success: true, message: `Skill "${skillName}" deleted` });
     } else {
       res.status(404).json({ error: 'Skill not found' });
     }
