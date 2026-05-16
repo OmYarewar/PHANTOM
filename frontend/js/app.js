@@ -50,7 +50,6 @@
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('⚡ WebSocket connected');
       setStatus(true);
       reconnectAttempts = 0;
     };
@@ -61,7 +60,6 @@
     };
 
     ws.onclose = () => {
-      console.log('🔌 WebSocket disconnected');
       setStatus(false);
       attemptReconnect();
     };
