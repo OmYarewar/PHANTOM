@@ -1,4 +1,5 @@
 import { spawn, execSync } from 'child_process';
+import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
 import { dirname, resolve } from 'path';
 import os from 'os';
@@ -87,7 +88,10 @@ async function executeCommand({ command, timeout = 120, working_directory, use_s
       }
     }
 
-    const cwd = working_directory || config.workspace || os.homedir();
+    let cwd = working_directory || config.workspace;
+    if (!cwd || !existsSync(cwd)) {
+      cwd = os.homedir();
+    }
     const proc = spawn('bash', ['-c', cmd], {
       cwd,
       timeout: timeout * 1000,
