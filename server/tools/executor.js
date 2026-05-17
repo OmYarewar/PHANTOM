@@ -34,9 +34,26 @@ export async function executeTool(name, args, onProgress) {
     case 'edit_source_code': return await editSourceCode(args);
     case 'save_trace': return await saveTrace(args);
     case 'scrapling_fetch': return await scraplingFetch(args, onProgress);
+    case 'show_preview_window': return showPreviewWindow(args);
     default:
       return `Unknown tool: ${name}`;
   }
+}
+
+/**
+ * Handle show_preview_window execution.
+ * Returns a JSON payload so the frontend can intercept and render the HTML.
+ */
+function showPreviewWindow({ html_content, title }) {
+  if (!html_content) {
+    throw new Error('html_content is required to show preview window.');
+  }
+  return JSON.stringify({
+    success: true,
+    message: `Successfully rendered preview window: "${title || 'Preview'}"`,
+    html_content: html_content,
+    title: title || 'Preview'
+  });
 }
 
 // User agent rotation to avoid blocks

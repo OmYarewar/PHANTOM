@@ -197,7 +197,7 @@
             <div class="form-group">
               <label for="setting-base-url">Base URL</label>
               <input type="url" id="setting-base-url" placeholder="https://api.openai.com/v1" />
-              <small>OpenAI, OpenRouter, Ollama, LM Studio, etc.</small>
+              <small>OpenAI, OpenRouter, Ollama, LM Studio, Nvidia (https://integrate.api.nvidia.com/v1), etc.</small>
             </div>
             <div class="form-group">
               <label for="setting-api-key">API Key</label>
@@ -220,6 +220,7 @@
                 <option value="meta-llama/llama-3-70b-instruct">
                 <option value="mistralai/mixtral-8x22b-instruct">
                 <option value="qwen/qwen-2.5-72b-instruct">
+                <option value="nvidia/nemotron-3-super-120b-a12b">
               </datalist>
             </div>
             <div class="form-row">
@@ -276,6 +277,21 @@
             <button id="save-settings" class="btn btn-primary">💾 Save Settings</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- AI Doctor Modal -->
+    <!-- Preview Panel for Visual Output -->
+    <div id="preview-panel" class="preview-panel hidden">
+      <div class="preview-header">
+        <h2 id="preview-title" class="preview-title">Preview</h2>
+        <div class="preview-actions">
+          <button id="preview-refresh-btn" class="btn-icon" title="Refresh">🔄</button>
+          <button id="preview-close-btn" class="btn-icon" title="Close">✕</button>
+        </div>
+      </div>
+      <div class="preview-body">
+        <iframe id="preview-iframe" sandbox="allow-scripts allow-forms allow-popups" title="Preview Panel"></iframe>
       </div>
     </div>
 

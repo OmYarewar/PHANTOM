@@ -43,6 +43,42 @@
   initImageDrop();
 
   // ─── WebSocket ───
+  // ─── Preview Panel Logic ───
+  let lastPreviewHtml = '';
+  const previewPanel = document.getElementById('preview-panel');
+  const previewIframe = document.getElementById('preview-iframe');
+  const previewTitle = document.getElementById('preview-title');
+
+  window.showPreview = function showPreview(htmlContent, title) {
+    if (!previewPanel) return;
+    lastPreviewHtml = htmlContent;
+
+    if (title) previewTitle.textContent = title;
+
+    // Instead of directly writing to the document (which gets blocked without allow-same-origin),
+    // we use a Data URI or srcdoc to safely render the content in the sandboxed iframe.
+    previewIframe.srcdoc = htmlContent;
+
+    previewPanel.classList.remove('hidden');
+
+    // Attempt to shrink chat width so they can be side-by-side on large screens
+    if (window.innerWidth > 1000) {
+      document.querySelector('.main-content').style.width = '55vw';
+    }
+  }
+
+  function hidePreview() {
+    if (!previewPanel) return;
+    previewPanel.classList.add('hidden');
+    document.querySelector('.main-content').style.width = '100%';
+  }
+
+  document.getElementById('preview-close-btn')?.addEventListener('click', hidePreview);
+  document.getElementById('preview-refresh-btn')?.addEventListener('click', () => {
+    if (lastPreviewHtml) showPreview(lastPreviewHtml, previewTitle.textContent);
+  });
+
+  // ─── WebSocket ───
   function connectWebSocket() {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${location.host}/ws`;
@@ -129,6 +165,18 @@
         break;
 
       case 'tool_result':
+          if (msg.name === 'show_preview_window') {
+            try {
+              const resObj = typeof msg.result === 'string' ? JSON.parse(msg.result) : msg.result;
+              if (resObj.html_content) {
+                window.showPreview(resObj.html_content, resObj.title || 'Preview');
+                // modify msg.result to only show success message in chat
+                msg.result = resObj.message;
+              }
+            } catch (e) {
+              console.error('Failed to parse show_preview_window result:', e);
+            }
+          }
         Chat.addToolResult(msg);
         break;
 

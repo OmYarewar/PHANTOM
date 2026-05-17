@@ -593,3 +593,82 @@ html, body {
   transition: border-color var(--transition-fast);
 }
 .doctor-input:focus { border-color: var(--border-focus); }
+
+/* ==========================================================================
+   Preview Panel
+   ========================================================================== */
+
+.preview-panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  bottom: 80px; /* Leave space for input area */
+  width: 45vw;
+  min-width: 400px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  overflow: hidden;
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+.preview-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(20px);
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid var(--border-light);
+  backdrop-filter: blur(10px);
+}
+
+.preview-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.preview-body {
+  flex: 1;
+  background: #ffffff; /* Typically preview content is white-bg */
+  position: relative;
+  overflow: hidden;
+}
+
+#preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .preview-panel {
+    position: fixed;
+    top: 60px;
+    left: 10px;
+    right: 10px;
+    bottom: 80px;
+    width: auto;
+    min-width: auto;
+  }
+}

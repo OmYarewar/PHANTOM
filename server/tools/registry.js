@@ -374,5 +374,26 @@ export function getToolDefinitions() {
         },
       },
     },
+    {
+      type: 'function',
+      function: {
+        name: 'show_preview_window',
+        description: 'Render interactive HTML, JS, CSS, charts, or graphs directly in the user\'s UI. Use this when the user asks for a visual representation, code demo, or graphical target map.',
+        parameters: {
+          type: 'object',
+          properties: {
+            html_content: {
+              type: 'string',
+              description: 'The HTML code to render. Can include inline <style> and <script> tags for interactivity.',
+            },
+            title: {
+              type: 'string',
+              description: 'The title to display on the preview window.',
+            },
+          },
+          required: ['html_content', 'title'],
+        },
+      },
+    },
   ];
 }
