@@ -1,4 +1,4 @@
-## 2024-05-16 - [Fix Path Traversal in File Deletion]
-**Vulnerability:** A path traversal vulnerability existed in the `/api/skills/:name` DELETE endpoint because user input (`req.params.name`) was being passed directly into `path.join()`. This allowed the deletion of arbitrary files on the server (e.g., passing `..%2f..%2fetc%2fpasswd`).
-**Learning:** Even when the intent is to construct a path within a specific directory, any user-provided path segment must be strictly sanitized to ensure it doesn't navigate upwards or outside the intended root.
-**Prevention:** Always use `path.basename()` on user-provided path parameters meant to refer strictly to file names or leaf directories. Additionally, explicitly reject `.` and `..` to prevent unexpected relative resolutions.
+## 2025-05-16 - [Fix Command Injection in Executor Tools]
+**Vulnerability:** The AI tools execution logic in `server/tools/executor.js` constructed bash commands by directly interpolating unescaped user inputs into shell strings. `pythonExecute` used `JSON.stringify()`, which wraps content in double quotes but doesn't prevent shell evaluation of sequences like `$(...)` or backticks within `bash -c`. `scraplingFetch` also directly concatenated arguments into double-quoted shell parameters.
+**Learning:** `JSON.stringify` and standard double-quoting are inadequate for sanitizing inputs passed to `bash -c` because bash will still evaluate command substitutions before passing the string.
+**Prevention:** Implement an `escapeShellArg` utility that enforces safe parameter wrapping in single quotes (`'`) and rigorously escapes internal single quotes (`'\''`) to completely neutralize shell command injection vectors.
