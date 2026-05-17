@@ -463,8 +463,9 @@ function formatSize(bytes) {
  * Execute Python code
  */
 async function pythonExecute({ code, timeout = 60 }) {
+  const escapedCode = typeof code === 'string' ? code.replace(/'/g, "'\\''") : '';
   return await executeCommand({
-    command: `python3 -c ${JSON.stringify(code)}`,
+    command: `python3 -c '${escapedCode}'`,
     timeout,
   });
 }
@@ -534,10 +535,12 @@ async function saveTrace({ task, approach, outcome, score, notes }) {
 async function scraplingFetch({ url, mode = 'basic', css_selector, xpath, proxy, solve_cloudflare = true }, onProgress) {
   const bridgePath = resolve(import.meta.dirname, 'scrapling_bridge.py');
 
-  let cmd = `python3 "${bridgePath}" "${url}" --mode ${mode}`;
-  if (css_selector) cmd += ` --css "${css_selector}"`;
-  if (xpath) cmd += ` --xpath "${xpath}"`;
-  if (proxy) cmd += ` --proxy "${proxy}"`;
+  const escapeArg = (arg) => typeof arg === 'string' ? arg.replace(/'/g, "'\\''") : arg;
+
+  let cmd = `python3 "${bridgePath}" '${escapeArg(url)}' --mode ${mode}`;
+  if (css_selector) cmd += ` --css '${escapeArg(css_selector)}'`;
+  if (xpath) cmd += ` --xpath '${escapeArg(xpath)}'`;
+  if (proxy) cmd += ` --proxy '${escapeArg(proxy)}'`;
   if (!solve_cloudflare) cmd += ` --no-cloudflare`;
 
   return await executeCommand({ command: cmd, timeout: 60 }, onProgress);
