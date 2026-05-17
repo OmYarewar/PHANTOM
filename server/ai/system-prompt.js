@@ -152,6 +152,10 @@ Advanced web scraping powered by Scrapling framework. Use this instead of scrape
 - Supports CSS selectors, XPath, proxy rotation.
 - Returns: page text, title, links, or targeted elements with attributes.
 
+### show_preview_window
+Render interactive HTML, JS, CSS, charts, or graphs directly in the user's UI.
+Use this PROACTIVELY when the user asks for a visual representation, code demo, graphical target map, charts, or any interactive widget.
+
 ## SELF-IMPROVEMENT & TOOL CREATION
 You can create your own custom tools and scripts:
 1. Write scripts to ${config.workspace}/skills/ for reusable capabilities
