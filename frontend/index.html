@@ -172,7 +172,7 @@
       <div class="settings-drawer">
         <div class="settings-header">
           <h2>⚙️ Settings</h2>
-          <button id="settings-close" class="btn-icon">
+          <button id="settings-close" class="btn-icon" aria-label="Close settings">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -291,7 +291,7 @@
               <p class="ai-doctor-subtitle">Temporary AI system diagnostics & repair</p>
             </div>
           </div>
-          <button id="ai-doctor-close" class="btn-icon">
+          <button id="ai-doctor-close" class="btn-icon" aria-label="Close AI Doctor">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -304,18 +304,18 @@
             🔒 Enter temporary API credentials — separate from your main PHANTOM config. These are used only for this session.
           </p>
           <div class="form-group">
-            <label>Base URL</label>
+            <label for="doctor-base-url">Base URL</label>
             <input type="url" id="doctor-base-url" placeholder="https://api.openai.com/v1" value="https://api.openai.com/v1" />
           </div>
           <div class="form-group">
-            <label>API Key</label>
+            <label for="doctor-api-key">API Key</label>
             <div class="input-with-toggle">
               <input type="password" id="doctor-api-key" placeholder="sk-..." />
               <button id="doctor-toggle-key" class="btn-icon-sm" title="Show/Hide">👁️</button>
             </div>
           </div>
           <div class="form-group">
-            <label>Model ID</label>
+            <label for="doctor-model">Model ID</label>
             <input type="text" id="doctor-model" placeholder="gpt-4o" value="gpt-4o" list="model-suggestions" />
           </div>
           <div id="doctor-config-feedback" class="doctor-config-feedback"></div>
@@ -329,10 +329,10 @@
           <div id="doctor-messages" class="doctor-messages"></div>
           <div class="doctor-input-row">
             <input type="text" id="doctor-chat-input" placeholder="Ask the AI Doctor..." class="doctor-input" />
-            <button id="doctor-stop-btn" class="stop-btn" style="display:none;padding:8px;">
+            <button id="doctor-stop-btn" class="stop-btn" style="display:none;padding:8px;" aria-label="Stop AI Doctor">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
             </button>
-            <button id="doctor-send-btn" class="send-btn">
+            <button id="doctor-send-btn" class="send-btn" aria-label="Send message to AI Doctor">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
               </svg>
@@ -348,7 +348,7 @@
       <div class="manage-drawer">
         <div class="manage-header">
           <h2>🧩 Management</h2>
-          <button id="manage-close" class="btn-icon">
+          <button id="manage-close" class="btn-icon" aria-label="Close management panel">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -368,15 +368,15 @@
             <div id="manage-mcp-list" class="manage-list"></div>
             <div class="manage-add-form" id="mcp-add-form" style="display:none;">
               <div class="form-group">
-                <label>Server Name</label>
+                <label for="mcp-name-input">Server Name</label>
                 <input type="text" id="mcp-name-input" placeholder="e.g. filesystem-server" />
               </div>
               <div class="form-group">
-                <label>Command</label>
+                <label for="mcp-command-input">Command</label>
                 <input type="text" id="mcp-command-input" placeholder="e.g. npx -y @modelcontextprotocol/server-filesystem /home" />
               </div>
               <div class="form-group">
-                <label>Transport</label>
+                <label for="mcp-transport-input">Transport</label>
                 <select id="mcp-transport-input">
                   <option value="stdio">stdio</option>
                   <option value="sse">SSE</option>
