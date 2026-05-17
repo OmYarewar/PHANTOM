@@ -4,13 +4,13 @@
  */
 
 // HTML entity map for escaping
-const escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
+const escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
 window.renderMarkdown = function(text) {
   if (!text) return '';
 
   // Escape HTML
-  let html = text.replace(/[&<>]/g, match => escapeMap[match]);
+  let html = text.replace(/[&<>"']/g, match => escapeMap[match]);
 
   // Code blocks (``` ... ```)
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
@@ -49,7 +49,13 @@ window.renderMarkdown = function(text) {
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
 
   // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+    let cleanUrl = url.replace(/[\x00-\x1F\x7F]/g, '').trim();
+    if (/^(?:javascript|vbscript|data):/i.test(cleanUrl)) {
+      cleanUrl = '#';
+    }
+    return `<a href="${cleanUrl}" target="_blank" rel="noopener">${text}</a>`;
+  });
 
   // Unordered lists
   html = html.replace(/^[\s]*[-*] (.+)$/gm, '<li>$1</li>');

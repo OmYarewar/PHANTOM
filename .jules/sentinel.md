@@ -1,4 +1,4 @@
-## 2025-05-16 - [Fix Command Injection in Executor Tools]
-**Vulnerability:** The AI tools execution logic in `server/tools/executor.js` constructed bash commands by directly interpolating unescaped user inputs into shell strings. `pythonExecute` used `JSON.stringify()`, which wraps content in double quotes but doesn't prevent shell evaluation of sequences like `$(...)` or backticks within `bash -c`. `scraplingFetch` also directly concatenated arguments into double-quoted shell parameters.
-**Learning:** `JSON.stringify` and standard double-quoting are inadequate for sanitizing inputs passed to `bash -c` because bash will still evaluate command substitutions before passing the string.
-**Prevention:** Implement an `escapeShellArg` utility that enforces safe parameter wrapping in single quotes (`'`) and rigorously escapes internal single quotes (`'\''`) to completely neutralize shell command injection vectors.
+## 2024-05-18 - [Fix XSS in Custom Markdown Parser]
+**Vulnerability:** The custom Markdown parser `frontend/js/markdown.js` was vulnerable to XSS through unescaped quotes in attributes and un-sanitized link URIs, allowing `javascript:` execution.
+**Learning:** The application uses a custom markdown parser that pipes its output directly to `innerHTML`. Any flaws in escaping HTML entities or sanitizing URLs in this parser can lead to DOM-based XSS, which is particularly severe given the context of AI-generated content (prompt injection).
+**Prevention:** Ensure the HTML entity map includes `"` and `'`. Always sanitize URL schemes in link generation to explicitly allow only safe protocols (or neutralize dangerous ones).
