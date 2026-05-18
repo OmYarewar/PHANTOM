@@ -77,6 +77,14 @@
   document.getElementById('preview-refresh-btn')?.addEventListener('click', () => {
     if (lastPreviewHtml) showPreview(lastPreviewHtml, previewTitle.textContent);
   });
+  document.getElementById('preview-popout-btn')?.addEventListener('click', () => {
+    if (!lastPreviewHtml) return;
+    const newWin = window.open('', '_blank');
+    if (newWin) {
+      newWin.document.write(lastPreviewHtml);
+      newWin.document.close();
+    }
+  });
 
   // ─── WebSocket ───
   function connectWebSocket() {

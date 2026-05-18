@@ -1,7 +1,7 @@
 import { spawn, execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
-import { dirname, resolve } from 'path';
+import { dirname, resolve, join } from 'path';
 import os from 'os';
 import { saveMemory, searchMemories } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
@@ -36,8 +36,39 @@ export async function executeTool(name, args, onProgress) {
     case 'save_trace': return await saveTrace(args);
     case 'scrapling_fetch': return await scraplingFetch(args, onProgress);
     case 'show_preview_window': return showPreviewWindow(args);
+    case 'write_skill': return await writeSkill(args);
     default:
       return `Unknown tool: ${name}`;
+  }
+}
+
+/**
+ * Write a new skill dynamically
+ */
+async function writeSkill({ name, description, code, entry_point = 'script.py' }) {
+  try {
+    const skillsDir = join(config.workspace, 'skills', name);
+    await mkdir(skillsDir, { recursive: true });
+
+    // Write the main script
+    await writeFile(join(skillsDir, entry_point), code, 'utf8');
+
+    // Make script executable if it's sh or py
+    try {
+      execSync(`chmod +x ${escapeShellArg(join(skillsDir, entry_point))}`);
+    } catch {}
+
+    // Write the skill manifest
+    const manifest = {
+      name,
+      description,
+      entry: entry_point
+    };
+    await writeFile(join(skillsDir, 'skill.json'), JSON.stringify(manifest, null, 2), 'utf8');
+
+    return `Skill "${name}" created successfully at ${skillsDir}.`;
+  } catch (err) {
+    return `Error creating skill: ${err.message}`;
   }
 }
 

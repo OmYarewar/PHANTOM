@@ -6,6 +6,36 @@ export function getToolDefinitions() {
     {
       type: 'function',
       function: {
+        name: 'write_skill',
+        description: 'Create and register a new AI skill dynamically. This allows you to add new custom tools or scripts to the workspace skills directory.',
+        parameters: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'The name of the new skill (should be a short, directory-friendly name).',
+            },
+            description: {
+              type: 'string',
+              description: 'A description of what the skill does.',
+            },
+            code: {
+              type: 'string',
+              description: 'The Python or Bash code for the skill.',
+            },
+            entry_point: {
+              type: 'string',
+              description: 'The filename for the main entry point (e.g., "script.py", "run.sh").',
+              default: 'script.py',
+            },
+          },
+          required: ['name', 'description', 'code'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
         name: 'execute_command',
         description: 'Execute a shell command on the local system. Use for running security tools, scripts, system commands, etc. Supports bash syntax including pipes, redirects, and background processes.',
         parameters: {

@@ -647,6 +647,10 @@ html, body {
   gap: 0.5rem;
 }
 
+#preview-popout-btn {
+  font-size: 1.1rem;
+}
+
 .preview-body {
   flex: 1;
   background: #ffffff; /* Typically preview content is white-bg */
