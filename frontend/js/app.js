@@ -447,6 +447,7 @@
   }
 
   async function deleteConversation(id) {
+    if (!confirm('Are you sure you want to delete this conversation?')) return;
     try {
       await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
       if (currentConversationId === id) {
