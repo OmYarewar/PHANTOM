@@ -21,6 +21,8 @@ export function resetClient() {
   openaiClient = null;
 }
 
+export { getClient };
+
 /**
  * Process a user message: send to LLM with tools, handle tool calls recursively, stream responses.
  * Now supports:
