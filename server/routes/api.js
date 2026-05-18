@@ -145,6 +145,75 @@ router.post('/sudo/validate', async (req, res) => {
   }
 });
 
+
+// ─── System Update ───
+router.get('/system/check-update', async (req, res) => {
+  try {
+    // Fetch latest from origin to check if we are behind
+    await execAsync('git fetch origin main', { encoding: 'utf8' });
+
+    // Check if we are behind origin/main
+    const statusCmd = await execAsync('git rev-list HEAD...origin/main --count', { encoding: 'utf8' });
+    const commitsBehind = parseInt(statusCmd.stdout.trim(), 10);
+
+    const updateAvailable = commitsBehind > 0;
+
+    // Get latest commit message
+    let message = '';
+    if (updateAvailable) {
+        const logCmd = await execAsync('git log -1 --pretty=%B origin/main', { encoding: 'utf8' });
+        message = logCmd.stdout.trim();
+    }
+
+    res.json({
+      updateAvailable,
+      commitsBehind,
+      message
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/system/update', async (req, res) => {
+  // Use SSE to send progress
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const sendProgress = (msg) => {
+    res.write(`data: ${JSON.stringify({ progress: msg })}\n\n`);
+  };
+
+  try {
+    sendProgress('Fetching latest updates from GitHub...');
+    await execAsync('git fetch origin main', { encoding: 'utf8' });
+    sendProgress('Resetting to latest changes...');
+    const pullResult = await execAsync('git reset --hard origin/main', { encoding: 'utf8' });
+    sendProgress(pullResult.stdout);
+
+    sendProgress('Installing dependencies...');
+    const npmResult = await execAsync('npm install', { encoding: 'utf8' });
+    sendProgress(npmResult.stdout);
+
+    sendProgress('Update complete! Restarting system...');
+    res.write('data: [DONE]\n\n');
+    res.end();
+
+    // Give time for the SSE connection to finish
+    setTimeout(() => {
+      console.log('Restarting due to update...');
+      process.exit(0);
+    }, 2000);
+  } catch (err) {
+    console.error('Update error:', err);
+    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
+  }
+});
+
 // ─── System Info ───
 router.get('/system/info', async (req, res) => {
   const info = {

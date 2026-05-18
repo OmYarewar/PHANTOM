@@ -681,3 +681,61 @@ html, body {
     min-width: auto;
   }
 }
+
+/* ─── Update Banner ─── */
+.update-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--info);
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: transform var(--transition-normal);
+}
+.update-banner.hidden {
+  transform: translateY(-100%);
+  display: none;
+}
+.update-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.update-icon {
+  font-size: 1.2rem;
+}
+.update-text {
+  display: flex;
+  flex-direction: column;
+}
+.update-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.update-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+#btn-update-now {
+  background: white;
+  color: var(--info);
+  font-weight: 600;
+  margin-right: 8px;
+}
+#btn-update-now:hover {
+  background: #f0f0f0;
+}
+#btn-update-dismiss {
+  color: white;
+  opacity: 0.8;
+}
+#btn-update-dismiss:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.2);
+}

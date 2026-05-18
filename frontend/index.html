@@ -12,6 +12,22 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>">
 </head>
 <body>
+
+    <!-- Update Banner -->
+    <div id="update-banner" class="update-banner hidden">
+      <div class="update-banner-content">
+        <span class="update-icon">🚀</span>
+        <div class="update-text">
+          <span class="update-title">System Update Available</span>
+          <span id="update-message" class="update-subtitle">A new version of PHANTOM is available.</span>
+        </div>
+      </div>
+      <div>
+        <button id="btn-update-now" class="btn btn-primary btn-sm">Update Now</button>
+        <button id="btn-update-dismiss" class="btn-icon btn-sm">✕</button>
+      </div>
+    </div>
+
   <!-- Matrix Rain Background -->
   <canvas id="matrix-bg"></canvas>
 
@@ -277,6 +293,26 @@
           <div class="settings-footer">
             <button id="save-settings" class="btn btn-primary">💾 Save Settings</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Update Progress Modal -->
+    <div id="update-progress-modal" class="ai-doctor-modal hidden" style="z-index: 9999;">
+      <div class="ai-doctor-overlay"></div>
+      <div class="ai-doctor-dialog">
+        <div class="ai-doctor-header">
+          <div class="ai-doctor-title-row">
+            <span class="ai-doctor-icon">🔄</span>
+            <div>
+              <h2 class="ai-doctor-title">Updating PHANTOM</h2>
+              <p class="ai-doctor-subtitle">Please wait while the system updates...</p>
+            </div>
+          </div>
+        </div>
+        <div class="doctor-config-screen" style="max-height: 400px; overflow-y: auto;">
+          <pre id="update-log" style="background: var(--bg-tertiary); padding: 10px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; margin: 0; min-height: 150px;"></pre>
         </div>
       </div>
     </div>

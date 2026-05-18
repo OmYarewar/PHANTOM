@@ -627,6 +627,96 @@
     }
   }, 30000);
 
+
+  // ─── System Update Logic ───
+  async function checkSystemUpdate() {
+    try {
+      const res = await fetch('/api/system/check-update');
+      const data = await res.json();
+      if (data.updateAvailable) {
+        showUpdateBanner(data);
+      }
+    } catch (err) {
+      console.error('Failed to check for updates:', err);
+    }
+  }
+
+  function showUpdateBanner(data) {
+    const banner = document.getElementById('update-banner');
+    const msg = document.getElementById('update-message');
+    const btnNow = document.getElementById('btn-update-now');
+    const btnDismiss = document.getElementById('btn-update-dismiss');
+
+    if (!banner) return;
+
+    if (data.message) {
+      msg.textContent = `[${data.commitsBehind} commits behind] ${data.message.substring(0, 50)}` + (data.message.length > 50 ? '...' : '');
+    }
+
+    banner.classList.remove('hidden');
+
+    btnDismiss.onclick = () => {
+      banner.classList.add('hidden');
+    };
+
+    btnNow.onclick = () => {
+      banner.classList.add('hidden');
+      startSystemUpdate();
+    };
+  }
+
+  function startSystemUpdate() {
+    const modal = document.getElementById('update-progress-modal');
+    const logEl = document.getElementById('update-log');
+    if (!modal || !logEl) return;
+
+    modal.classList.remove('hidden');
+    logEl.textContent = 'Initializing update...\n';
+
+    fetch('/api/system/update', { method: 'POST' })
+      .then(response => {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        function read() {
+          reader.read().then(({ done, value }) => {
+            if (done) return;
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.substring(6);
+                if (dataStr === '[DONE]') {
+                  logEl.textContent += '\nReconnecting...';
+                  setTimeout(() => window.location.reload(), 3000);
+                  return;
+                }
+                try {
+                  const data = JSON.parse(dataStr);
+                  if (data.progress) {
+                    logEl.textContent += data.progress + '\n';
+                    logEl.scrollTop = logEl.scrollHeight;
+                  }
+                  if (data.error) {
+                    logEl.textContent += '\nError: ' + data.error + '\n';
+                  }
+                } catch (e) {}
+              }
+            }
+            read();
+          });
+        }
+        read();
+      })
+      .catch(err => {
+        logEl.textContent += '\nConnection error: ' + err.message + '\n';
+      });
+  }
+
+  // Check for updates shortly after load and then every 1 hour
+  setTimeout(checkSystemUpdate, 5000);
+  setInterval(checkSystemUpdate, 60 * 60 * 1000);
+
   // ─── Helpers ───
   function escapeHtml(str) {
     if (!str) return '';
