@@ -70,7 +70,33 @@ export function initDB(dbPath = config.db.path) {
     CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
     CREATE INDEX IF NOT EXISTS idx_memories_category ON memories(category);
     CREATE INDEX IF NOT EXISTS idx_memories_key ON memories(key);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts5(id UNINDEXED, type UNINDEXED, content);
+
+    CREATE TRIGGER IF NOT EXISTS after_message_insert AFTER INSERT ON messages BEGIN
+      INSERT INTO search_index(id, type, content) VALUES (new.id, 'message', new.content);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS after_memory_insert AFTER INSERT ON memories BEGIN
+      INSERT INTO search_index(id, type, content) VALUES (new.id, 'memory', new.value);
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS after_memory_update AFTER UPDATE ON memories BEGIN
+      UPDATE search_index SET content = new.value WHERE id = new.id AND type = 'memory';
+    END;
   `);
+
+  // Backfill if search_index is empty
+  const count = db.prepare('SELECT count(*) as count FROM search_index').get();
+  if (count.count === 0) {
+    db.exec(`
+      INSERT INTO search_index (id, type, content)
+      SELECT id, 'message', content FROM messages WHERE content IS NOT NULL;
+
+      INSERT INTO search_index (id, type, content)
+      SELECT id, 'memory', value FROM memories WHERE value IS NOT NULL;
+    `);
+  }
 
   return db;
 }
@@ -199,4 +225,27 @@ export function saveToolResult(conversationId, toolName, input, output, status, 
 
 export function closeDB() {
   if (db) db.close();
+}
+
+
+export function searchConversations(query) {
+  // FTS5 MATCH syntax
+  const q = '"' + query.replace(/"/g, '""') + '"';
+  const rows = getDB().prepare(`
+    SELECT
+      si.type,
+      si.content as matched_text,
+      m.conversation_id,
+      m.role,
+      c.title as conversation_title,
+      m.created_at
+    FROM search_index si
+    LEFT JOIN messages m ON si.id = m.id AND si.type = 'message'
+    LEFT JOIN conversations c ON m.conversation_id = c.id
+    WHERE search_index MATCH ? AND si.type = 'message'
+    ORDER BY m.created_at DESC
+    LIMIT 30
+  `).all(q);
+
+  return rows;
 }

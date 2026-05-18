@@ -3,7 +3,7 @@ import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
 import { dirname, resolve, join } from 'path';
 import os from 'os';
-import { saveMemory, searchMemories } from '../memory/store.js';
+import { saveMemory, searchMemories, searchConversations, createConversation } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
 import config from '../config.js';
 
@@ -30,6 +30,8 @@ export async function executeTool(name, args, onProgress) {
     case 'scrape_webpage': return await scrapeWebpage(args);
     case 'save_memory': return saveMemoryTool(args);
     case 'recall_memory': return recallMemoryTool(args);
+    case 'search_conversations': return searchConversationsTool(args);
+    case 'delegate_task': return await delegateTaskTool(args, onProgress);
     case 'list_directory': return await listDirectory(args);
     case 'python_execute': return await pythonExecute(args);
     case 'edit_source_code': return await editSourceCode(args);
@@ -601,4 +603,59 @@ async function scraplingFetch({ url, mode = 'basic', css_selector, xpath, proxy,
   if (!solve_cloudflare) cmd += ` --no-cloudflare`;
 
   return await executeCommand({ command: cmd, timeout: 60 }, onProgress);
+}
+
+
+/**
+ * Search past conversations tool
+ */
+function searchConversationsTool({ query }) {
+  try {
+    const results = searchConversations(query);
+    if (!results || results.length === 0) return 'No matching conversations found.';
+
+    // Format the results nicely
+    let output = `Found ${results.length} results for "${query}":\n\n`;
+    for (const r of results) {
+      output += `- [${r.conversation_title} | ${r.role}] ${r.created_at}\n  ${r.matched_text.substring(0, 150)}...\n\n`;
+    }
+    return output;
+  } catch (error) {
+    return `Error searching conversations: ${error.message}`;
+  }
+}
+
+/**
+ * Delegate task to a subagent
+ */
+async function delegateTaskTool({ task_description }, onProgress) {
+  try {
+    if (onProgress) onProgress(`Spawning subagent for task: ${task_description.substring(0, 50)}...`);
+
+    // Dynamically import processMessage to avoid circular dependencies
+    const { processMessage } = await import('../ai/llm-client.js');
+
+    // Create an isolated conversation for the subagent
+    const subConv = createConversation('Subagent: ' + task_description.substring(0, 30));
+
+    // Define an abort signal (optional)
+    const ac = new AbortController();
+
+    // Run the subagent
+    const result = await processMessage(
+      subConv.id,
+      task_description,
+      (chunk) => {}, // ignore chunking for now
+      (tc) => { if (onProgress) onProgress(`[Subagent] Using tool: ${tc.name}`); },
+      (tr) => {},
+      (err) => { if (onProgress) onProgress(`[Subagent Error] ${err}`); },
+      () => {},
+      ac.signal,
+      (tp) => { if (onProgress) onProgress(`[Subagent Tool] ${tp.name}: ${tp.text}`); }
+    );
+
+    return `Subagent completed task. Result:\n\n${result}`;
+  } catch (error) {
+    return `Error delegating task: ${error.message}`;
+  }
 }

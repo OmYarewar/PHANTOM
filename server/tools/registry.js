@@ -6,6 +6,41 @@ export function getToolDefinitions() {
     {
       type: 'function',
       function: {
+        name: 'search_conversations',
+        description: 'Search past conversations for context and recall. Provides blazing-fast FTS5 full-text search across all messages.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'The search query to look up in past conversations.',
+            },
+          },
+          required: ['query'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'delegate_task',
+        description: 'Spawn an isolated subagent to complete a sub-task or research independently, returning the final result (hierarchical subagent-driven development).',
+        parameters: {
+          type: 'object',
+          properties: {
+            task_description: {
+              type: 'string',
+              description: 'A detailed description of the task for the subagent to perform.',
+            },
+          },
+          required: ['task_description'],
+        },
+      },
+    },
+
+    {
+      type: 'function',
+      function: {
         name: 'write_skill',
         description: 'Create and register a new AI skill dynamically. This allows you to add new custom tools or scripts to the workspace skills directory.',
         parameters: {
