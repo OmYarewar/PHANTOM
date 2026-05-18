@@ -6,6 +6,10 @@
 **Learning:** In `frontend/js/chat.js`, the `_startTypingLoop` function renders characters gradually via `requestAnimationFrame`. However, on *every single frame* where a new character is rendered, it re-evaluates the *entire* accumulated markdown string via `window.renderMarkdown(this.renderedContent)`. This O(N^2) scaling behavior makes markdown rendering performance exceptionally critical for UI responsiveness during long AI responses, elevating the importance of micro-optimizations like regex consolidation that would normally be premature.
 **Action:** Always scrutinize rendering loops tied to `requestAnimationFrame` for re-evaluation of growing strings. Micro-optimizations to string parsing are highly justified when the parsing occurs inside an O(N^2) render loop like a typing animation.
 
-## $(date +%Y-%m-%d) - [SSE Stream Parsing Errors due to Chunking]
+## 2026-05-18 - [SSE Stream Parsing Errors due to Chunking]
 **Learning:** When parsing Server-Sent Events (SSE) directly from a stream, chunks do not necessarily align with logical message boundaries (like newlines). Splitting arbitrary stream chunks by `\n` without buffering incomplete lines results in dropped events and `JSON.parse` errors.
 **Action:** Introduced a buffering mechanism when reading SSE streams in the frontend (`app.js` and `settings.js`) to accumulate chunks, split by the event delimiter, and properly handle incomplete trailing lines by leaving them in the buffer for the next chunk.
+
+## 2026-05-18 - [SQLite Temporary B-Tree Sorting Bottleneck]
+**Learning:** In SQLite, queries using `ORDER BY` with unindexed or partially indexed columns (like `ORDER BY updated_at DESC` or `WHERE conversation_id = ? ORDER BY created_at ASC`) fallback to a temporary B-Tree sort (`USE TEMP B-TREE FOR ORDER BY` in `EXPLAIN QUERY PLAN`). This becomes a noticeable performance bottleneck for frequent queries as data grows.
+**Action:** Always add targeted indexes, especially composite indexes like `(conversation_id, created_at ASC)`, to allow SQLite to natively return sorted results without secondary sorting overhead. This is a common and necessary optimization for this application's database access patterns.

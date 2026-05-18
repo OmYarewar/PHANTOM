@@ -68,6 +68,12 @@ export function initDB(dbPath = config.db.path) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+
+    -- ⚡ Bolt: Performance optimization
+    -- Added indexes to avoid SQLite 'USE TEMP B-TREE FOR ORDER BY' during common queries
+    CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_messages_conv_created ON messages(conversation_id, created_at);
+
     CREATE INDEX IF NOT EXISTS idx_memories_category ON memories(category);
     CREATE INDEX IF NOT EXISTS idx_memories_key ON memories(key);
 
