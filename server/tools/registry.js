@@ -455,6 +455,11 @@ export function getToolDefinitions() {
               type: 'string',
               description: 'The title to display on the preview window.',
             },
+            open_new_window: {
+              type: 'boolean',
+              description: 'Whether to automatically pop out the rendered HTML into a new browser tab or window.',
+              default: false,
+            },
           },
           required: ['html_content', 'title'],
         },

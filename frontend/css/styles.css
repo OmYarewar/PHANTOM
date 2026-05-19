@@ -84,7 +84,7 @@ html, body {
   width: 100%; padding: 8px 12px; background: var(--bg-tertiary);
   border: 1px solid var(--border-color); border-radius: var(--radius-sm);
   color: var(--text-primary); font-family: var(--font-sans); font-size: 13px;
-  outline: none; transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-fast);
 }
 .sidebar-search input:focus { border-color: var(--border-focus); }
 .sidebar-search input::placeholder { color: var(--text-muted); }
@@ -270,7 +270,7 @@ html, body {
 }
 .input-container:focus-within { border-color: var(--border-focus); }
 #message-input {
-  flex: 1; background: transparent; border: none; outline: none; color: var(--text-primary);
+  flex: 1; background: transparent; border: none;   color: var(--text-primary);
   font-family: var(--font-sans); font-size: 14px; padding: 8px 12px; resize: none;
   max-height: 150px; line-height: 1.4;
 }
@@ -321,7 +321,7 @@ html, body {
 .sudo-modal-input-wrap input {
   flex: 1; padding: 10px 14px; background: var(--bg-tertiary);
   border: 1px solid var(--border-color); border-radius: var(--radius-sm);
-  color: var(--text-primary); font-family: var(--font-mono); font-size: 14px; outline: none;
+  color: var(--text-primary); font-family: var(--font-mono); font-size: 14px;
 }
 .sudo-modal-input-wrap input:focus { border-color: var(--accent); }
 .sudo-modal-feedback { min-height: 24px; font-size: 13px; margin-bottom: 12px; }
@@ -351,7 +351,7 @@ html, body {
 .form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="number"] {
   width: 100%; padding: 9px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color);
   border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-mono);
-  font-size: 13px; outline: none; transition: border-color var(--transition-fast);
+  font-size: 13px;   transition: border-color var(--transition-fast);
 }
 .form-group input:focus { border-color: var(--border-focus); }
 .form-group small { display: block; margin-top: 4px; font-size: 11px; color: var(--text-muted); }
@@ -549,7 +549,7 @@ html, body {
 .doctor-config-screen label { display: block; font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
 .doctor-config-screen input {
   width: 100%; padding: 9px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-mono); font-size: 13px; outline: none;
+  border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-mono); font-size: 13px;
   transition: border-color var(--transition-fast);
 }
 .doctor-config-screen input:focus { border-color: var(--border-focus); }
@@ -594,7 +594,7 @@ html, body {
 .doctor-input {
   flex: 1; padding: 9px 14px; background: var(--bg-surface);
   border: 1px solid var(--border-color); border-radius: var(--radius-sm);
-  color: var(--text-primary); font-family: var(--font-sans); font-size: 13px; outline: none;
+  color: var(--text-primary); font-family: var(--font-sans); font-size: 13px;
   transition: border-color var(--transition-fast);
 }
 .doctor-input:focus { border-color: var(--border-focus); }

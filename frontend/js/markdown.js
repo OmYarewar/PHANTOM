@@ -51,7 +51,14 @@ window.renderMarkdown = function(text) {
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
     let cleanUrl = url.replace(/[\x00-\x1F\x7F]/g, '').trim();
-    if (/^(?:javascript|vbscript|data):/i.test(cleanUrl)) {
+    let decodedUrl = cleanUrl;
+    try {
+      decodedUrl = decodeURIComponent(cleanUrl);
+    } catch (e) {
+      // Ignore malformed URI sequences
+    }
+    const checkUrl = decodedUrl.replace(/\s+/g, '').toLowerCase();
+    if (/^(?:javascript|vbscript|data):/.test(checkUrl)) {
       cleanUrl = '#';
     }
     return `<a href="${cleanUrl}" target="_blank" rel="noopener">${text}</a>`;
