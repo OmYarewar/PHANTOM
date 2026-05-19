@@ -78,7 +78,7 @@ async function writeSkill({ name, description, code, entry_point = 'script.py' }
  * Handle show_preview_window execution.
  * Returns a JSON payload so the frontend can intercept and render the HTML.
  */
-function showPreviewWindow({ html_content, title }) {
+function showPreviewWindow({ html_content, title, open_new_window }) {
   if (!html_content) {
     throw new Error('html_content is required to show preview window.');
   }
@@ -86,7 +86,8 @@ function showPreviewWindow({ html_content, title }) {
     success: true,
     message: `Successfully rendered preview window: "${title || 'Preview'}"`,
     html_content: html_content,
-    title: title || 'Preview'
+    title: title || 'Preview',
+    open_new_window: !!open_new_window
   });
 }
 

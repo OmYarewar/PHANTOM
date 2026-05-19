@@ -177,7 +177,19 @@
             try {
               const resObj = typeof msg.result === 'string' ? JSON.parse(msg.result) : msg.result;
               if (resObj.html_content) {
-                window.showPreview(resObj.html_content, resObj.title || 'Preview');
+                if (resObj.open_new_window) {
+                  const newWin = window.open('', '_blank');
+                  if (newWin) {
+                    newWin.document.write(resObj.html_content);
+                    newWin.document.title = resObj.title || 'Preview';
+                    newWin.document.close();
+                  } else {
+                    // Fallback if popup blocker prevents it
+                    window.showPreview(resObj.html_content, resObj.title || 'Preview');
+                  }
+                } else {
+                  window.showPreview(resObj.html_content, resObj.title || 'Preview');
+                }
                 // modify msg.result to only show success message in chat
                 msg.result = resObj.message;
               }
