@@ -39,6 +39,7 @@ export async function executeTool(name, args, onProgress) {
     case 'scrapling_fetch': return await scraplingFetch(args, onProgress);
     case 'show_preview_window': return showPreviewWindow(args);
     case 'write_skill': return await writeSkill(args);
+    case 'analyze_target_graph': return analyzeTargetGraph(args);
     default:
       return `Unknown tool: ${name}`;
   }
@@ -78,7 +79,7 @@ async function writeSkill({ name, description, code, entry_point = 'script.py' }
  * Handle show_preview_window execution.
  * Returns a JSON payload so the frontend can intercept and render the HTML.
  */
-function showPreviewWindow({ html_content, title }) {
+function showPreviewWindow({ html_content, title, open_new_window }) {
   if (!html_content) {
     throw new Error('html_content is required to show preview window.');
   }
@@ -86,7 +87,61 @@ function showPreviewWindow({ html_content, title }) {
     success: true,
     message: `Successfully rendered preview window: "${title || 'Preview'}"`,
     html_content: html_content,
-    title: title || 'Preview'
+    title: title || 'Preview',
+    open_new_window: !!open_new_window
+  });
+}
+
+/**
+ * Handle analyze_target_graph execution.
+ * Autonomously creates a visualization and delegates to showPreviewWindow to open it in a new window.
+ */
+function analyzeTargetGraph({ target_name, nodes }) {
+  if (!target_name || !nodes || !Array.isArray(nodes)) {
+    throw new Error('target_name and nodes array are required.');
+  }
+
+  // Generate a basic Mermaid.js graph HTML payload
+  const escapedTarget = target_name.replace(/"/g, '\\"');
+  let mermaidNodes = `graph TD;\n  Target["${escapedTarget}"]`;
+
+  nodes.forEach((node, index) => {
+    const escapedNode = node.replace(/"/g, '\\"');
+    mermaidNodes += `\n  Target --> Node${index}["${escapedNode}"]`;
+  });
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Target Analysis: ${target_name}</title>
+  <style>
+    body { font-family: sans-serif; background: #0d0d0d; color: #f3f4f6; text-align: center; padding: 50px; }
+    .graph-container { background: #1a1a1a; padding: 20px; border-radius: 8px; display: inline-block; margin-top: 20px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+</head>
+<body>
+  <h1>Analysis for ${target_name}</h1>
+  <p>Interactive target topology generated autonomously.</p>
+  <div class="graph-container">
+    <div class="mermaid">
+      ${mermaidNodes}
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  // Reuse showPreviewWindow logic, forcing open_new_window to true
+  return showPreviewWindow({
+    html_content: htmlContent,
+    title: `Graph: ${target_name}`,
+    open_new_window: true
   });
 }
 

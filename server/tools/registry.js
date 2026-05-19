@@ -455,8 +455,35 @@ export function getToolDefinitions() {
               type: 'string',
               description: 'The title to display on the preview window.',
             },
+            open_new_window: {
+              type: 'boolean',
+              description: 'If true, automatically pops out the preview into a new browser window/tab instead of just showing it in the side panel. Use this for full-page apps or when you want more freedom for the visualization.',
+              default: false,
+            },
           },
           required: ['html_content', 'title'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'analyze_target_graph',
+        description: 'Autonomously generate and visualize an interactive network or structural graph for a given target, displaying it in a new window for the user.',
+        parameters: {
+          type: 'object',
+          properties: {
+            target_name: {
+              type: 'string',
+              description: 'The name or IP of the target to analyze.',
+            },
+            nodes: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of node names (e.g., open ports, subdomains, related services) to include in the graph.',
+            },
+          },
+          required: ['target_name', 'nodes'],
         },
       },
     },

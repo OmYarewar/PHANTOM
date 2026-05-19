@@ -81,7 +81,31 @@
     if (!lastPreviewHtml) return;
     const newWin = window.open('', '_blank');
     if (newWin) {
-      newWin.document.write(lastPreviewHtml);
+      const isFullHtml = lastPreviewHtml.trim().toLowerCase().startsWith('<!doctype html>') || lastPreviewHtml.trim().toLowerCase().startsWith('<html');
+
+      if (isFullHtml) {
+        newWin.document.write(lastPreviewHtml);
+      } else {
+        const title = previewTitle?.textContent || 'Preview';
+        newWin.document.write(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; background: #0d0d0d; color: #fff; }
+    /* Inject root vars to match dark theme loosely */
+    :root { --bg-dark: #0d0d0d; --text-light: #f3f4f6; }
+  </style>
+</head>
+<body>
+  ${lastPreviewHtml}
+</body>
+</html>
+        `);
+      }
       newWin.document.close();
     }
   });
@@ -178,6 +202,14 @@
               const resObj = typeof msg.result === 'string' ? JSON.parse(msg.result) : msg.result;
               if (resObj.html_content) {
                 window.showPreview(resObj.html_content, resObj.title || 'Preview');
+
+                if (resObj.open_new_window) {
+                  // Wait a tick for the UI to update, then click the popout button automatically
+                  setTimeout(() => {
+                    document.getElementById('preview-popout-btn')?.click();
+                  }, 100);
+                }
+
                 // modify msg.result to only show success message in chat
                 msg.result = resObj.message;
               }
