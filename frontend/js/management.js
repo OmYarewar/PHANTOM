@@ -109,6 +109,7 @@ window.Management = {
   },
 
   async deleteMCP(id) {
+    if (!confirm('Are you sure you want to remove this MCP server?')) return;
     try {
       await fetch(`/api/mcp/servers/${id}`, { method: 'DELETE' });
       this.loadMCPServers();
