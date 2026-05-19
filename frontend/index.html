@@ -24,7 +24,7 @@
       </div>
       <div>
         <button id="btn-update-now" class="btn btn-primary btn-sm">Update Now</button>
-        <button id="btn-update-dismiss" class="btn-icon btn-sm">✕</button>
+        <button id="btn-update-dismiss" class="btn-icon btn-sm" aria-label="Dismiss update">✕</button>
       </div>
     </div>
 
@@ -39,7 +39,7 @@
           <span class="logo-icon">👻</span>
           <span class="logo-text">PHANTOM</span>
         </div>
-        <button id="new-chat-btn" class="btn-icon" title="New Chat">
+        <button id="new-chat-btn" class="btn-icon" title="New Chat" aria-label="New Chat">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 5v14M5 12h14"/>
           </svg>
@@ -59,7 +59,7 @@
           <span class="status-dot offline"></span>
           <span class="status-text">Disconnected</span>
         </div>
-        <button id="settings-btn" class="btn-icon" title="Settings">
+        <button id="settings-btn" class="btn-icon" title="Settings" aria-label="Settings">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
             <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
@@ -72,7 +72,7 @@
     <main id="main-content" class="main-content">
       <!-- Top Bar -->
       <div id="top-bar" class="top-bar">
-        <button id="sidebar-toggle" class="btn-icon mobile-only" title="Toggle Sidebar">
+        <button id="sidebar-toggle" class="btn-icon mobile-only" title="Toggle Sidebar" aria-label="Toggle Sidebar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12h18M3 6h18M3 18h18"/>
           </svg>
@@ -147,12 +147,12 @@
             rows="1"
             autofocus
           ></textarea>
-          <button id="stop-btn" class="stop-btn" title="Stop AI (Abort)" style="display:none;">
+          <button id="stop-btn" class="stop-btn" title="Stop AI (Abort)" style="display:none;" aria-label="Stop AI (Abort)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <rect x="4" y="4" width="16" height="16" rx="2"/>
             </svg>
           </button>
-          <button id="send-btn" class="send-btn" title="Send Message (Ctrl+Enter)" disabled>
+          <button id="send-btn" class="send-btn" title="Send Message (Ctrl+Enter)" aria-label="Send Message" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
             </svg>
@@ -220,7 +220,7 @@
               <label for="setting-api-key">API Key</label>
               <div class="input-with-toggle">
                 <input type="password" id="setting-api-key" placeholder="sk-..." />
-                <button id="toggle-api-key" class="btn-icon-sm" title="Show/Hide">👁️</button>
+                <button id="toggle-api-key" class="btn-icon-sm" title="Show/Hide" aria-label="Toggle API Key visibility">👁️</button>
               </div>
             </div>
             <div class="form-group">
@@ -264,7 +264,7 @@
               <label for="setting-sudo-password">Sudo Password</label>
               <div class="input-with-toggle">
                 <input type="password" id="setting-sudo-password" placeholder="For tool installation &amp; privileged commands" />
-                <button id="toggle-sudo-pass" class="btn-icon-sm" title="Show/Hide">👁️</button>
+                <button id="toggle-sudo-pass" class="btn-icon-sm" title="Show/Hide" aria-label="Toggle Sudo Password visibility">👁️</button>
               </div>
               <small>Persisted securely in local database across restarts</small>
             </div>
@@ -323,9 +323,9 @@
       <div class="preview-header">
         <h2 id="preview-title" class="preview-title">Preview</h2>
         <div class="preview-actions">
-          <button id="preview-popout-btn" class="btn-icon" title="Open in new window">⧉</button>
-          <button id="preview-refresh-btn" class="btn-icon" title="Refresh">🔄</button>
-          <button id="preview-close-btn" class="btn-icon" title="Close">✕</button>
+          <button id="preview-popout-btn" class="btn-icon" title="Open in new window" aria-label="Open in new window">⧉</button>
+          <button id="preview-refresh-btn" class="btn-icon" title="Refresh" aria-label="Refresh preview">🔄</button>
+          <button id="preview-close-btn" class="btn-icon" title="Close" aria-label="Close preview">✕</button>
         </div>
       </div>
       <div class="preview-body">
