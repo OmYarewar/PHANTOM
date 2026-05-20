@@ -6,6 +6,18 @@ export function getToolDefinitions() {
     {
       type: 'function',
       function: {
+        name: 'get_system_capabilities',
+        description: 'Get a list of all currently available skills and their descriptions, allowing the AI to be self-aware of its capabilities.',
+        parameters: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
         name: 'search_conversations',
         description: 'Search past conversations for context and recall. Provides blazing-fast FTS5 full-text search across all messages.',
         parameters: {

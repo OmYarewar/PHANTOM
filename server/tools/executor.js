@@ -6,6 +6,7 @@ import os from 'os';
 import { saveMemory, searchMemories, searchConversations, createConversation } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
 import config from '../config.js';
+import { getSystemCapabilities } from './self_awareness.js';
 
 /**
  * Helper to securely escape arguments for bash shell
@@ -40,6 +41,7 @@ export async function executeTool(name, args, onProgress) {
     case 'show_preview_window': return showPreviewWindow(args);
     case 'write_skill': return await writeSkill(args);
     case 'analyze_target_graph': return analyzeTargetGraph(args);
+    case 'get_system_capabilities': return await getSystemCapabilitiesTool();
     default:
       return `Unknown tool: ${name}`;
   }
@@ -88,7 +90,7 @@ function showPreviewWindow({ html_content, title, open_new_window }) {
     message: `Successfully rendered preview window: "${title || 'Preview'}"`,
     html_content: html_content,
     title: title || 'Preview',
-    open_new_window: !!open_new_window
+    open_new_window: open_new_window !== undefined ? !!open_new_window : true
   });
 }
 
@@ -713,4 +715,9 @@ async function delegateTaskTool({ task_description }, onProgress) {
   } catch (error) {
     return `Error delegating task: ${error.message}`;
   }
+}
+
+async function getSystemCapabilitiesTool() {
+  const skillsDir = join(config.workspace, 'skills');
+  return getSystemCapabilities(skillsDir);
 }
