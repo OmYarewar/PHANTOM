@@ -76,6 +76,9 @@ export function initDB(dbPath = config.db.path) {
 
     CREATE INDEX IF NOT EXISTS idx_memories_category ON memories(category);
     CREATE INDEX IF NOT EXISTS idx_memories_key ON memories(key);
+    CREATE INDEX IF NOT EXISTS idx_memories_updated ON memories(updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_memories_cat_updated ON memories(category, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_mcp_servers_created ON mcp_servers(created_at DESC);
 
     CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts5(id UNINDEXED, type UNINDEXED, content);
 
