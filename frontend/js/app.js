@@ -327,7 +327,7 @@
         <img id="image-preview-thumb" src="" alt="preview" class="image-preview-thumb"/>
         <span id="image-preview-name" class="image-preview-name"></span>
         <span class="image-preview-badge">OSINT Ready</span>
-        <button id="image-preview-remove" class="image-preview-remove" title="Remove image">✕</button>
+        <button id="image-preview-remove" class="image-preview-remove" title="Remove image" aria-label="Remove image">✕</button>
       </div>
     `;
     inputArea.insertBefore(previewEl, inputArea.firstChild);
@@ -448,7 +448,7 @@
       el.innerHTML = `
         <span class="conv-icon">💬</span>
         <span class="conv-title">${escapeHtml(conv.title)}</span>
-        <button class="conv-delete" title="Delete">✕</button>
+        <button class="conv-delete" title="Delete" aria-label="Delete conversation">✕</button>
       `;
 
       el.addEventListener('click', (e) => {
