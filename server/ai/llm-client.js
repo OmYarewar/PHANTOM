@@ -290,7 +290,7 @@ export async function testConnection() {
       model: config.api.model,
       messages: [{ role: 'user', content: 'Say "PHANTOM online" in exactly 2 words.' }],
       max_tokens: 20,
-    });
+    }, { timeout: 5000 });
     return { success: true, message: response.choices[0]?.message?.content || 'Connected', model: config.api.model };
   } catch (error) {
     return { success: false, message: error.message };
