@@ -322,13 +322,15 @@ html, body {
 .sudo-modal-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; }
 .sudo-modal-input-wrap {
   display: flex; align-items: center; gap: 6px; margin-bottom: 12px;
+  background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+  padding-right: 8px; transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
+.sudo-modal-input-wrap:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 2px var(--accent); }
 .sudo-modal-input-wrap input {
-  flex: 1; padding: 10px 14px; background: var(--bg-tertiary);
-  border: 1px solid var(--border-color); border-radius: var(--radius-sm);
-  color: var(--text-primary); font-family: var(--font-mono); font-size: 14px;
+  flex: 1; padding: 10px 14px; background: transparent !important;
+  border: none !important; border-radius: var(--radius-sm);
+  color: var(--text-primary); font-family: var(--font-mono); font-size: 14px; outline: none !important;
 }
-.sudo-modal-input-wrap input:focus { border-color: var(--accent); outline: none; }
 .sudo-modal-feedback { min-height: 24px; font-size: 13px; margin-bottom: 12px; }
 .sudo-modal-feedback.success { color: var(--accent); }
 .sudo-modal-feedback.error { color: var(--danger); }
@@ -361,8 +363,13 @@ html, body {
 .form-group input:focus { border-color: var(--border-focus); outline: none; }
 .form-group small { display: block; margin-top: 4px; font-size: 11px; color: var(--text-muted); }
 .form-group input[type="range"] { width: 100%; accent-color: var(--accent); }
-.input-with-toggle { display: flex; align-items: center; gap: 4px; }
-.input-with-toggle input { flex: 1; }
+.input-with-toggle {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+  padding-right: 8px; transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.input-with-toggle:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 2px var(--accent); }
+.input-with-toggle input { flex: 1; border: none !important; background: transparent !important; padding-right: 0 !important; outline: none !important; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-actions { display: flex; align-items: center; gap: 10px; }
 .test-result { font-size: 12px; font-family: var(--font-mono); }
