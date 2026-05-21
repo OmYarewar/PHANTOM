@@ -341,6 +341,21 @@ router.post('/doctor/chat', async (req, res) => {
   }
 
   const baseUrl = (doctorCfg.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+
+  try {
+    const url = new URL(baseUrl);
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      return res.status(400).json({ error: 'Invalid API URL protocol' });
+    }
+    // SSRF Protection: Prevent querying local/internal network interfaces
+    const forbiddenHosts = ['localhost', '127.0.0.1', '169.254.169.254', '0.0.0.0', '::1'];
+    if (forbiddenHosts.includes(url.hostname)) {
+      return res.status(403).json({ error: 'Access to internal/local hostnames is forbidden' });
+    }
+  } catch (err) {
+    return res.status(400).json({ error: 'Invalid API URL' });
+  }
+
   const apiKey  = doctorCfg.apiKey;
   const model   = doctorCfg.model || 'gpt-4o';
 
