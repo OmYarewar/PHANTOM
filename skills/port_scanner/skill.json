@@ -1,0 +1,14 @@
+{
+  "name": "port_scanner",
+  "description": "Autonomously scans a target for open ports.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "target": {
+        "type": "string",
+        "description": "The target IP or hostname to scan."
+      }
+    },
+    "required": ["target"]
+  }
+}
