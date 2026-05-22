@@ -86,6 +86,11 @@ window.Settings = {
   },
 
   async save() {
+    const btn = document.getElementById('save-settings');
+    const originalText = btn.textContent;
+    btn.textContent = '⏳ Saving...';
+    btn.disabled = true;
+
     const settings = {
       baseUrl: document.getElementById('setting-base-url').value,
       model: document.getElementById('setting-model').value,
@@ -114,16 +119,21 @@ window.Settings = {
       if (res.ok) {
         document.getElementById('current-model').textContent = settings.model || 'No Model';
 
-        const btn = document.getElementById('save-settings');
         btn.textContent = '✓ Saved';
         btn.style.background = '#16a34a';
         setTimeout(() => {
-          btn.textContent = '💾 Save Settings';
+          btn.textContent = originalText;
           btn.style.background = '';
+          btn.disabled = false;
         }, 1500);
+      } else {
+        btn.textContent = originalText;
+        btn.disabled = false;
       }
     } catch (err) {
       console.error('Failed to save settings:', err);
+      btn.textContent = originalText;
+      btn.disabled = false;
     }
   },
 
@@ -131,6 +141,11 @@ window.Settings = {
     const resultEl = document.getElementById('test-result');
     resultEl.className = 'test-result';
     resultEl.textContent = 'Testing...';
+
+    const btn = document.getElementById('test-connection');
+    const originalText = btn.textContent;
+    btn.textContent = '⏳ Testing...';
+    btn.disabled = true;
 
     await this.save();
 
@@ -148,6 +163,9 @@ window.Settings = {
     } catch (err) {
       resultEl.className = 'test-result error';
       resultEl.textContent = `✗ ${err.message}`;
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
     }
 
     setTimeout(() => { resultEl.textContent = ''; }, 5000);
