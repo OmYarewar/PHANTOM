@@ -647,20 +647,23 @@ async function listDirectory({ path: dirPath, show_hidden = false }) {
   try {
     const resolvedPath = resolve(dirPath);
     const entries = await readdir(resolvedPath, { withFileTypes: true });
-    const results = [];
 
-    for (const entry of entries) {
-      if (!show_hidden && entry.name.startsWith('.')) continue;
+    // ⚡ Bolt: Fetch file stats in parallel instead of sequentially
+    // Reduces latency significantly when listing large directories
+    const promises = entries.map(async (entry) => {
+      if (!show_hidden && entry.name.startsWith('.')) return null;
       try {
         const fullPath = resolve(resolvedPath, entry.name);
         const stats = await stat(fullPath);
         const type = entry.isDirectory() ? 'DIR' : 'FILE';
         const size = entry.isFile() ? formatSize(stats.size) : '';
-        results.push(`${type.padEnd(5)} ${size.padStart(10)} ${entry.name}`);
+        return `${type.padEnd(5)} ${size.padStart(10)} ${entry.name}`;
       } catch {
-        results.push(`???   ${entry.name}`);
+        return `???   ${entry.name}`;
       }
-    }
+    });
+
+    const results = (await Promise.all(promises)).filter(Boolean);
 
     return `Contents of ${resolvedPath}:\n${results.join('\n')}`;
   } catch (err) {

@@ -25,3 +25,7 @@
 ## 2024-05-24 - [Array shift() Bottleneck in Animation Loops]
 **Learning:** In the frontend (`frontend/js/chat.js`), using an array for the `typingQueue` and popping characters off the front with `Array.shift()` inside a `requestAnimationFrame` loop creates a severe O(N^2) performance bottleneck for long AI responses. `Array.shift()` has O(N) complexity since it must re-index all remaining elements.
 **Action:** Retained the array-based queue to safely handle Unicode surrogate pairs (since strings split them when slicing blindly), but introduced a `typingIndex` pointer to track progress instead of mutating the array. Incrementing the pointer (`typingQueue[typingIndex++]`) replaces the O(N) `shift()` operation with O(1) reads, drastically reducing overhead inside high-frequency animation loops.
+
+## 2024-05-24 - [Sequential await bottleneck in array iteration loops]
+**Learning:** In backend tools like `listDirectory` (`server/tools/executor.js`), using an asynchronous loop (`for...of`) with `await fs.stat(...)` inside causes files to be stated sequentially, which significantly hurts performance when large directories are listed. The asynchronous operations were completely independent.
+**Action:** When performing independent async operations (such as file I/O or network requests) over a list of items, avoid sequential `await` in loops. Map them to a list of Promises and `await Promise.all()` to ensure they execute concurrently.
