@@ -17,6 +17,30 @@ function escapeShellArg(arg) {
 }
 
 /**
+ * Validates URLs to prevent SSRF vulnerabilities by ensuring they use allowed protocols
+ * and do not point to internal or forbidden hostnames.
+ */
+function validateUrlForSSRF(urlString) {
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(urlString);
+  } catch (err) {
+    throw new Error('Invalid URL format');
+  }
+
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error('Invalid URL protocol. Only http and https are allowed.');
+  }
+
+  const forbiddenHosts = ['localhost', '127.0.0.1', '169.254.169.254', '0.0.0.0', '::1'];
+  if (forbiddenHosts.includes(parsedUrl.hostname)) {
+    throw new Error('Access to internal/local hostnames is forbidden (SSRF protection).');
+  }
+
+  return parsedUrl;
+}
+
+/**
  * Execute a tool by name with given arguments
  * @param {Function} onProgress - optional callback for live output streaming
  */
@@ -413,6 +437,7 @@ function detectPackageManager() {
  */
 async function webRequest({ url, method = 'GET', headers = {}, body, follow_redirects = true }) {
   try {
+    validateUrlForSSRF(url);
     const opts = {
       method,
       headers: { 'User-Agent': getRandomUA(), ...headers },
@@ -513,6 +538,7 @@ async function searchWeb({ query }) {
  */
 async function scrapeWebpage({ url, max_length = 30000 }) {
   try {
+    validateUrlForSSRF(url);
     const response = await fetch(url, {
       headers: {
         'User-Agent': getRandomUA(),
@@ -722,6 +748,11 @@ async function saveTrace({ task, approach, outcome, score, notes }) {
  * Scrapling-powered web fetching — bypasses anti-bot, renders JS, extracts data
  */
 async function scraplingFetch({ url, mode = 'basic', css_selector, xpath, proxy, solve_cloudflare = true }, onProgress) {
+  try {
+    validateUrlForSSRF(url);
+  } catch (err) {
+    return `Request error: ${err.message}`;
+  }
   const bridgePath = resolve(import.meta.dirname, 'scrapling_bridge.py');
 
   let cmd = `python3 ${escapeShellArg(bridgePath)} ${escapeShellArg(url)} --mode ${escapeShellArg(mode)}`;
