@@ -95,6 +95,14 @@ window.Management = {
 
     if (!name || !command) return;
 
+    const saveBtn = document.getElementById('mcp-save-btn');
+    const cancelBtn = document.getElementById('mcp-cancel-btn');
+    const originalText = saveBtn.textContent;
+
+    saveBtn.disabled = true;
+    cancelBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
     try {
       await fetch('/api/mcp/servers', {
         method: 'POST',
@@ -105,7 +113,11 @@ window.Management = {
       document.getElementById('mcp-name-input').value = '';
       document.getElementById('mcp-command-input').value = '';
       this.loadMCPServers();
-    } catch {}
+    } catch {} finally {
+      saveBtn.disabled = false;
+      cancelBtn.disabled = false;
+      saveBtn.textContent = originalText;
+    }
   },
 
   async deleteMCP(id) {
@@ -144,6 +156,9 @@ window.Management = {
     const file = event.target.files[0];
     if (!file) return;
 
+    const fileInput = document.getElementById('skill-zip-input');
+    fileInput.disabled = true;
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -157,6 +172,8 @@ window.Management = {
       }
     } catch (err) {
       alert('Upload error: ' + err.message);
+    } finally {
+      fileInput.disabled = false;
     }
     event.target.value = ''; // Reset file input
   },

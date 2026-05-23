@@ -23,7 +23,7 @@
         </div>
       </div>
       <div>
-        <button id="btn-update-now" class="btn btn-primary btn-sm">Update Now</button>
+        <button id="btn-update-now" class="btn btn-primary btn-sm" aria-label="Update Now">Update Now</button>
         <button id="btn-update-dismiss" class="btn-icon btn-sm" aria-label="Dismiss update">✕</button>
       </div>
     </div>
@@ -78,7 +78,7 @@
           </svg>
         </button>
         <div class="top-bar-actions">
-          <button id="manage-btn" class="btn btn-sm btn-secondary" title="MCP &amp; Skills">🧩 Manage</button>
+          <button id="manage-btn" class="btn btn-sm btn-secondary" title="MCP &amp; Skills" aria-label="Manage MCP and Skills">🧩 Manage</button>
         </div>
         <div class="top-bar-info">
           <span id="current-model" class="model-badge">No Model</span>
@@ -127,7 +127,7 @@
               <span class="feature-text">Unlimited Tool Iterations</span>
             </div>
           </div>
-          <p class="welcome-hint">Configure your API key in <button id="welcome-settings-btn" class="inline-link">Settings</button> to get started</p>
+          <p class="welcome-hint">Configure your API key in <button id="welcome-settings-btn" class="inline-link" aria-label="Open Settings">Settings</button> to get started</p>
           <p class="welcome-hint" style="margin-top:4px; color: var(--text-muted);">🖼️ Drag &amp; drop an image to analyze</p>
         </div>
 
@@ -177,8 +177,8 @@
         </div>
         <div id="sudo-modal-feedback" class="sudo-modal-feedback"></div>
         <div class="sudo-modal-actions">
-          <button id="sudo-modal-validate" class="btn btn-primary">🔓 Validate &amp; Grant Access</button>
-          <button id="sudo-modal-skip" class="btn btn-secondary">Skip for now</button>
+          <button id="sudo-modal-validate" class="btn btn-primary" aria-label="Validate and Grant Access">🔓 Validate &amp; Grant Access</button>
+          <button id="sudo-modal-skip" class="btn btn-secondary" aria-label="Skip sudo access for now">Skip for now</button>
         </div>
       </div>
     </div>
@@ -203,7 +203,7 @@
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.6;">
               A temporary AI assistant with its own API credentials that diagnoses and fixes system issues. Your main API key is not used.
             </p>
-            <button id="ai-doctor-btn" class="btn btn-secondary" style="width:100%;justify-content:center;">
+            <button id="ai-doctor-btn" class="btn btn-secondary" style="width:100%;justify-content:center;" aria-label="Launch AI Doctor">
               🏥 Launch AI Doctor
             </button>
           </section>
@@ -252,7 +252,7 @@
               </div>
             </div>
             <div class="form-actions">
-              <button id="test-connection" class="btn btn-secondary">🔌 Test Connection</button>
+              <button id="test-connection" class="btn btn-secondary" aria-label="Test Connection">🔌 Test Connection</button>
               <span id="test-result" class="test-result"></span>
             </div>
           </section>
@@ -286,12 +286,12 @@
             <div id="mcp-server-list" class="mcp-list">
               <p class="mcp-empty">No MCP servers configured</p>
             </div>
-            <button id="add-mcp-btn" class="btn btn-secondary btn-sm">+ Add MCP Server</button>
+            <button id="add-mcp-btn" class="btn btn-secondary btn-sm" aria-label="Add MCP Server">+ Add MCP Server</button>
           </section>
 
           <!-- Save Button -->
           <div class="settings-footer">
-            <button id="save-settings" class="btn btn-primary">💾 Save Settings</button>
+            <button id="save-settings" class="btn btn-primary" aria-label="Save Settings">💾 Save Settings</button>
           </div>
         </div>
       </div>
@@ -373,7 +373,7 @@
             <input type="text" id="doctor-model" placeholder="gpt-4o" value="gpt-4o" list="model-suggestions" />
           </div>
           <div id="doctor-config-feedback" class="doctor-config-feedback"></div>
-          <button id="doctor-start-btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;">
+          <button id="doctor-start-btn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" aria-label="Start Diagnosis">
             🏥 Start Diagnosis
           </button>
         </div>
@@ -411,8 +411,8 @@
 
         <!-- Tabs -->
         <div class="manage-tabs">
-          <button class="manage-tab active" data-tab="mcp-tab">🔌 MCP Servers</button>
-          <button class="manage-tab" data-tab="skills-tab">🧠 Skills</button>
+          <button class="manage-tab active" data-tab="mcp-tab" aria-label="MCP Servers Tab">🔌 MCP Servers</button>
+          <button class="manage-tab" data-tab="skills-tab" aria-label="Skills Tab">🧠 Skills</button>
         </div>
 
         <div class="manage-body">
@@ -437,11 +437,11 @@
                 </select>
               </div>
               <div class="form-actions">
-                <button id="mcp-save-btn" class="btn btn-primary btn-sm">💾 Save Server</button>
-                <button id="mcp-cancel-btn" class="btn btn-secondary btn-sm">Cancel</button>
+                <button id="mcp-save-btn" class="btn btn-primary btn-sm" aria-label="Save MCP Server">💾 Save Server</button>
+                <button id="mcp-cancel-btn" class="btn btn-secondary btn-sm" aria-label="Cancel MCP Server creation">Cancel</button>
               </div>
             </div>
-            <button id="manage-add-mcp" class="btn btn-secondary btn-sm" style="margin-top:10px;">+ Add MCP Server</button>
+            <button id="manage-add-mcp" class="btn btn-secondary btn-sm" style="margin-top:10px;" aria-label="Add MCP Server">+ Add MCP Server</button>
           </div>
 
           <!-- Skills Tab -->

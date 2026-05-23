@@ -86,6 +86,11 @@ window.Settings = {
   },
 
   async save() {
+    const btn = document.getElementById('save-settings');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
     const settings = {
       baseUrl: document.getElementById('setting-base-url').value,
       model: document.getElementById('setting-model').value,
@@ -114,20 +119,30 @@ window.Settings = {
       if (res.ok) {
         document.getElementById('current-model').textContent = settings.model || 'No Model';
 
-        const btn = document.getElementById('save-settings');
         btn.textContent = '✓ Saved';
         btn.style.background = '#16a34a';
         setTimeout(() => {
           btn.textContent = '💾 Save Settings';
           btn.style.background = '';
+          btn.disabled = false;
         }, 1500);
+      } else {
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     } catch (err) {
       console.error('Failed to save settings:', err);
+      btn.disabled = false;
+      btn.textContent = originalText;
     }
   },
 
   async testConnection() {
+    const btn = document.getElementById('test-connection');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Testing...';
+
     const resultEl = document.getElementById('test-result');
     resultEl.className = 'test-result';
     resultEl.textContent = 'Testing...';
@@ -148,6 +163,9 @@ window.Settings = {
     } catch (err) {
       resultEl.className = 'test-result error';
       resultEl.textContent = `✗ ${err.message}`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
     }
 
     setTimeout(() => { resultEl.textContent = ''; }, 5000);
