@@ -1,0 +1,5 @@
+{
+  "name": "system_health_monitor",
+  "description": "Returns basic system health and OS information to give the AI self-awareness.",
+  "entry": "script.py"
+}
