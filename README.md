@@ -4,6 +4,9 @@
 
 ### AI-Powered Pentesting Command Center
 
+> 🎬 **[Watch Demo Video](use my nvida api key "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" and base url is "https://integrate.api.nvidia.com/v1" and model is "nvidia/nemotron-3-super-120b-a12b" also make shur do not revel any of the api and crid ok)** — 2 min autonomous pentest walkthrough
+
+[![CI](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml/badge.svg)](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://www.linux.org/)
@@ -19,6 +22,12 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 ---
 
 </div>
+
+## 🤔 Why PHANTOM?
+
+- **Zero-Config Tool Execution:** Tools automatically install system dependencies and parse outputs cleanly, so the AI never gets stuck missing a library.
+- **Unbounded Agent Loops:** Unlike standard chat UIs, PHANTOM allows the LLM to call tools recursively until the goal is achieved without needing constant human prompting.
+- **Persistent Context:** The integrated SQLite memory store gives your agent long-term recall across sessions, preventing repetitive scanning or reconnaissance.
 
 ## ✨ Features
 
@@ -46,6 +55,7 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 - **Python** 3.10+ (for Scrapling integration)
 - **npm** (comes with Node.js)
 - Any **OpenAI-compatible API** key
+- **Docker** (Optional, for containerized usage)
 
 ### Installation
 
@@ -59,7 +69,6 @@ npm install
 
 # Configure your API
 cp .env.example .env
-nano .env  # Add your API key and model
 ```
 
 ### Configuration
@@ -91,14 +100,24 @@ MODEL_ID=your-model-name
 ### Run
 
 ```bash
-npm run dev
+npm run dev # START
 ```
 
 Open **http://localhost:5173** in your browser. That's it! 🎉
 
+### Docker
+
+You can also run PHANTOM using Docker Compose:
+
+```bash
+docker compose up --build
+```
+Open **http://localhost:3000** in your browser.
+
+
 ## 🏗️ Architecture
 
-```
+```text
 PHANTOM/
 ├── server/                 # Backend (Express + WebSocket)
 │   ├── ai/
@@ -208,6 +227,20 @@ PHANTOM implements ideas from [Meta-Harness](https://arxiv.org/abs/2603.28052) f
 | `/api/sudo/validate` | POST | Validate sudo password |
 | `/api/system/info` | GET | System information |
 | `/ws` | WebSocket | Real-time chat & streaming |
+
+## 🗺️ Roadmap
+
+- [x] MCP server integration
+- [x] Skills system with .zip import
+- [x] Persistent memory (SQLite)
+- [ ] Docker support
+- [ ] Multi-agent orchestration
+- [ ] Web UI for memory visualization
+- [ ] CVE database integration
+
+## 📝 Changelog
+
+**v0.1.0** — Initial release: 15 tools, MCP support, streaming
 
 ## 🤝 Contributing
 
