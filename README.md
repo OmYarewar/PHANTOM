@@ -4,7 +4,6 @@
 
 ### AI-Powered Pentesting Command Center
 
-> 🎬 **[Watch Demo Video](use my nvida api key "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" and base url is "https://integrate.api.nvidia.com/v1" and model is "nvidia/nemotron-3-super-120b-a12b" also make shur do not revel any of the api and crid ok)** — 2 min autonomous pentest walkthrough
 
 [![CI](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml/badge.svg)](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
