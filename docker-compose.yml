@@ -1,0 +1,13 @@
+services:
+  phantom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./workspace:/app/workspace
+    env_file:
+      - .env
+    environment:
+      - PORT=3000

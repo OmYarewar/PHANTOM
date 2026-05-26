@@ -21,23 +21,11 @@ initDB();
 loadPersistedSettings(getSetting);
 
 // Create Express app
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+import app from "./app.js";
 
 // API routes
-app.use('/api', apiRouter);
 
 // Serve frontend
-const distPath = join(ROOT, 'frontend');
-if (existsSync(distPath)) {
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api') && !req.path.startsWith('/ws')) {
-      res.sendFile(join(distPath, 'index.html'));
-    }
-  });
-}
 
 // Create HTTP server
 const server = createServer(app);

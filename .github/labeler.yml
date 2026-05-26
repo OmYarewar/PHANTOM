@@ -1,0 +1,19 @@
+tools:
+  - changed-files:
+    - any-glob-to-any-file: 'server/tools/**/*'
+
+ui:
+  - changed-files:
+    - any-glob-to-any-file: 'frontend/**/*'
+
+memory:
+  - changed-files:
+    - any-glob-to-any-file: 'server/memory/**/*'
+
+ai-core:
+  - changed-files:
+    - any-glob-to-any-file: 'server/ai/**/*'
+
+tests:
+  - changed-files:
+    - any-glob-to-any-file: 'tests/**/*'
