@@ -116,18 +116,37 @@ export async function processMessage(conversationId, userMessage, onChunk, onToo
     }
 
     try {
-      const response = await client.chat.completions.create({
-        model: config.api.model,
-        messages,
-        tools: tools.length > 0 ? tools : undefined,
-        tool_choice: tools.length > 0 ? 'auto' : undefined,
-        temperature: config.api.temperature,
-        max_tokens: config.api.maxTokens,
-        stream: true,
-      });
+      let response;
+      let retries = 0;
+      const maxRetries = 3;
+
+      while (retries < maxRetries) {
+        try {
+          response = await client.chat.completions.create({
+            model: config.api.model,
+            messages,
+            tools: tools.length > 0 ? tools : undefined,
+            tool_choice: tools.length > 0 ? 'auto' : undefined,
+            temperature: config.api.temperature,
+            max_tokens: config.api.maxTokens,
+            stream: true,
+          });
+          break; // Success, exit retry loop
+        } catch (apiError) {
+          if (apiError.status === 429 || apiError.message.includes('429')) {
+            retries++;
+            if (retries >= maxRetries) throw apiError;
+            console.log(`[PHANTOM] Rate limit hit (429). Retrying in ${Math.pow(2, retries)}s...`);
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
+            if (abortSignal?.aborted) throw new Error('Operation stopped by user.');
+            continue;
+          }
+          throw apiError;
+        }
+      }
 
       let fullContent = '';
-      let thinkingContent = '';
+
       let toolCalls = [];
       let isInThinkBlock = false;
 
@@ -147,7 +166,7 @@ export async function processMessage(conversationId, userMessage, onChunk, onToo
         // Some models send reasoning in a separate field
         if (delta.reasoning_content || delta.reasoning) {
           const thinkText = delta.reasoning_content || delta.reasoning;
-          thinkingContent += thinkText;
+
           if (onThinking) onThinking(thinkText);
           continue;
         }
@@ -165,7 +184,7 @@ export async function processMessage(conversationId, userMessage, onChunk, onToo
               onChunk(parts[0]);
             }
             if (parts[1]) {
-              thinkingContent += parts[1];
+
               if (onThinking) onThinking(parts[1]);
             }
             continue;
@@ -176,7 +195,7 @@ export async function processMessage(conversationId, userMessage, onChunk, onToo
             isInThinkBlock = false;
             const parts = text.split('</think>');
             if (parts[0]) {
-              thinkingContent += parts[0];
+
               if (onThinking) onThinking(parts[0]);
             }
             if (parts[1]) {
@@ -188,7 +207,7 @@ export async function processMessage(conversationId, userMessage, onChunk, onToo
 
           // Route to thinking or content
           if (isInThinkBlock) {
-            thinkingContent += text;
+
             if (onThinking) onThinking(text);
           } else {
             fullContent += text;

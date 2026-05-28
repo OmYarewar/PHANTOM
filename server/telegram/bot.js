@@ -137,7 +137,9 @@ export function startBot(cfg) {
                 sendToolUpdate(bot, chatId, toolCall.name, toolCall.args, 'running');
             },
             (toolResult) => {
-                sendToolUpdate(bot, chatId, toolResult.name, null, 'done');
+                const isError = typeof toolResult.result === 'string' && toolResult.result.startsWith('Error:');
+                const status = isError ? 'failed' : 'done';
+                sendToolUpdate(bot, chatId, toolResult.name, toolResult.result, status);
             },
             (err) => {
                 sendError(bot, chatId, err);

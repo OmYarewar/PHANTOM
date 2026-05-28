@@ -65,3 +65,6 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - Added `send_file_to_telegram` tool in `server/tools/registry.js` and `executor.js`, allowing the AI to send files to the active Telegram user using `mime-types`.
 - Added unit tests for `sender.js` and updated existing bot tests.
 - Status: All tests pass.
+- Fixed Telegram command display to pass tool status and result output.
+- Wrapped OpenAI client creation in a retry mechanism with exponential backoff on 429 status code.
+- Cleaned up LLM unused thinkingContent warnings.
