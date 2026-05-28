@@ -40,6 +40,36 @@ window.Settings = {
     // Save settings
     document.getElementById('save-settings').addEventListener('click', () => this.save());
 
+    // Telegram Bot enable/disable toggle
+    const tgEnableToggle = document.getElementById('setting-telegram-enable');
+    const tgFields = document.getElementById('telegram-fields');
+    if (tgEnableToggle && tgFields) {
+      tgEnableToggle.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          tgFields.style.opacity = '1';
+          tgFields.style.pointerEvents = 'auto';
+        } else {
+          tgFields.style.opacity = '0.5';
+          tgFields.style.pointerEvents = 'none';
+        }
+      });
+    }
+
+    // Telegram Bot Token visibility toggle
+    const tgTokenToggle = document.getElementById('toggle-telegram-token');
+    const tgTokenInput = document.getElementById('setting-telegram-token');
+    if (tgTokenToggle && tgTokenInput) {
+      tgTokenToggle.addEventListener('click', () => {
+        tgTokenInput.type = tgTokenInput.type === 'password' ? 'text' : 'password';
+      });
+    }
+
+    // Save Telegram settings
+    const saveTgBtn = document.getElementById('save-telegram-btn');
+    if (saveTgBtn) {
+      saveTgBtn.addEventListener('click', () => this.saveTelegram());
+    }
+
     // AI Doctor button
     document.getElementById('ai-doctor-btn').addEventListener('click', () => this.openDoctor());
 
