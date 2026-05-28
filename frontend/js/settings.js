@@ -106,8 +106,8 @@ window.Settings = {
       temperature: parseFloat(document.getElementById('setting-temperature').value),
       maxTokens: parseInt(document.getElementById('setting-max-tokens').value),
       workspace: document.getElementById('setting-workspace').value,
-      telegramBotToken: document.getElementById('setting-telegram-enable').checked ? document.getElementById('setting-telegram-token').value : '',
-      telegramUserId: document.getElementById('setting-telegram-enable').checked ? document.getElementById('setting-telegram-userid').value : '',
+      telegramBotToken: document.getElementById('setting-telegram-token').value,
+      telegramUserId: document.getElementById('setting-telegram-userid').value,
     };
 
     const apiKey = document.getElementById('setting-api-key').value;
