@@ -4,8 +4,8 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 
-import config, { loadPersistedSettings } from './config.js';
-import { initDB, closeDB, getSetting } from './memory/store.js';
+import { loadPersistedSettings } from './config.js';
+import { initDB, getSetting } from './memory/store.js';
 import apiRouter from './routes/api.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -21,6 +21,18 @@ loadPersistedSettings(getSetting);
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Optional API authentication middleware
+app.use('/api', (req, res, next) => {
+  const token = process.env.API_TOKEN || process.env.AUTH_TOKEN;
+  if (token) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || authHeader !== `Bearer ${token}`) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  }
+  next();
+});
 
 // API routes
 app.use('/api', apiRouter);

@@ -7,3 +7,8 @@
 **Vulnerability:** The `/doctor/chat` endpoint allowed users to provide an arbitrary `baseUrl` for connecting to "OpenAI-compatible APIs." This was directly passed to `fetch` without validation, creating a Server-Side Request Forgery (SSRF) vulnerability. This could allow an attacker to send POST requests and read responses from internal/local services (e.g., `http://169.254.169.254/latest/meta-data/` on AWS).
 **Learning:** Any endpoint that constructs a URL dynamically from user input and makes outbound HTTP requests must explicitly validate the structure and target of that URL.
 **Prevention:** Enforce strict URL protocol validation (`http:`/`https:`) and actively block internal IP addresses and loopback hostnames (e.g., `localhost`, `127.0.0.1`, `169.254.169.254`, `0.0.0.0`, `::1`) before initiating the `fetch`.
+
+### Security Implementation
+- Added basic API Key or Bearer Token authentication middleware to the Express server to protect the `/api` routes from unauthorized access.
+- Controlled via the `API_TOKEN` and `AUTH_TOKEN` environment variables.
+- Kept the frontend backwards-compatible by bypassing middleware checks if no tokens are configured by default.

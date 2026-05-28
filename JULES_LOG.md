@@ -79,3 +79,8 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Files Changed:** \`server/telegram/sender.js\`, \`server/telegram/bot.js\`, \`tests/telegram.test.js\`, \`tests/sender.test.js\`
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
+- **Task:** Implement simple API key or bearer token authentication middleware before defining the routes in `server/app.js` (Security fix).
+- **Decision:** Used a lightweight middleware block inside `server/app.js` leveraging `process.env.API_TOKEN` or `process.env.AUTH_TOKEN` from the `.env` configuration file to check against the incoming `Authorization` header (`Bearer <token>`).
+- **Files Changed:** `server/app.js`, `tests/api.test.js`.
+- **Test Status:** Passing.
+- **Commit Hash:** Not yet committed.
