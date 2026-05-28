@@ -415,7 +415,7 @@ window.Chat = {
       // Use double rAF to ensure DOM has updated before scrolling
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (this._chatArea) {
+          if (this._chatArea && (force || !this._userScrolled)) {
             this._chatArea.scrollTop = this._chatArea.scrollHeight;
           }
         });
