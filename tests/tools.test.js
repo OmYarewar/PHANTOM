@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { executeTool } from '../server/tools/executor.js';
+import { executeTool, validateUrlForSSRF } from '../server/tools/executor.js';
 import { initDB, closeDB, saveMemory, searchMemories } from '../server/memory/store.js';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -58,5 +58,58 @@ describe('Memory Store', () => {
     expect(results[0].category).toBe('Test');
     expect(results[0].key).toBe('test-key');
     expect(results[0].value).toBe('test-value');
+  });
+});
+
+describe('validateUrlForSSRF', () => {
+  it('should allow valid http and https URLs', () => {
+    expect(() => validateUrlForSSRF('http://example.com')).not.toThrow();
+    expect(() => validateUrlForSSRF('https://example.com')).not.toThrow();
+    expect(() => validateUrlForSSRF('https://example.com/path?query=1')).not.toThrow();
+  });
+
+  it('should throw on invalid URL formats', () => {
+    expect(() => validateUrlForSSRF('not_a_url')).toThrow('Invalid URL format');
+    expect(() => validateUrlForSSRF('http://')).toThrow('Invalid URL format');
+  });
+
+  it('should throw on invalid protocols', () => {
+    expect(() => validateUrlForSSRF('ftp://example.com')).toThrow('Invalid URL protocol. Only http and https are allowed.');
+    expect(() => validateUrlForSSRF('file:///etc/passwd')).toThrow('Invalid URL protocol. Only http and https are allowed.');
+    expect(() => validateUrlForSSRF('data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D')).toThrow('Invalid URL protocol. Only http and https are allowed.');
+  });
+
+  it('should throw on exact matches for forbidden hosts', () => {
+    const forbidden = ['localhost', '127.0.0.1', '169.254.169.254', '0.0.0.0', '[::1]', '[0:0:0:0:0:0:0:1]'];
+    for (const host of forbidden) {
+      expect(() => validateUrlForSSRF(`http://${host}`)).toThrow('Access to internal/local hostnames is forbidden (SSRF protection).');
+    }
+  });
+
+  it('should throw on IPv4 loopback and ANY variants', () => {
+    expect(() => validateUrlForSSRF('http://127.0.0.2')).toThrow('Access to loopback/ANY addresses is forbidden (SSRF protection).');
+    expect(() => validateUrlForSSRF('http://127.12.34.56')).toThrow('Access to loopback/ANY addresses is forbidden (SSRF protection).');
+  });
+
+  it('should throw on AWS metadata IP', () => {
+    expect(() => validateUrlForSSRF('http://169.254.169.254/latest/meta-data/')).toThrow('Access to internal/local hostnames is forbidden (SSRF protection).');
+  });
+
+  it('should throw on IPv6 loopback variants', () => {
+    expect(() => validateUrlForSSRF('http://[::1]')).toThrow('Access to internal/local hostnames is forbidden (SSRF protection).');
+    expect(() => validateUrlForSSRF('http://[0:0:0:0:0:0:0:1]')).toThrow('Access to internal/local hostnames is forbidden (SSRF protection).');
+  });
+
+  it('should throw on dynamic DNS loopbacks and local domains', () => {
+    const forbiddenDomains = [
+      'test.localhost',
+      '127.0.0.1.nip.io',
+      '127.0.0.1.xip.io',
+      '127.0.0.1.sslip.io',
+      'sub.127.0.0.1.nip.io'
+    ];
+    for (const domain of forbiddenDomains) {
+      expect(() => validateUrlForSSRF(`http://${domain}`)).toThrow('Access to dynamic DNS loopbacks/local domains is forbidden (SSRF protection).');
+    }
   });
 });
