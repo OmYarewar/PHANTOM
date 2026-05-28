@@ -56,8 +56,12 @@ router.put('/settings', (req, res) => {
 });
 
 router.post('/settings/test', async (req, res) => {
-  const result = await testConnection();
-  res.json(result);
+  try {
+    const result = await testConnection();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Conversations ───
@@ -217,39 +221,43 @@ router.post('/system/update', async (req, res) => {
 
 // ─── System Info ───
 router.get('/system/info', async (req, res) => {
-  const info = {
-    hostname: os.hostname(),
-    platform: os.platform(),
-    arch: os.arch(),
-    release: os.release(),
-    user: os.userInfo().username,
-    uptime: os.uptime(),
-    memory: {
-      total: os.totalmem(),
-      free: os.freemem(),
-      used: os.totalmem() - os.freemem(),
-    },
-    cpus: os.cpus().length,
-  };
+  try {
+    const info = {
+      hostname: os.hostname(),
+      platform: os.platform(),
+      arch: os.arch(),
+      release: os.release(),
+      user: os.userInfo().username,
+      uptime: os.uptime(),
+      memory: {
+        total: os.totalmem(),
+        free: os.freemem(),
+        used: os.totalmem() - os.freemem(),
+      },
+      cpus: os.cpus().length,
+    };
 
-  // Run external commands concurrently without blocking the event loop
-  const results = await Promise.allSettled([
-    execAsync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }),
-    execAsync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' })
-  ]);
+    // Run external commands concurrently without blocking the event loop
+    const results = await Promise.allSettled([
+      execAsync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }),
+      execAsync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' })
+    ]);
 
-  if (results[0].status === 'fulfilled' && results[0].value.stdout) {
-    info.distro = results[0].value.stdout.trim();
+    if (results[0].status === 'fulfilled' && results[0].value.stdout) {
+      info.distro = results[0].value.stdout.trim();
+    }
+    if (results[1].status === 'fulfilled' && results[1].value.stdout) {
+      info.ip = results[1].value.stdout.trim();
+    }
+
+    // Check if sudo password is stored
+    info.sudoConfigured = !!getSetting('sudo_password', '');
+    info.workspace = config.workspace;
+
+    res.json(info);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  if (results[1].status === 'fulfilled' && results[1].value.stdout) {
-    info.ip = results[1].value.stdout.trim();
-  }
-
-  // Check if sudo password is stored
-  info.sudoConfigured = !!getSetting('sudo_password', '');
-  info.workspace = config.workspace;
-
-  res.json(info);
 });
 
 // ─── Skills Management ───

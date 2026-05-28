@@ -123,8 +123,12 @@
     };
 
     ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      handleMessage(msg);
+      try {
+        const msg = JSON.parse(event.data);
+        handleMessage(msg);
+      } catch (err) {
+        console.error('WebSocket parsing error:', err);
+      }
     };
 
     ws.onclose = () => {
