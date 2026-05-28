@@ -6,6 +6,7 @@ import { setSetting } from '../memory/store.js';
 import { resetClient } from '../ai/llm-client.js';
 import { getToolDefinitions } from '../tools/registry.js';
 import os from 'os';
+import removeMd from 'remove-markdown';
 
 let bot = null;
 let currentConfig = null;
@@ -144,13 +145,24 @@ export function startBot(cfg) {
       const activeSession = startSession();
       await sendMessage('Processing...');
 
+
       try {
         let aiFullResponse = '';
+        let lastTypingTime = 0;
+        const sendTyping = () => {
+            const now = Date.now();
+            if (now - lastTypingTime > 4000) {
+                lastTypingTime = now;
+                bot.sendChatAction(msg.chat.id, 'typing').catch(()=>{});
+            }
+        };
+
         await processMessage(
             activeSession.conversationId,
             text,
             (chunk) => {
                 aiFullResponse += chunk;
+                sendTyping();
             },
             (toolCall) => {
                 sendMessage(`⚙️ Tool called: ${toolCall.name}\nArguments: ${JSON.stringify(toolCall.args, null, 2)}`);
@@ -162,8 +174,10 @@ export function startBot(cfg) {
                 sendMessage(`❌ Error: ${err}`);
             },
             () => {
-                // Ignore thinking chunks for Telegram
+                // Throttle typing indicators
+                sendTyping();
             },
+
             activeSession.abortController.signal,
             () => {
                 // Ignore tool progress for Telegram to avoid spam
@@ -171,7 +185,7 @@ export function startBot(cfg) {
         );
 
         if (activeSession.status !== 'stopped' && aiFullResponse.trim() !== '') {
-            await sendMessage(aiFullResponse);
+            await sendMessage(removeMd(aiFullResponse));
         }
       } catch (err) {
         await sendMessage(`❌ Error: ${err.message}`);
