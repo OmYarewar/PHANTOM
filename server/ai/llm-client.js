@@ -52,9 +52,40 @@ export async function processMessage(conversationId, userMessage, onChunk, onToo
     }
   } catch {}
 
-  // Add conversation history (limit to last 50 messages to stay in context window)
   // Limit history to last 40 messages to keep context window lean
   const recentHistory = history.slice(-40);
+
+  // Clean up truncated history: ensure we don't start with orphan tool responses
+  // and ensure all assistant tool_calls have matching tool responses
+  while (recentHistory.length > 0 && (recentHistory[0].role === 'tool' || recentHistory[0].tool_call_id)) {
+    recentHistory.shift();
+  }
+
+  for (let i = 0; i < recentHistory.length; i++) {
+    const msg = recentHistory[i];
+    if (msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0) {
+      const expectedToolCalls = msg.tool_calls;
+      const actualToolResponses = [];
+      let j = i + 1;
+      while (j < recentHistory.length && (recentHistory[j].role === 'tool' || recentHistory[j].tool_call_id)) {
+        actualToolResponses.push(recentHistory[j]);
+        j++;
+      }
+
+      const hasAllResponses = expectedToolCalls.every(tc => actualToolResponses.some(tr => tr.tool_call_id === tc.id)) &&
+                              actualToolResponses.length === expectedToolCalls.length;
+
+      if (!hasAllResponses) {
+        delete msg.tool_calls;
+        if (!msg.content) {
+            msg.content = "[Tool calls omitted due to context window truncation]";
+        }
+        // Remove any orphaned responses for these tool calls
+        recentHistory.splice(i + 1, actualToolResponses.length);
+      }
+    }
+  }
+
   for (const msg of recentHistory) {
     const m = { role: msg.role, content: msg.content };
     if (msg.tool_calls) m.tool_calls = msg.tool_calls;

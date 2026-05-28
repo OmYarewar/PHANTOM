@@ -136,7 +136,7 @@ export function startBot(cfg) {
           return;
       }
 
-      if (text === '/newchat') {
+      if (text === '/newchat' || text === '/new') {
           resetSession();
           await sendMessage('🧹 Conversation reset. Send me a new task.');
           return;
