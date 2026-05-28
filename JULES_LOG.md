@@ -79,3 +79,13 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Files Changed:** \`server/telegram/sender.js\`, \`server/telegram/bot.js\`, \`tests/telegram.test.js\`, \`tests/sender.test.js\`
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
+
+## Fix scrollToBottom Bug in Streaming Render Loop
+*   **Decisions:**
+    *   The `frontend/js/chat.js` typing loop (`_startTypingLoop`) used `this.scrollToBottom()` which relied on a double `requestAnimationFrame` delay to ensure the DOM was updated before reading `scrollHeight`. During rapid streaming, this caused the scroll to lag behind the render, preventing the scrollbar from keeping up with text generation.
+    *   Added a `sync` parameter to `scrollToBottom(force = false, sync = false)`. When `sync` is true, the scroll position is calculated synchronously via `this._chatArea.scrollTop = this._chatArea.scrollHeight;` bypassing the deferred rAF execution.
+    *   Updated the render loop to invoke `this.scrollToBottom(false, true)` enforcing an immediate layout reflow explicitly for the typing animation batch rendering step.
+*   **Fixes:** Resolved scrolling jitter during markdown typing animation and enabled the UI to properly track with stream progression.
+*   **Files Changed:** `frontend/js/chat.js`
+*   **Test Status:** 24/24 Vitest cases passing `npm test` with 100% pass rate. Lint checks also pass.
+*   **Commit:** fix(ui): enable synchronous scrollToBottom tracking in streaming render loop

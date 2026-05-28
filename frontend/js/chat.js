@@ -221,7 +221,7 @@ window.Chat = {
           }
 
           // FIXED: Force scroll to bottom after each render frame
-          this.scrollToBottom();
+          this.scrollToBottom(false, true);
           lastTime = timestamp;
         }
       }
@@ -409,9 +409,13 @@ window.Chat = {
    * FIXED: Reliable scroll to bottom
    * force=true bypasses the user-scrolled check (use on new messages)
    */
-  scrollToBottom(force = false) {
+  scrollToBottom(force = false, sync = false) {
     if (!this._chatArea) return;
     if (force || !this._userScrolled) {
+      if (sync) {
+        this._chatArea.scrollTop = this._chatArea.scrollHeight;
+        return;
+      }
       // Use double rAF to ensure DOM has updated before scrolling
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
