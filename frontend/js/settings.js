@@ -77,6 +77,15 @@ window.Settings = {
       document.getElementById('temperature-value').textContent = data.temperature || 0.7;
       document.getElementById('setting-max-tokens').value = data.maxTokens || 4096;
       document.getElementById('setting-workspace').value = data.workspace || '';
+      document.getElementById('setting-telegram-token').value = data.telegramBotToken || '';
+      document.getElementById('setting-telegram-userid').value = data.telegramUserId || '';
+      const hasTgConfig = !!(data.telegramBotToken || data.telegramUserId);
+      const tgEnable = document.getElementById('setting-telegram-enable');
+      if (tgEnable) {
+          tgEnable.checked = hasTgConfig;
+          tgEnable.dispatchEvent(new Event('change'));
+      }
+      this.updateTelegramStatus();
 
       // Update model badge
       document.getElementById('current-model').textContent = data.model || 'No Model';
@@ -97,6 +106,8 @@ window.Settings = {
       temperature: parseFloat(document.getElementById('setting-temperature').value),
       maxTokens: parseInt(document.getElementById('setting-max-tokens').value),
       workspace: document.getElementById('setting-workspace').value,
+      telegramBotToken: document.getElementById('setting-telegram-enable').checked ? document.getElementById('setting-telegram-token').value : '',
+      telegramUserId: document.getElementById('setting-telegram-enable').checked ? document.getElementById('setting-telegram-userid').value : '',
     };
 
     const apiKey = document.getElementById('setting-api-key').value;
@@ -135,6 +146,54 @@ window.Settings = {
       btn.disabled = false;
       btn.textContent = originalText;
     }
+  },
+
+  async saveTelegram() {
+    const btn = document.getElementById('save-telegram-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    await this.save(); // Save everything first
+
+    try {
+        const res = await fetch('/api/telegram/restart', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.success) {
+            btn.textContent = '✓ Restarted';
+            btn.style.background = '#16a34a';
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (err) {
+        console.error('Failed to restart Telegram bot:', err);
+    } finally {
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+            btn.disabled = false;
+        }, 1500);
+        this.updateTelegramStatus();
+    }
+  },
+
+  async updateTelegramStatus() {
+      const statusContainer = document.getElementById('telegram-status');
+      if (!statusContainer) return;
+      try {
+          const res = await fetch('/api/telegram/status');
+          const data = await res.json();
+          if (data.error) {
+              statusContainer.innerHTML = `<span class="status-dot" style="background: #ef4444;"></span> Error: ${data.error}`;
+          } else if (data.running) {
+              statusContainer.innerHTML = `<span class="status-dot" style="background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite;"></span> Bot running`;
+          } else {
+              statusContainer.innerHTML = `<span class="status-dot" style="background: gray;"></span> Not configured`;
+          }
+      } catch (err) {
+          statusContainer.innerHTML = `<span class="status-dot" style="background: #ef4444;"></span> Error: ${err.message}`;
+      }
   },
 
   async testConnection() {

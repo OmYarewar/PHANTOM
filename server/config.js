@@ -26,6 +26,10 @@ const config = {
     maxTokens: parseInt(process.env.MAX_TOKENS || '4096', 10),
   },
   workspace: join(ROOT, 'workspace'),
+  telegram: {
+    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+    userId: process.env.TELEGRAM_USER_ID ? parseInt(process.env.TELEGRAM_USER_ID, 10) : null,
+  },
   db: {
     path: join(ROOT, 'phantom.db'),
   },
@@ -42,6 +46,8 @@ export function updateConfig(updates) {
   if (updates.temperature !== undefined) config.api.temperature = parseFloat(updates.temperature);
   if (updates.maxTokens !== undefined) config.api.maxTokens = parseInt(updates.maxTokens, 10);
   if (updates.workspace !== undefined) config.workspace = updates.workspace;
+  if (updates.telegramBotToken !== undefined) config.telegram.botToken = updates.telegramBotToken;
+  if (updates.telegramUserId !== undefined) config.telegram.userId = updates.telegramUserId ? parseInt(updates.telegramUserId, 10) : null;
 }
 
 /**
@@ -54,6 +60,8 @@ export function loadPersistedSettings(getSetting) {
   const temperature = getSetting('api_temperature', null);
   const maxTokens = getSetting('api_max_tokens', null);
   const workspace = getSetting('workspace', null);
+  const telegramBotToken = getSetting('telegram_bot_token', null);
+  const telegramUserId = getSetting('telegram_user_id', null);
 
   if (baseUrl) config.api.baseUrl = baseUrl;
   if (apiKey) config.api.apiKey = apiKey;
@@ -61,6 +69,8 @@ export function loadPersistedSettings(getSetting) {
   if (temperature) config.api.temperature = parseFloat(temperature);
   if (maxTokens) config.api.maxTokens = parseInt(maxTokens, 10);
   if (workspace) config.workspace = workspace;
+  if (telegramBotToken) config.telegram.botToken = telegramBotToken;
+  if (telegramUserId) config.telegram.userId = parseInt(telegramUserId, 10);
 
   // Ensure workspace directory exists
   try {

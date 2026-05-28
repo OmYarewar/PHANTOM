@@ -9,3 +9,16 @@
 - `frontend/js/app.js`
 **Tests:** 11 passed / 0 added
 **Commits:** Pending
+## YYYY-MM-DD
+**Tasks Completed:**
+- Added Telegram bot integration using `node-telegram-bot-api`.
+- Created `server/telegram/bot.js` for bot logic and `server/telegram/session.js` for session management.
+- Integrated bot start into `server/index.js` based on `config.telegram`.
+- Updated `server/config.js` and `.env.example` to support `TELEGRAM_BOT_TOKEN` and `TELEGRAM_USER_ID`.
+- Added `/api/telegram/status` and `/api/telegram/restart` API endpoints.
+- Added Telegram configuration UI in `frontend/index.html` and logic in `frontend/js/settings.js` with pulse animation in `frontend/css/styles.css`.
+- Wrote tests in `tests/telegram.test.js` to verify bot commands, session handling, and message filtering.
+
+**Testing:**
+- All tests pass (`npm test`).
+- Lint checks completed (`npm run lint`).

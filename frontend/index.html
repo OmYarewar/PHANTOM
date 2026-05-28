@@ -257,6 +257,39 @@
             </div>
           </section>
 
+                    <!-- Telegram Integration -->
+          <section class="settings-section">
+            <h3>📱 Telegram Integration</h3>
+            <div class="form-group" style="flex-direction: row; align-items: center; justify-content: space-between;">
+                <label for="setting-telegram-enable" style="margin-bottom: 0;">Enable Telegram Bot</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="setting-telegram-enable">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div id="telegram-fields" style="opacity: 0.5; pointer-events: none; transition: opacity 0.2s;">
+                <div class="form-group">
+                <label for="setting-telegram-token">Bot Token</label>
+                <div class="input-with-toggle">
+                    <input type="password" id="setting-telegram-token" placeholder="1234567890:ABCdef..." />
+                    <button type="button" id="toggle-telegram-token" class="btn-icon-sm" title="Show/Hide">👁️</button>
+                </div>
+                <small>Get from @BotFather on Telegram</small>
+                </div>
+                <div class="form-group">
+                <label for="setting-telegram-userid">Your User ID</label>
+                <input type="number" id="setting-telegram-userid" placeholder="8418185701" />
+                <small>Get your ID from @userinfobot on Telegram</small>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; margin-top: 16px;">
+                <button type="button" id="save-telegram-btn" class="btn btn-secondary">Save & Restart Bot</button>
+                <div id="telegram-status" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary);">
+                    <span class="status-dot" style="background: gray;"></span> Not configured
+                </div>
+            </div>
+          </section>
+
           <!-- System Access -->
           <section class="settings-section">
             <h3>🔑 System Access</h3>

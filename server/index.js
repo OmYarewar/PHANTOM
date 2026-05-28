@@ -10,6 +10,7 @@ import config, { loadPersistedSettings } from './config.js';
 import { initDB, closeDB, createConversation, getMessages, updateConversationTitle, getSetting } from './memory/store.js';
 import { processMessage } from './ai/llm-client.js';
 import apiRouter from './routes/api.js';
+import { startBot } from './telegram/bot.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -159,6 +160,7 @@ wss.on('connection', (ws) => {
 
 // Start server
 server.listen(config.port, () => {
+  startBot();
   console.log(`
 ╔══════════════════════════════════════════════╗
 ║                                              ║

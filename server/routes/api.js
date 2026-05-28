@@ -18,6 +18,7 @@ import { readdirSync, statSync, rmSync, mkdirSync, existsSync, readFileSync } fr
 const execAsync = promisify(exec);
 import { join, basename } from 'path';
 import multer from 'multer';
+import { startBot, stopBot, getBotStatus } from '../telegram/bot.js';
 import AdmZip from 'adm-zip';
 
 const router = Router();
@@ -37,11 +38,13 @@ router.get('/settings', (req, res) => {
     maxTokens: parseInt(settings.api_max_tokens || config.api.maxTokens),
     workspace: settings.workspace || config.workspace,
     sudoConfigured: !!settings.sudo_password,
+    telegramBotToken: settings.telegram_bot_token ? '••••••••' : '',
+    telegramUserId: settings.telegram_user_id || '',
   });
 });
 
 router.put('/settings', (req, res) => {
-  const { baseUrl, apiKey, model, temperature, maxTokens, sudoPassword, workspace } = req.body;
+  const { baseUrl, apiKey, model, temperature, maxTokens, sudoPassword, workspace, telegramBotToken, telegramUserId } = req.body;
 
   if (baseUrl) { setSetting('api_base_url', baseUrl); updateConfig({ baseUrl }); }
   if (apiKey && apiKey !== '••••••••') { setSetting('api_key', apiKey); updateConfig({ apiKey }); }
@@ -50,6 +53,8 @@ router.put('/settings', (req, res) => {
   if (maxTokens !== undefined) { setSetting('api_max_tokens', String(maxTokens)); updateConfig({ maxTokens }); }
   if (sudoPassword !== undefined) { setSetting('sudo_password', sudoPassword); }
   if (workspace) { setSetting('workspace', workspace); updateConfig({ workspace }); }
+  if (telegramBotToken !== undefined && telegramBotToken !== '••••••••') { setSetting('telegram_bot_token', telegramBotToken); updateConfig({ telegramBotToken }); }
+  if (telegramUserId !== undefined) { setSetting('telegram_user_id', telegramUserId); updateConfig({ telegramUserId }); }
 
   resetClient();
   res.json({ success: true, message: 'Settings updated' });
@@ -61,6 +66,21 @@ router.post('/settings/test', async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Telegram ───
+router.get('/telegram/status', (req, res) => {
+  res.json(getBotStatus());
+});
+
+router.post('/telegram/restart', (req, res) => {
+  try {
+    stopBot();
+    startBot();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
