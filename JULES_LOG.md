@@ -29,3 +29,15 @@
   - `frontend/js/settings.js`
 - **Tests**: Ran all tests with `bun test` and `npm test` successfully. Visually verified the UI fix with a Playwright script.
 Update Telegram bot integration: normal text replies, model command, formatted tool logs, and media sending
+
+## Telegram Typing Indicator and Markdown Removal
+- **Decisions**:
+  - Added `remove-markdown` to format the AI response as plain text before sending it to the Telegram bot, while retaining standard Markdown output on the web frontend.
+  - Implemented a throttled `sendTyping` helper inside the message handler in `server/telegram/bot.js` that triggers `bot.sendChatAction(..., 'typing')`. It is hooked into the `onChunk` and `onThinking` streaming callbacks to keep the typing indicator active for long responses.
+  - Updated `tests/telegram.test.js` to mock `sendChatAction` to ensure the new integrations are fully tested without breaking existing suites.
+- **Fixes**:
+  - Telegram bot now successfully sends plain text instead of raw markdown characters.
+  - Telegram bot now shows a visible typing indicator while processing the stream or waiting for model generation.
+- **Files Changed**: `package.json`, `package-lock.json`, `server/telegram/bot.js`, `tests/telegram.test.js`.
+- **Test Status**: `npm test` executed and all 17 tests passed.
+- **Commit Hashes**: `8f00f9f`, `ee59388`.

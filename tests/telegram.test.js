@@ -14,6 +14,7 @@ vi.mock('node-telegram-bot-api', () => {
     default: vi.fn().mockImplementation(() => {
       return {
         sendMessage: mockSendMessage,
+        sendChatAction: vi.fn().mockResolvedValue(true),
         stopPolling: mockStopPolling,
         isPolling: mockIsPolling,
         on: (event, handler) => {

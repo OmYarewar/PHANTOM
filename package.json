@@ -20,6 +20,7 @@
     "multer": "^2.1.1",
     "node-telegram-bot-api": "^0.67.0",
     "openai": "^4.78.0",
+    "remove-markdown": "^0.6.4",
     "uuid": "^11.1.0",
     "ws": "^8.18.0"
   },
