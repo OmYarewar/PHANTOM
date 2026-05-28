@@ -1,7 +1,9 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { processMessage } from '../ai/llm-client.js';
 import { startSession, stopSession, getSession, resetSession, getHistory } from './session.js';
-import config from '../config.js';
+import config, { updateConfig } from '../config.js';
+import { setSetting } from '../memory/store.js';
+import { resetClient } from '../ai/llm-client.js';
 import { getToolDefinitions } from '../tools/registry.js';
 import os from 'os';
 
@@ -35,10 +37,7 @@ export async function sendMessage(text) {
   try {
     const chunks = splitMessage(text);
     for (const chunk of chunks) {
-      await bot.sendMessage(currentConfig.userId, chunk, { parse_mode: 'Markdown' }).catch(err => {
-         // fallback if markdown fails
-         return bot.sendMessage(currentConfig.userId, chunk);
-      });
+      await bot.sendMessage(currentConfig.userId, chunk);
     }
   } catch (err) {
     console.error('[Telegram] Error sending message:', err.message);
@@ -99,6 +98,21 @@ export function startBot(cfg) {
         return;
       }
 
+
+      if (text.startsWith('/model')) {
+          const parts = text.split(' ');
+          if (parts.length < 2) {
+              await sendMessage('Usage: /model <model_id>');
+              return;
+          }
+          const newModel = parts[1];
+          updateConfig({ model: newModel });
+          setSetting('api_model', newModel);
+          resetClient();
+          await sendMessage(`✅ Model changed to: ${newModel}`);
+          return;
+      }
+
       if (text === '/status') {
           const uptime = os.uptime();
           const tools = getToolDefinitions();
@@ -139,19 +153,19 @@ export function startBot(cfg) {
                 aiFullResponse += chunk;
             },
             (toolCall) => {
-                sendMessage(`🖥️ Running: ${toolCall.name}`);
+                sendMessage(`⚙️ Tool called: ${toolCall.name}\nArguments: ${JSON.stringify(toolCall.args, null, 2)}`);
             },
             (toolResult) => {
-                // sendMessage(`✅ Finished: ${toolResult.name}`);
+                sendMessage(`✅ Tool finished: ${toolResult.name}\nResult:\n\`\`\`\n${typeof toolResult.result === 'string' ? toolResult.result.substring(0, 1000) : '...'}\n\`\`\``);
             },
             (err) => {
                 sendMessage(`❌ Error: ${err}`);
             },
-            (thinking) => {
+            () => {
                 // Ignore thinking chunks for Telegram
             },
             activeSession.abortController.signal,
-            (progress) => {
+            () => {
                 // Ignore tool progress for Telegram to avoid spam
             }
         );
@@ -179,7 +193,7 @@ export function stopBot() {
   if (bot) {
     try {
       bot.stopPolling();
-    } catch(e) {}
+    } catch {}
     bot = null;
   }
 }
@@ -191,4 +205,22 @@ export function getBotStatus() {
         userId: currentConfig ? currentConfig.userId : null,
         error: lastError
     };
+}
+
+
+export async function sendMediaFile(filePath, caption = '') {
+  if (!bot || !currentConfig || !currentConfig.userId) return;
+  try {
+    const ext = filePath.split('.').pop().toLowerCase();
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    if (imageExts.includes(ext)) {
+      await bot.sendPhoto(currentConfig.userId, filePath, { caption });
+    } else {
+      await bot.sendDocument(currentConfig.userId, filePath, { caption });
+    }
+    return `Media sent to Telegram successfully.`;
+  } catch (err) {
+    console.error('[Telegram] Error sending media:', err.message);
+    throw err;
+  }
 }

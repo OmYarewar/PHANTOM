@@ -3,6 +3,27 @@
  */
 export function getToolDefinitions() {
   return [
+    {
+      type: 'function',
+      function: {
+        name: 'send_telegram_media',
+        description: 'Send a media file (image, document, etc.) from the local system to the user via Telegram.',
+        parameters: {
+          type: 'object',
+          properties: {
+            file_path: {
+              type: 'string',
+              description: 'Absolute path to the file to send.',
+            },
+            caption: {
+              type: 'string',
+              description: 'Optional caption to include with the media.',
+            },
+          },
+          required: ['file_path'],
+        },
+      },
+    },
   {
     type: 'function',
     function: {

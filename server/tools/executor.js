@@ -94,6 +94,7 @@ export async function executeTool(name, args, onProgress) {
     case 'show_code_demo': return showCodeDemo(args);
     case 'write_skill': return await writeSkill(args);
     case 'analyze_target_graph': return analyzeTargetGraph(args);
+    case 'send_telegram_media': return await sendMediaFileTool(args);
     case 'get_system_capabilities': return await getSystemCapabilitiesTool();
     default:
       return `Unknown tool: ${name}`;
@@ -835,9 +836,9 @@ async function delegateTaskTool({ task_description }, onProgress) {
     const result = await processMessage(
       subConv.id,
       task_description,
-      (chunk) => {}, // ignore chunking for now
+      () => {}, // ignore chunking for now
       (tc) => { if (onProgress) onProgress(`[Subagent] Using tool: ${tc.name}`); },
-      (tr) => {},
+      () => {},
       (err) => { if (onProgress) onProgress(`[Subagent Error] ${err}`); },
       () => {},
       ac.signal,
@@ -853,4 +854,20 @@ async function delegateTaskTool({ task_description }, onProgress) {
 async function getSystemCapabilitiesTool() {
   const skillsDir = join(config.workspace, 'skills');
   return getSystemCapabilities(skillsDir);
+}
+
+
+/**
+ * Send media to Telegram
+ */
+async function sendMediaFileTool({ file_path, caption }) {
+  try {
+    const resolvedPath = resolve(file_path);
+    if (!existsSync(resolvedPath)) {
+      return `Error: File does not exist at ${resolvedPath}`;
+    }
+    return await sendMediaFile(resolvedPath, caption);
+  } catch (err) {
+    return `Error sending media: ${err.message}`;
+  }
 }

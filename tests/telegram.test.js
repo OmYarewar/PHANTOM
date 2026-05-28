@@ -97,7 +97,7 @@ describe('Telegram Bot Integration', () => {
           text: '/stop'
       });
 
-      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('Task stopped.'), expect.any(Object));
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('Task stopped.'));
       expect(getSession().status).toBe('stopped');
   });
 
@@ -109,9 +109,9 @@ describe('Telegram Bot Integration', () => {
           text: 'Hello world'
       });
 
-      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('Processing...'), expect.any(Object));
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('Processing...'));
       // It should also send the response back
-      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('AI Response'), expect.any(Object));
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('AI Response'));
       expect(getSession().status).toBe('idle'); // Should reset to idle after completion
   });
 });

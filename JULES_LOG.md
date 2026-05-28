@@ -28,3 +28,4 @@
 - **Files Changed**:
   - `frontend/js/settings.js`
 - **Tests**: Ran all tests with `bun test` and `npm test` successfully. Visually verified the UI fix with a Playwright script.
+Update Telegram bot integration: normal text replies, model command, formatted tool logs, and media sending
