@@ -6,14 +6,21 @@ import { setSetting } from '../memory/store.js';
 import { resetClient } from '../ai/llm-client.js';
 import { getToolDefinitions } from '../tools/registry.js';
 import os from 'os';
-import removeMd from 'remove-markdown';
+import { convertMarkdown } from '../utils/telegramify.js';
+import fs from 'fs';
 
 let bot = null;
 let currentConfig = null;
 let lastError = null;
 
 // Helper to chunk long messages (Telegram limit is 4096)
-function splitMessage(text, limit = 4000) {
+// Helper to chunk long messages
+function splitMessage(textOrChunk, limit = 4000) {
+  if (typeof textOrChunk === 'object' && textOrChunk.text) {
+      // For parsed entities, we let the lib handle chunks or assume they are pre-chunked by telegramify
+      return [textOrChunk];
+  }
+  const text = textOrChunk;
   const chunks = [];
   let currentChunk = '';
   const lines = text.split('\n');
@@ -38,7 +45,7 @@ export async function sendMessage(text) {
   try {
     const chunks = splitMessage(text);
     for (const chunk of chunks) {
-      await bot.sendMessage(currentConfig.userId, chunk);
+      await bot.sendMessage(currentConfig.userId, chunk.text || chunk, { entities: chunk.entities });
     }
   } catch (err) {
     console.error('[Telegram] Error sending message:', err.message);
@@ -185,7 +192,23 @@ export function startBot(cfg) {
         );
 
         if (activeSession.status !== 'stopped' && aiFullResponse.trim() !== '') {
-            await sendMessage(removeMd(aiFullResponse));
+            try {
+                const results = await convertMarkdown(aiFullResponse);
+                for (const item of results) {
+                    if (item.type === 'text') {
+                        await bot.sendMessage(currentConfig.userId, item.text, { entities: item.entities });
+                    } else if (item.type === 'file') {
+                        const fileBuf = Buffer.from(item.file_data, 'base64');
+                        await bot.sendDocument(currentConfig.userId, fileBuf, {}, { filename: item.file_name });
+                    } else if (item.type === 'photo') {
+                        const fileBuf = Buffer.from(item.file_data, 'base64');
+                        await bot.sendPhoto(currentConfig.userId, fileBuf, {}, { filename: item.file_name });
+                    }
+                }
+            } catch (err) {
+                console.error('[Telegram] Rendering failed, falling back to raw text:', err);
+                await sendMessage(aiFullResponse);
+            }
         }
       } catch (err) {
         await sendMessage(`❌ Error: ${err.message}`);

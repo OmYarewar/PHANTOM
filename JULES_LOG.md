@@ -41,3 +41,18 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - **Files Changed**: `package.json`, `package-lock.json`, `server/telegram/bot.js`, `tests/telegram.test.js`.
 - **Test Status**: `npm test` executed and all 17 tests passed.
 - **Commit Hashes**: `8f00f9f`, `ee59388`.
+## [2026-05-28] — Telegram Markdown Parsing Fix
+**Tasks Completed:**
+- Replaced the simple `remove-markdown` package for formatting telegram outputs with a Python bridge leveraging `telegramify-markdown`.
+- Created `server/utils/telegramify.js` which spawns a `python3` child process to safely and reliably parse and chunk the markdown strings, returning both `text` entities and `file` attachments.
+- Refactored `server/telegram/bot.js` `sendMessage` and `splitMessage` methods to handle objects containing parsed entities, routing them through `bot.sendMessage` and `bot.sendDocument` accordingly.
+- Cleaned up unneeded dependencies from test cases and verified everything works.
+
+**Testing:**
+- Verified Python bridge functionality individually and integrated.
+- `npm test` all suites passed successfully.
+- `npm run lint` passed without major related errors.
+**Files Changed:**
+- `server/utils/telegramify.js`
+- `server/telegram/bot.js`
+- `tests/telegram.test.js`
