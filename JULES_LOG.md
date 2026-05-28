@@ -28,3 +28,15 @@
 - **Files Changed**:
   - `frontend/js/settings.js`
 - **Tests**: Ran all tests with `bun test` and `npm test` successfully. Visually verified the UI fix with a Playwright script.
+## Telegram Bot Improvements
+- **Issue**: The telegram bot lacked support for receiving files (images and documents), always formatted output using markdown (which could break randomly), lacked a command to change models, and didn't display tool usage properly.
+- **Fix**:
+  - Removed `{ parse_mode: 'Markdown' }` when sending Telegram messages.
+  - Added support for `msg.photo` and `msg.document` to correctly pass images and files natively via `image_url` object to the AI.
+  - Added `/model <modelId>` command to change AI models over Telegram.
+  - Enhanced tool message logs by collecting all tool execution data and pushing them as `Tool Execution Log` text block on success.
+  - Updated `tests/telegram.test.js` to match the removed Markdown parameter format.
+- **Files Changed**:
+  - `server/telegram/bot.js`
+  - `tests/telegram.test.js`
+- **Tests**: Ran all tests with `npm test` successfully.

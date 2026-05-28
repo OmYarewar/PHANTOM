@@ -35,9 +35,8 @@ export async function sendMessage(text) {
   try {
     const chunks = splitMessage(text);
     for (const chunk of chunks) {
-      await bot.sendMessage(currentConfig.userId, chunk, { parse_mode: 'Markdown' }).catch(err => {
-         // fallback if markdown fails
-         return bot.sendMessage(currentConfig.userId, chunk);
+      await bot.sendMessage(currentConfig.userId, chunk).catch(err => {
+         console.error('Failed to send telegram msg:', err);
       });
     }
   } catch (err) {
@@ -81,7 +80,28 @@ export function startBot(cfg) {
         return; // Silently ignore
       }
 
-      const text = msg.text || '';
+      // Handle document/photo if present
+      let fileUrl = null;
+      let text = msg.caption || msg.text || '';
+
+      if (msg.photo && msg.photo.length > 0) {
+        // Get highest resolution photo
+        const fileId = msg.photo[msg.photo.length - 1].file_id;
+        try {
+            const link = await bot.getFileLink(fileId);
+            fileUrl = link;
+        } catch(e) {
+            console.error('Failed to get photo link', e);
+        }
+      } else if (msg.document) {
+        const fileId = msg.document.file_id;
+        try {
+            const link = await bot.getFileLink(fileId);
+            fileUrl = link;
+        } catch(e) {
+            console.error('Failed to get document link', e);
+        }
+      }
 
       if (text === '/start') {
         await sendMessage('👻 PHANTOM online. Send me a task.');
@@ -120,6 +140,15 @@ export function startBot(cfg) {
           return;
       }
 
+      if (text.startsWith('/model ')) {
+          const newModel = text.replace('/model ', '').trim();
+          if (newModel) {
+             config.api.model = newModel;
+             await sendMessage(`✅ Model changed to ${newModel}`);
+          }
+          return;
+      }
+
       // Regular message
       const session = getSession();
       if (session.status === 'running') {
@@ -132,32 +161,53 @@ export function startBot(cfg) {
 
       try {
         let aiFullResponse = '';
+
+        // Prepare content payload
+        const contentParam = [];
+        if (text) {
+            contentParam.push({ type: 'text', text });
+        }
+        if (fileUrl) {
+            contentParam.push({ type: 'image_url', image_url: { url: fileUrl }});
+        }
+
+        let toolLogs = [];
+
         await processMessage(
             activeSession.conversationId,
-            text,
+            contentParam.length > 0 ? contentParam : text,
             (chunk) => {
                 aiFullResponse += chunk;
             },
             (toolCall) => {
-                sendMessage(`🖥️ Running: ${toolCall.name}`);
+                const argsStr = toolCall.args ? JSON.stringify(toolCall.args) : '';
+                toolLogs.push(`> 🛠️ Tool Call: ${toolCall.name}\n${argsStr}`);
+                sendMessage(`🖥️ Starting: ${toolCall.name}`);
             },
             (toolResult) => {
-                // sendMessage(`✅ Finished: ${toolResult.name}`);
+                let resStr = typeof toolResult.result === 'object' ? JSON.stringify(toolResult.result) : String(toolResult.result);
+                if (resStr.length > 500) resStr = resStr.substring(0, 500) + '... (truncated)';
+                toolLogs.push(`> ✅ Tool Result (${toolResult.name}):\n${resStr}`);
             },
             (err) => {
                 sendMessage(`❌ Error: ${err}`);
             },
             (thinking) => {
-                // Ignore thinking chunks for Telegram
+                // Ignore thinking logs
             },
             activeSession.abortController.signal,
             (progress) => {
-                // Ignore tool progress for Telegram to avoid spam
+                // Ignore tool progress
             }
         );
 
-        if (activeSession.status !== 'stopped' && aiFullResponse.trim() !== '') {
-            await sendMessage(aiFullResponse);
+        if (activeSession.status !== 'stopped') {
+            if (toolLogs.length > 0) {
+               await sendMessage(`📋 Tool Execution Log:\n\n${toolLogs.join('\n\n')}`);
+            }
+            if (aiFullResponse.trim() !== '') {
+               await sendMessage(aiFullResponse);
+            }
         }
       } catch (err) {
         await sendMessage(`❌ Error: ${err.message}`);
