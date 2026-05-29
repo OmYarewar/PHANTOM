@@ -79,10 +79,3 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Files Changed:** \`server/telegram/sender.js\`, \`server/telegram/bot.js\`, \`tests/telegram.test.js\`, \`tests/sender.test.js\`
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
-
-## $(date +"%Y-%m-%d %H:%M:%S")
-- **Decisions**: Secured the Express application's CORS configuration by replacing the wild-open `app.use(cors())` with an explicit array of allowed origins to prevent unauthorized Cross-Origin Resource Sharing attacks.
-- **Fixes**: Replaced the permissive CORS settings in `server/app.js` with specific origins (`http://localhost:5173`, `http://127.0.0.1:5173`, `http://localhost:1337`, `http://127.0.0.1:1337`).
-- **Files Changed**: `server/app.js`
-- **Test Status**: `npm test` and `npm run lint` passed.
-- **Commit**: Not yet committed.
