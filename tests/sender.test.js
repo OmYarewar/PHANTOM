@@ -20,17 +20,17 @@ vi.mock('mime-types', () => ({
 import { sendAIReply, sendPlain, sendToolUpdate, sendError } from '../server/telegram/sender.js';
 
 describe('sendAIReply()', () => {
-  it('calls bot.sendMessage with parse_mode MarkdownV2', async () => {
+  it('calls bot.sendMessage with parse_mode HTML', async () => {
     const bot = { sendMessage: vi.fn().mockResolvedValue({}) };
     await sendAIReply(bot, 123, '**hello** world');
     expect(bot.sendMessage).toHaveBeenCalledWith(
       123,
       expect.any(String),
-      expect.objectContaining({ parse_mode: 'MarkdownV2' })
+      expect.objectContaining({ parse_mode: 'HTML' })
     );
   });
 
-  it('falls back to plain text if MarkdownV2 send fails', async () => {
+  it('falls back to plain text if HTML send fails', async () => {
     const bot = {
       sendMessage: vi.fn()
         .mockRejectedValueOnce(new Error('Bad Request: can\'t parse entities'))

@@ -122,7 +122,7 @@ describe('Telegram Bot Integration', () => {
 
       // Processing message was removed
       // It should also send the response back
-      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('AI Response'), expect.objectContaining({ parse_mode: 'MarkdownV2' }));
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, expect.stringContaining('AI Response'), expect.objectContaining({ parse_mode: 'HTML' }));
       expect(getSession(12345).status).toBe('idle'); // Should reset to idle after completion
   });
 });

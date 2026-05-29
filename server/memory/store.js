@@ -2,6 +2,18 @@ import Database from 'better-sqlite3';
 import config from '../config.js';
 import { v4 as uuidv4 } from 'uuid';
 
+
+export function validateParams(sql, params) {
+  const placeholderCount = (sql.match(/\?/g) || []).length;
+  const paramCount = Array.isArray(params) ? params.length : 0;
+  if (placeholderCount !== paramCount) {
+    throw new Error(
+      `SQL parameter mismatch: query has ${placeholderCount} placeholder(s) but ${paramCount} value(s) were provided.\nQuery: ${sql}`
+    );
+  }
+}
+
+
 let db;
 
 export function initDB(dbPath = config.db.path) {
@@ -96,7 +108,7 @@ export function initDB(dbPath = config.db.path) {
   `);
 
   // Backfill if search_index is empty
-  const count = db.prepare('SELECT count(*) as count FROM search_index').get();
+  const count = getDB().prepare('SELECT count(*) as count FROM search_index').get();
   if (count.count === 0) {
     db.exec(`
       INSERT INTO search_index (id, type, content)
@@ -110,10 +122,45 @@ export function initDB(dbPath = config.db.path) {
   return db;
 }
 
+
 export function getDB() {
   if (!db) initDB();
-  return db;
+
+  // Wrap db in a Proxy to intercept prepare() calls and inject validateParams
+  return new Proxy(db, {
+    get(target, prop) {
+      if (prop === 'prepare') {
+        return function(sql) {
+          const stmt = target.prepare(sql);
+          return new Proxy(stmt, {
+            get(stmtTarget, stmtProp) {
+              if (['run', 'get', 'all'].includes(stmtProp)) {
+                return function(...args) {
+                  validateParams(sql, args);
+                  return stmtTarget[stmtProp](...args);
+                };
+              }
+              if (stmtProp === 'each') {
+                return function(args, cb) {
+                  if (typeof args !== 'function') {
+                     validateParams(sql, Array.isArray(args) ? args : [args]);
+                  } else {
+                     validateParams(sql, []);
+                  }
+                  return stmtTarget[stmtProp](args, cb);
+                };
+              }
+              // Bind other methods like bind() or plucks() if used
+              return typeof stmtTarget[stmtProp] === 'function' ? stmtTarget[stmtProp].bind(stmtTarget) : stmtTarget[stmtProp];
+            }
+          });
+        };
+      }
+      return typeof target[prop] === 'function' ? target[prop].bind(target) : target[prop];
+    }
+  });
 }
+
 
 // ─── Conversations ───
 export function createConversation(title = 'New Conversation') {

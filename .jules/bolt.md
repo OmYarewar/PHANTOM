@@ -5,3 +5,6 @@
 - Implemented `send_telegram_media` to handle media cleanly instead of routing large streams through markdown text renderer.
 - Addressed testing issues with `vitest` expecting options arguments after removing the parse_mode option.
 - [2025-05-28] Fixed `tests/tools.test.js` to include coverage for `validateUrlForSSRF` protecting against Server-Side Request Forgery vulnerabilities.
+
+- Fix MarkdownV2 API calls by refactoring everything to HTML mode across the `telegramify` handlers to fix recurring parsing entity issues on Telegram SDK.
+- Fix missing SQLite `db.run` parameters by implementing an implicit AST-like parameter count validator interceptor wrapped over `getDB().prepare()` to trap query vs parameters count mismatches dynamically.

@@ -297,7 +297,11 @@ export async function processMessage(conversationId, userMessage, sessionContext
           onToolResult({ id: tc.id, name: tc.function.name, result: truncatedResult });
 
           // Save tool result
-          saveToolResult(conversationId, tc.function.name, args, truncatedResult, 'success', duration);
+          try {
+            saveToolResult(conversationId, tc.function.name, args, truncatedResult, 'success', duration);
+          } catch (err) {
+            console.error('[Tools] Failed to save tool result to memory:', err.message);
+          }
 
           // Add tool result to messages
           const toolMsg = { role: 'tool', content: truncatedResult, tool_call_id: tc.id, name: tc.function.name };
