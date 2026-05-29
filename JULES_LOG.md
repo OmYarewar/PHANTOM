@@ -90,3 +90,9 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - Updated `server/ai/system-prompt.js` and `server/ai/llm-client.js` to integrate the injected `sessionContext`.
 - Mocked dependencies properly and wrote Unit tests inside `tests/bootstrap.test.js` ensuring correct context extraction and formatting.
 - **Tests pass successfully** (`npm test`).
+
+### Fixed Telegram MarkdownV2 and SQLite Parameter Mismatches
+- **Decisions:** Rewrote all `parse_mode: 'MarkdownV2'` references to `parse_mode: 'HTML'` in `server/telegram/sender.js`. Used the provided manual HTML parsing methods to eradicate the error-prone library `telegramify-markdown`. For SQLite param mismatch (BUG 2), implemented a `validateParams` interceptor globally injected into `getDB().prepare()` to check param count dynamically for `.run()`, `.all()`, and `.get()` operations. Wrapped the LLM tool memory saves inside a try/catch.
+- **Fixes:** `sender.js` MarkdownV2 replaced. `store.js` augmented with an interceptor validation proxy.
+- **Files Changed:** `server/telegram/sender.js`, `server/memory/store.js`, `server/ai/llm-client.js`, `tests/sender.test.js`, `tests/memory.test.js`.
+- **Test Status:** Passing.

@@ -4,7 +4,7 @@ import mime from 'mime-types';
 import telegramifyMarkdown from 'telegramify-markdown';
 
 /**
- * THE CORE FUNCTION — converts any AI markdown output to clean Telegram MarkdownV2
+ * THE CORE FUNCTION — converts any AI markdown output to clean Telegram HTML
  * then sends it in chunks if needed.
  */
 export async function sendAIReply(bot, chatId, markdownText) {
@@ -17,11 +17,11 @@ export async function sendAIReply(bot, chatId, markdownText) {
   if (chunks.length === 1) {
     try {
       await bot.sendMessage(chatId, chunks[0], {
-        parse_mode: 'MarkdownV2',
+        parse_mode: 'HTML',
         disable_web_page_preview: true,
       });
     } catch (err) {
-      console.error('[Telegram] MarkdownV2 failed:', err.message);
+      console.error('[Telegram] HTML failed:', err.message);
       const plain = markdownText
         .replace(/[*_`~\\]/g, '')
         .replace(/\n{3,}/g, '\n\n')
@@ -36,11 +36,11 @@ export async function sendAIReply(bot, chatId, markdownText) {
     // Send first chunk
     try {
       await bot.sendMessage(chatId, chunks[0], {
-        parse_mode: 'MarkdownV2',
+        parse_mode: 'HTML',
         disable_web_page_preview: true,
       });
     } catch (err) {
-      console.error('[Telegram] MarkdownV2 failed (chunk 0):', err.message);
+      console.error('[Telegram] HTML failed (chunk 0):', err.message);
       const plain = markdownText.slice(0, 4096).replace(/[*_`~\\]/g, '').replace(/\n{3,}/g, '\n\n');
       try { await bot.sendMessage(chatId, plain); } catch (e) {}
     }
@@ -50,11 +50,11 @@ export async function sendAIReply(bot, chatId, markdownText) {
       await new Promise(r => setTimeout(r, 100)); // preserve order
       try {
         await bot.sendMessage(chatId, chunks[i], {
-          parse_mode: 'MarkdownV2',
+          parse_mode: 'HTML',
           disable_web_page_preview: true,
         });
       } catch (err) {
-        console.error('[Telegram] MarkdownV2 failed (chunk ' + i + '):', err.message);
+        console.error('[Telegram] HTML failed (chunk ' + i + '):', err.message);
         const plain = markdownText.slice(i*4096, (i+1)*4096).replace(/[*_`~\\]/g, '').replace(/\n{3,}/g, '\n\n');
         try { await bot.sendMessage(chatId, plain); } catch (e) {}
       }
@@ -93,13 +93,13 @@ export async function sendToolUpdate(bot, chatId, toolName, input, status) {
   const statusText = statusMap[status] || status;
   const preview = input ? String(input).slice(0, 60) + (String(input).length > 60 ? '…' : '') : '';
 
-  // Build this as a simple MarkdownV2 message manually (no conversion needed — we control all content)
+  // Build this as a simple HTML message manually (no conversion needed — we control all content)
   const safeToolName = toolName.replace(/_/g, '\\_');
   const safePreview = preview.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\$&');
   const msg = `${statusText} ${icon} \`${safeToolName}\`\n${safePreview ? '`' + safePreview + '`' : ''}`;
 
   try {
-    await bot.sendMessage(chatId, msg, { parse_mode: 'MarkdownV2' });
+    await bot.sendMessage(chatId, msg, { parse_mode: 'HTML' });
   } catch {
     await sendPlain(bot, chatId, `${statusText} ${toolName}${preview ? ': ' + preview : ''}`);
   }
@@ -111,7 +111,7 @@ export async function sendToolUpdate(bot, chatId, toolName, input, status) {
 export async function sendError(bot, chatId, message) {
   try {
     const safe = String(message).replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\$&');
-    await bot.sendMessage(chatId, `❌ *Error*\n${safe}`, { parse_mode: 'MarkdownV2' });
+    await bot.sendMessage(chatId, `❌ *Error*\n${safe}`, { parse_mode: 'HTML' });
   } catch {
     await sendPlain(bot, chatId, `❌ Error: ${message}`);
   }
@@ -195,7 +195,7 @@ function splitIntoChunks(text, maxLen) {
 }
 
 /**
- * Scans the converted MarkdownV2 string and escapes any reserved characters
+ * Scans the converted HTML string and escapes any reserved characters
  * that are still unescaped, but ONLY outside of code blocks and inline code.
  * This is the safety net after telegramify-markdown runs.
  */
