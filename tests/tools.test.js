@@ -4,15 +4,20 @@ import { initDB, closeDB, saveMemory, searchMemories } from '../server/memory/st
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { mkdtemp, rm } from 'fs/promises';
+import config from '../server/config.js';
 
 describe('Tools Executor', () => {
   let tempDir;
+  let originalWorkspace;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'phantom-test-'));
+    originalWorkspace = config.workspace;
+    config.workspace = tempDir;
   });
 
   afterEach(async () => {
+    config.workspace = originalWorkspace;
     await rm(tempDir, { recursive: true, force: true });
   });
 

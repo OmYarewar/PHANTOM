@@ -22,6 +22,7 @@ window.Chat = {
   thinkingContent: '',
   // Auto-scroll control: user can scroll up to pause, near-bottom = resume
   _userScrolled: false,
+  _lastScrollTop: 0,
 
   init() {
     this.messagesEl = document.getElementById('messages');
@@ -30,8 +31,19 @@ window.Chat = {
     // Detect when user manually scrolls up (pause auto-scroll)
     this._chatArea.addEventListener('scroll', () => {
       const threshold = 80;
-      const distFromBottom = this._chatArea.scrollHeight - this._chatArea.scrollTop - this._chatArea.clientHeight;
-      this._userScrolled = distFromBottom > threshold;
+      const currentScrollTop = this._chatArea.scrollTop;
+      const distFromBottom = Math.ceil(this._chatArea.scrollHeight - currentScrollTop - this._chatArea.clientHeight);
+
+      if (distFromBottom <= threshold) {
+        // If we are at or near the bottom, resume auto-scroll
+        this._userScrolled = false;
+      } else if (currentScrollTop < this._lastScrollTop) {
+        // If we are NOT near the bottom AND we scrolled UP,
+        // it means the user intentionally scrolled back.
+        this._userScrolled = true;
+      }
+
+      this._lastScrollTop = currentScrollTop;
     });
   },
 
@@ -221,7 +233,7 @@ window.Chat = {
           }
 
           // FIXED: Force scroll to bottom after each render frame
-          this.scrollToBottom();
+          this.scrollToBottom(false, true);
           lastTime = timestamp;
         }
       }
@@ -409,9 +421,13 @@ window.Chat = {
    * FIXED: Reliable scroll to bottom
    * force=true bypasses the user-scrolled check (use on new messages)
    */
-  scrollToBottom(force = false) {
+  scrollToBottom(force = false, sync = false) {
     if (!this._chatArea) return;
     if (force || !this._userScrolled) {
+      if (sync) {
+        this._chatArea.scrollTop = this._chatArea.scrollHeight;
+        return;
+      }
       // Use double rAF to ensure DOM has updated before scrolling
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {

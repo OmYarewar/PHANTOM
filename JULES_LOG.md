@@ -80,8 +80,3 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
 
-## 2025-05-28
-- **Decision:** Added comprehensive test suite for `validateUrlForSSRF` in `tests/tools.test.js` to prevent SSRF regressions.
-- **Files Changed:** `tests/tools.test.js`
-- **Tests Status:** Passed
-- **Commit:** Pending

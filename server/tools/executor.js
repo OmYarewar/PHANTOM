@@ -358,6 +358,10 @@ async function executeCommand({ command, timeout = 120, working_directory, use_s
 async function readFileContent({ path, max_lines = 500 }) {
   try {
     const resolvedPath = resolve(path);
+    const safeRoot = resolve(config.workspace);
+    if (!resolvedPath.startsWith(safeRoot)) {
+      return `Error: Access denied. Path is outside the workspace (${safeRoot})`;
+    }
     const content = await readFile(resolvedPath, 'utf8');
     const lines = content.split('\n');
     if (lines.length > max_lines) {
@@ -375,6 +379,10 @@ async function readFileContent({ path, max_lines = 500 }) {
 async function writeFileContent({ path: filePath, content, append = false }) {
   try {
     const resolvedPath = resolve(filePath);
+    const safeRoot = resolve(config.workspace);
+    if (!resolvedPath.startsWith(safeRoot)) {
+      return `Error: Access denied. Path is outside the workspace (${safeRoot})`;
+    }
     await mkdir(dirname(resolvedPath), { recursive: true });
     if (append) {
       const existing = await readFile(resolvedPath, 'utf8').catch(() => '');
@@ -675,6 +683,10 @@ function recallMemoryTool({ query, category }) {
 async function listDirectory({ path: dirPath, show_hidden = false }) {
   try {
     const resolvedPath = resolve(dirPath);
+    const safeRoot = resolve(config.workspace);
+    if (!resolvedPath.startsWith(safeRoot)) {
+      return `Error: Access denied. Path is outside the workspace (${safeRoot})`;
+    }
     const entries = await readdir(resolvedPath, { withFileTypes: true });
 
     // ⚡ Bolt: Fetch file stats in parallel instead of sequentially
