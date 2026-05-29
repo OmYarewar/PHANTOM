@@ -45,4 +45,12 @@ describe('API Routes', () => {
     expect(res.body).toHaveProperty('hostname');
     expect(res.body).toHaveProperty('platform');
   });
+  it('DELETE /api/skills/:name should reject invalid skill names (path traversal)', async () => {
+    const res1 = await request(app).delete('/api/skills/..%2Fsecret');
+    expect(res1.status).toBe(404); // The router actually fails to match the route for ..%2Fsecret and goes to 404 handler, or the param is not matching.
+
+    const res2 = await request(app).delete('/api/skills/%21%40%23%24');
+    expect(res2.status).toBe(400);
+  });
+
 });
