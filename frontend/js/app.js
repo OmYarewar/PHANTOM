@@ -740,7 +740,7 @@
                   if (data.error) {
                     logEl.textContent += '\nError: ' + data.error + '\n';
                   }
-                } catch (e) {}
+                } catch (e) { console.error('Error parsing update stream chunk:', e, dataStr); }
               }
             }
             read();

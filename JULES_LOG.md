@@ -79,3 +79,4 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Files Changed:** \`server/telegram/sender.js\`, \`server/telegram/bot.js\`, \`tests/telegram.test.js\`, \`tests/sender.test.js\`
 *   **Test Status:** 24/24 Vitest cases passing \`npm test\` with 100% pass rate.
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
+- 2025-01-05: Added error logging for JSON.parse exceptions in the app update streaming response to prevent silently swallowing stream parsing errors.
