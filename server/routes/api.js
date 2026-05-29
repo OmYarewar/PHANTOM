@@ -324,7 +324,7 @@ router.post('/skills/upload', upload.single('file'), (req, res) => {
 
     // Sanitize skillName to prevent path traversal
     skillName = basename(skillName);
-    if (!skillName || skillName === '.' || skillName === '..') {
+    if (!skillName || skillName === '.' || skillName === '..' || !/^[a-zA-Z0-9_-]+$/.test(skillName)) {
       return res.status(400).json({ error: 'Invalid skill name' });
     }
 
@@ -343,7 +343,7 @@ router.delete('/skills/:name', (req, res) => {
   try {
     const skillsDir = getSkillsDir();
     const skillName = basename(req.params.name);
-    if (!skillName || skillName === '.' || skillName === '..') {
+    if (!skillName || skillName === '.' || skillName === '..' || !/^[a-zA-Z0-9_-]+$/.test(skillName)) {
       return res.status(400).json({ error: 'Invalid skill name' });
     }
     const skillPath = join(skillsDir, skillName);
