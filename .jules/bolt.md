@@ -4,3 +4,4 @@
 - Removed parse_mode Markdown from `sendMessage` which caused fallback parsing errors previously.
 - Implemented `send_telegram_media` to handle media cleanly instead of routing large streams through markdown text renderer.
 - Addressed testing issues with `vitest` expecting options arguments after removing the parse_mode option.
+- [2025-05-28] Fixed `tests/tools.test.js` to include coverage for `validateUrlForSSRF` protecting against Server-Side Request Forgery vulnerabilities.
