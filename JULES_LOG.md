@@ -96,3 +96,19 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - **Fixes:** `sender.js` MarkdownV2 replaced. `store.js` augmented with an interceptor validation proxy.
 - **Files Changed:** `server/telegram/sender.js`, `server/memory/store.js`, `server/ai/llm-client.js`, `tests/sender.test.js`, `tests/memory.test.js`.
 - **Test Status:** Passing.
+## [2026-05-30] — Security Hardening Session
+**What I decided to work on:** I decided to focus on security hardening based on the directives. The application runs an Express server but lacked fundamental security middlewares like Helmet (for setting secure HTTP headers) and rate limiting (to protect endpoints from brute-force or DoS attacks).
+**What I built/fixed:**
+- Installed `helmet` and `express-rate-limit` dependencies.
+- Configured and applied `helmet` middleware globally in `server/app.js` (with CSP disabled for compatibility with the Vite dev server).
+- Configured `express-rate-limit` to limit requests to 100 per 15 minutes globally for `/api` routes.
+- Configured Express to trust the proxy (`app.set('trust proxy', 1)`) to ensure correct IP tracking for rate limiting, especially important for test environments and reverse proxies.
+- Wrote tests in `tests/api.test.js` to verify the security headers are present and the rate limit triggers correctly on exceeding 100 requests.
+- Updated tests in `tests/api.test.js` to mock different `X-Forwarded-For` IP addresses to ensure isolated state for rate limit checks between test cases.
+**Files changed:**
+- `package.json`
+- `package-lock.json`
+- `server/app.js`
+- `tests/api.test.js`
+**Tests:** 44 passed / 2 added
+**Commits:** Pending
