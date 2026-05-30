@@ -122,3 +122,9 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - **Files Changed:** `server/index.js`, `server/tools/executor.js`, `frontend/js/chat.js`, `frontend/css/styles.css`
 - **Test Status:** Tested with `npm test`, executed Playwright to ensure UI loads correctly. All passed.
 - **Commit:** $(git rev-parse HEAD)
+- Fixed EADDRINUSE error and double initialization logs in backend.
+## Fix EADDRINUSE unhandled exception
+**Date**: 2025-05-28
+- Fixed unhandled node process exception when port 1337 is blocked.
+- Fixed duplicate logs printed during startup by modifying server/index.js.
+- Tests passing.

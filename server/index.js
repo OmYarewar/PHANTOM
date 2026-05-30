@@ -6,20 +6,14 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 
-import config, { loadPersistedSettings } from './config.js';
-import { initDB, closeDB, createConversation, getMessages, updateConversationTitle, getSetting } from './memory/store.js';
+import config from './config.js';
+import { closeDB, createConversation, getMessages, updateConversationTitle } from './memory/store.js';
 import { processMessage } from './ai/llm-client.js';
 import apiRouter from './routes/api.js';
 import { startBot } from './telegram/bot.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-
-// Initialize database
-initDB();
-
-// Load persisted settings from DB (API keys, workspace, etc.)
-loadPersistedSettings(getSetting);
 
 // Create Express app
 import app from "./app.js";
@@ -160,6 +154,18 @@ wss.on('connection', (ws) => {
 });
 
 // Start server
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Error: Port ${config.port} is already in use.`);
+    console.error(`💡 Another instance of PHANTOM is likely running.`);
+    console.error(`   Run 'kill $(lsof -t -i :${config.port})' to free the port, or change PORT in .env\n`);
+    process.exit(1);
+  } else {
+    console.error(`\n❌ Server error:`, err);
+    process.exit(1);
+  }
+});
+
 server.listen(config.port, () => {
   startBot();
   console.log(`
