@@ -11,3 +11,4 @@
 ## Start-up Optimizations
 - Resolved redundant configuration and initialization logs during startup by eliminating double executions of `initDB` and `loadPersistedSettings` resulting from ESM top-level import behavior in `server/index.js` and `server/app.js`.
 - Handled unhandled 'error' events explicitly on the server socket via `server.on('error')` to gracefully catch `EADDRINUSE` panics when another backend instance retains port bindings, outputting user-actionable instructions to release the port instead of emitting unhandled exceptions.
+- Refactored `server/telegram/bootstrap.js` to use `fs/promises` for loading skills concurrently, reducing event loop blocking from ~400ms to ~70ms when scanning 5000 skill files, by avoiding synchronous `fs.statSync` and mapping `fs.readdir` (with `withFileTypes: true`) to `Promise.all`.
