@@ -1,10 +1,14 @@
 import os from 'os';
 import { execSync } from 'child_process';
 import config from '../config.js';
-import { readFileSync, existsSync, readdirSync } from 'fs';
+import { existsSync } from 'fs';
+import fsPromises from 'fs/promises';
 import { join } from 'path';
 
+let cachedSystemInfo = null;
+
 function getSystemInfo() {
+  if (cachedSystemInfo) return cachedSystemInfo;
   try {
     const info = {
       hostname: os.hostname(),
@@ -37,6 +41,7 @@ function getSystemInfo() {
       } catch {}
     }
 
+    cachedSystemInfo = info;
     return info;
   } catch {
     return { hostname: 'unknown', platform: os.platform(), user: 'unknown' };
@@ -46,44 +51,48 @@ function getSystemInfo() {
 /**
  * Load skill manifests from workspace/skills
  */
-function getAvailableSkills() {
+async function getAvailableSkills() {
   try {
     const skillsDir = join(config.workspace, 'skills');
     if (!existsSync(skillsDir)) return [];
-    const entries = readdirSync(skillsDir, { withFileTypes: true });
-    return entries.filter(e => e.isDirectory()).map(e => {
+    const entries = await fsPromises.readdir(skillsDir, { withFileTypes: true });
+    const promises = entries.filter(e => e.isDirectory()).map(async e => {
       const metaPath = join(skillsDir, e.name, 'skill.json');
       if (existsSync(metaPath)) {
         try {
-          const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
-          return `- ${meta.name || e.name}: ${meta.description || 'No description'}`;
+          const metaStr = await fsPromises.readFile(metaPath, 'utf8');
+          const meta = JSON.parse(metaStr);
+          return `- **${meta.name || e.name}**: ${meta.description || 'No description'}`;
         } catch {}
       }
-      return `- ${e.name}`;
+      return `- **${e.name}**`;
     });
+    return await Promise.all(promises);
   } catch { return []; }
 }
 
 /**
  * Load execution trace summaries for meta-optimization
  */
-function getRecentTraces() {
+async function getRecentTraces() {
   try {
     const tracesDir = join(config.workspace, '.traces');
     if (!existsSync(tracesDir)) return '';
-    const files = readdirSync(tracesDir).sort().slice(-5);
-    return files.map(f => {
+    const files = (await fsPromises.readdir(tracesDir)).sort().slice(-5);
+    const tracePromises = files.map(async f => {
       try {
-        return readFileSync(join(tracesDir, f), 'utf8').substring(0, 500);
+        const data = await fsPromises.readFile(join(tracesDir, f), 'utf8');
+        return data.substring(0, 500);
       } catch { return ''; }
-    }).filter(Boolean).join('\n---\n');
+    });
+    const traces = await Promise.all(tracePromises);
+    return traces.filter(Boolean).join('\n---\n');
   } catch { return ''; }
 }
 
-export function buildSystemPrompt(sessionContext = "") {
+export async function buildSystemPrompt(sessionContext = "") {
   const sys = getSystemInfo();
-  const skills = getAvailableSkills();
-  const traces = getRecentTraces();
+  const [skills, traces] = await Promise.all([getAvailableSkills(), getRecentTraces()]);
 
   const basePrompt = `You are PHANTOM — an elite AI-powered pentesting and red teaming command center. You run locally on the operator's machine with full system access and unlimited tool iterations.
 
