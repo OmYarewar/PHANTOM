@@ -128,3 +128,14 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - Fixed unhandled node process exception when port 1337 is blocked.
 - Fixed duplicate logs printed during startup by modifying server/index.js.
 - Tests passing.
+
+## Optimize detectPackageManager with Async/Parallel Execution
+**Date**: $(date +"%Y-%m-%d")
+- **Decisions**:
+  - The `detectPackageManager` function in `server/tools/executor.js` was running synchronously, blocking the Node.js event loop with up to 4 sequential `execSync` calls.
+  - Rewrote the function to be asynchronous and use `exec` from `child_process` promisified as `execAsync`.
+  - Executed all checks concurrently using `Promise.all` while maintaining the prioritized order (apt, pacman, yum, dnf).
+  - Updated the caller function `installTool` to use `await detectPackageManager()`.
+- **Performance Impact**: Benchmark scripts showed a reduction in execution time from ~26ms down to ~21ms locally, and more importantly, transformed a blocking, sequential workload into a non-blocking, parallel workload, improving server responsiveness.
+- **Files Changed**: `server/tools/executor.js`
+- **Test Status**: `npm test` executed and all 44 tests passed. Syntax validation and local benchmarks successful.
