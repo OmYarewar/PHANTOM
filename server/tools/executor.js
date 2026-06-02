@@ -1,8 +1,11 @@
-import { spawn, execSync } from 'child_process';
+import { spawn, execSync, exec } from 'child_process';
 import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
 import { dirname, resolve, join } from 'path';
+import util from 'util';
 import os from 'os';
+
+const execAsync = util.promisify(exec);
 import { saveMemory, searchMemories, searchConversations, createConversation } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
 import config from '../config.js';
@@ -402,7 +405,7 @@ async function writeFileContent({ path: filePath, content, append = false }) {
 async function installTool({ name, method = 'auto', source }) {
   // Detect package manager if auto
   if (method === 'auto') {
-    method = detectPackageManager();
+    method = await detectPackageManager();
   }
 
   const sudoPass = getSetting('sudo_password', '');
@@ -449,24 +452,23 @@ async function installTool({ name, method = 'auto', source }) {
   return await executeCommand({ command: cmd, timeout: 300 });
 }
 
-function detectPackageManager() {
+async function detectPackageManager() {
   try {
-    execSync('which apt-get 2>/dev/null');
+    const checks = [
+      execAsync('which apt-get 2>/dev/null').then(() => 'apt').catch(() => null),
+      execAsync('which pacman 2>/dev/null').then(() => 'pacman').catch(() => null),
+      execAsync('which yum 2>/dev/null').then(() => 'yum').catch(() => null),
+      execAsync('which dnf 2>/dev/null').then(() => 'yum').catch(() => null)
+    ];
+
+    const results = await Promise.all(checks);
+    for (const res of results) {
+      if (res) return res;
+    }
     return 'apt';
-  } catch {}
-  try {
-    execSync('which pacman 2>/dev/null');
-    return 'pacman';
-  } catch {}
-  try {
-    execSync('which yum 2>/dev/null');
-    return 'yum';
-  } catch {}
-  try {
-    execSync('which dnf 2>/dev/null');
-    return 'yum';
-  } catch {}
-  return 'apt'; // default
+  } catch {
+    return 'apt';
+  }
 }
 
 /**
