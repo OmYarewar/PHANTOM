@@ -37,7 +37,7 @@ export async function processMessage(conversationId, userMessage, sessionContext
 
   // Build messages array
   const messages = [
-    { role: 'system', content: buildSystemPrompt(sessionContext) },
+    { role: 'system', content: await buildSystemPrompt(sessionContext) },
   ];
 
   // Add memory context
