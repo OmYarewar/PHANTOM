@@ -128,3 +128,10 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - Fixed unhandled node process exception when port 1337 is blocked.
 - Fixed duplicate logs printed during startup by modifying server/index.js.
 - Tests passing.
+## Session: Performance Optimization
+- **Goal**: Optimize `server/ai/system-prompt.js:22` to remove `execSync` execution.
+- **Fix**: Replaced shell executions (`cat`, `uname`, and `which`) with `fs.readFileSync`, `os.release()`, and `fs.existsSync` against `process.env.PATH`.
+- **Files Modified**: `server/ai/system-prompt.js`
+- **Testing**: Ran `vitest` and benchmark scripts (reduced execution time from ~250ms to ~2ms).
+- **Status**: Completed and committed.
+- **Commit**: $(git rev-parse HEAD)
