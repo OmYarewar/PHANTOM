@@ -1,4 +1,5 @@
-import fs from 'fs';
+
+import fsPromises from 'fs/promises';
 import path from 'path';
 import { recallMemory } from '../memory/store.js';
 
@@ -34,67 +35,69 @@ export async function bootstrapSession() {
 async function loadSkills() {
   const skillsDir = path.resolve(process.cwd(), 'skills');
 
-  if (!fs.existsSync(skillsDir)) {
+  try {
+    await fsPromises.access(skillsDir);
+  } catch {
     return [];
   }
 
-  const entries = fs.readdirSync(skillsDir);
-  const skills = [];
+  const entries = await fsPromises.readdir(skillsDir, { withFileTypes: true });
 
-  for (const entry of entries) {
-    const fullPath = path.join(skillsDir, entry);
-    const stat = fs.statSync(fullPath);
+  const skillPromises = entries.map(async (dirent) => {
+    const fullPath = path.join(skillsDir, dirent.name);
 
     try {
-      if (stat.isDirectory()) {
-        // Skill folder — look for skill.json or README.md inside
+      if (dirent.isDirectory()) {
         const metaPath = path.join(fullPath, 'skill.json');
         const readmePath = path.join(fullPath, 'README.md');
 
-        if (fs.existsSync(metaPath)) {
-          const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-          skills.push({
-            name: meta.name || entry,
+        try {
+          const metaContent = await fsPromises.readFile(metaPath, 'utf8');
+          const meta = JSON.parse(metaContent);
+          return {
+            name: meta.name || dirent.name,
             description: meta.description || 'No description',
             version: meta.version || '1.0.0',
             type: 'folder',
-          });
-        } else if (fs.existsSync(readmePath)) {
-          const lines = fs.readFileSync(readmePath, 'utf8').split('\n');
-          const name = lines[0].replace(/^#+\s*/, '').trim() || entry;
-          const description = lines.find(l => l.trim() && !l.startsWith('#')) || 'No description';
-          skills.push({ name, description: description.trim(), type: 'folder' });
-        } else {
-          skills.push({ name: entry, description: 'Skill folder', type: 'folder' });
+          };
+        } catch {
+          // If skill.json fails, try README.md
+          try {
+            const readmeContent = await fsPromises.readFile(readmePath, 'utf8');
+            const lines = readmeContent.split('\n');
+            const name = lines[0].replace(/^#+\s*/, '').trim() || dirent.name;
+            const description = lines.find(l => l.trim() && !l.startsWith('#')) || 'No description';
+            return { name, description: description.trim(), type: 'folder' };
+          } catch {
+             // If both fail, return generic folder
+             return { name: dirent.name, description: 'Skill folder', type: 'folder' };
+          }
         }
-      } else if (entry.endsWith('.json')) {
-        const meta = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-        skills.push({
-          name: meta.name || entry.replace('.json', ''),
+      } else if (dirent.name.endsWith('.json')) {
+        const metaContent = await fsPromises.readFile(fullPath, 'utf8');
+        const meta = JSON.parse(metaContent);
+        return {
+          name: meta.name || dirent.name.replace('.json', ''),
           description: meta.description || 'No description',
           version: meta.version || '1.0.0',
           type: 'json',
-        });
-      } else if (entry.endsWith('.zip')) {
-        skills.push({
-          name: entry.replace('.zip', ''),
+        };
+      } else if (dirent.name.endsWith('.zip')) {
+        return {
+          name: dirent.name.replace('.zip', ''),
           description: 'Packaged skill',
           type: 'zip',
-        });
+        };
       }
     } catch (err) {
-      // Unreadable skill — include with error note
-      skills.push({ name: entry, description: `Could not read: ${err.message}`, type: 'unknown' });
+      return { name: dirent.name, description: `Could not read: ${err.message}`, type: 'unknown' };
     }
-  }
+  });
 
-  return skills;
+  const skills = await Promise.all(skillPromises);
+  return skills.filter(Boolean);
 }
 
-/**
- * Loads the most recent memories from the SQLite store.
- * Gets up to 30 most recent entries — enough context without bloating the prompt.
- */
 async function loadMemories() {
   try {
     // Use the existing recallMemory function with a broad query
