@@ -16,7 +16,7 @@ import { promisify } from 'util';
 import { readdirSync, statSync, rmSync, mkdirSync, existsSync, readFileSync } from 'fs';
 
 const execAsync = promisify(exec);
-import { join, basename } from 'path';
+import { join, basename, resolve, sep } from 'path';
 import multer from 'multer';
 import { startBot, stopBot, getBotStatus } from '../telegram/bot.js';
 import AdmZip from 'adm-zip';
@@ -328,7 +328,16 @@ router.post('/skills/upload', upload.single('file'), (req, res) => {
       return res.status(400).json({ error: 'Invalid skill name' });
     }
 
-    const extractTo = join(skillsDir, skillName);
+    const extractTo = resolve(join(skillsDir, skillName));
+
+    // Check for Zip Slip vulnerability
+    for (const entry of entries) {
+      const entryPath = resolve(extractTo, entry.entryName);
+      if (!entryPath.startsWith(extractTo + sep)) {
+        return res.status(400).json({ error: 'Malicious zip file detected: Invalid path' });
+      }
+    }
+
     if (!existsSync(extractTo)) mkdirSync(extractTo, { recursive: true });
     zip.extractAllTo(extractTo, true);
     // Cleanup temp file

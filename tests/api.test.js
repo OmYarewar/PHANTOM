@@ -120,4 +120,25 @@ describe('API Routes', () => {
     expect(res2.status).toBe(400);
   });
 
+
+  it('POST /api/skills/upload should reject zip files containing path traversal (Zip Slip)', async () => {
+    const res = await request(app)
+      .post('/api/skills/upload')
+      .set('X-Forwarded-For', testIp)
+      .attach('file', 'tests/evil.zip');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Malicious zip file detected: Invalid path');
+  });
+
+  it('POST /api/skills/upload should accept safe zip files', async () => {
+    const res = await request(app)
+      .post('/api/skills/upload')
+      .set('X-Forwarded-For', testIp)
+      .attach('file', 'tests/safe.zip');
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.name).toBe('safe');
+  });
 });

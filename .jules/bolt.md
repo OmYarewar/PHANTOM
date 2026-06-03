@@ -11,3 +11,5 @@
 ## Start-up Optimizations
 - Resolved redundant configuration and initialization logs during startup by eliminating double executions of `initDB` and `loadPersistedSettings` resulting from ESM top-level import behavior in `server/index.js` and `server/app.js`.
 - Handled unhandled 'error' events explicitly on the server socket via `server.on('error')` to gracefully catch `EADDRINUSE` panics when another backend instance retains port bindings, outputting user-actionable instructions to release the port instead of emitting unhandled exceptions.
+
+- Added security fix for Zip Slip vulnerability in ZIP file upload handler by thoroughly validating absolute resolved path bounds.
