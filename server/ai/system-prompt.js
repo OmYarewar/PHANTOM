@@ -1,8 +1,7 @@
 import os from 'os';
-import { execSync } from 'child_process';
 import config from '../config.js';
 import { readFileSync, existsSync, readdirSync } from 'fs';
-import { join } from 'path';
+import path, { join } from 'path';
 
 function getSystemInfo() {
   try {
@@ -19,10 +18,12 @@ function getSystemInfo() {
 
     if (os.platform() === 'linux') {
       try {
-        info.distro = execSync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }).trim();
+        const releaseContent = readFileSync('/etc/os-release', 'utf8');
+        const match = releaseContent.match(/^PRETTY_NAME="?(.*?)"?$/m);
+        info.distro = match && match[1] ? match[1] : 'Linux';
       } catch { info.distro = 'Linux'; }
       try {
-        info.kernel = execSync('uname -r', { encoding: 'utf8' }).trim();
+        info.kernel = os.release();
       } catch {}
     }
 
@@ -30,11 +31,14 @@ function getSystemInfo() {
       'hashcat', 'masscan', 'gobuster', 'ffuf', 'nuclei', 'subfinder', 'httpx',
       'msfconsole', 'searchsploit', 'wireshark', 'aircrack-ng', 'netcat', 'socat', 'tcpdump'];
     info.installed_tools = [];
+    const paths = (process.env.PATH || '').split(path.delimiter);
     for (const tool of tools) {
-      try {
-        execSync(`which ${tool} 2>/dev/null`, { encoding: 'utf8' });
-        info.installed_tools.push(tool);
-      } catch {}
+      for (const p of paths) {
+        if (existsSync(path.join(p, tool))) {
+          info.installed_tools.push(tool);
+          break;
+        }
+      }
     }
 
     return info;

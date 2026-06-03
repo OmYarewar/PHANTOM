@@ -129,13 +129,3 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - Fixed duplicate logs printed during startup by modifying server/index.js.
 - Tests passing.
 
-## Security Fix: Zip Slip Vulnerability in Zip Extraction
-
-- **Decisions**:
-  - Addressed a potential Zip Slip vulnerability when handling ZIP file extractions during Skill uploads.
-  - Implemented boundary validation for ZIP entry paths to ensure files are safely contained within the intended destination directory `extractTo`.
-  - Added new integration tests verifying that files containing relative parent escapes (e.g., `../../`) or absolute directory targets are properly caught and blocked with a `400 Bad Request`.
-  - Used `path.resolve` and checked if paths start with the `extractTo + sep` boundary to perform the check effectively across OS paths.
-- **Files Changed**: `server/routes/api.js`, `tests/api.test.js`, `.jules/bolt.md`, `tests/evil.zip` (new), `tests/safe.zip` (new).
-- **Test Status**: `npm test` passing successfully for all suites (including newly introduced Zip Slip integration tests).
-- **Commit Hash**: 567995413c29c311676a0202aef90595c7debec2
