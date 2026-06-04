@@ -81,7 +81,7 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 *   **Commit:** fix(telegram): hardened MarkdownV2 escaping, added typing indicators, batched tool updates and parallel chunk sending
 
 
-## [$(date +"%Y-%m-%d")] Session Bootstrap Step Added
+## [2026-06-04] Session Bootstrap Step Added
 - Implemented a session bootstrap step for the Telegram bot.
 - Created `server/telegram/bootstrap.js` to load skills from the `skills/` directory and memories from SQLite store via `recallMemory`.
 - Updated `server/memory/store.js` to add an overloaded `recallMemory` function supporting `limit` and `orderBy` options.
@@ -113,7 +113,7 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 **Tests:** 44 passed / 2 added
 **Commits:** Pending
 
-## $(date +"%Y-%m-%d") - Fix AI Thought Process Error & UI
+## 2026-06-04 - Fix AI Thought Process Error & UI
 - **Decisions:**
   - Fixed an argument mismatch in `processMessage` calls (`server/index.js`, `server/tools/executor.js`) which caused `onThinking` to map to `abortSignal`, leading to `LLM Error: onThinking is not a function`. Passed `null` for the missing `sessionContext`.
   - Improved the UI for the thought process by converting it to use `<details>` and `<summary>` elements, making it collapsible natively.
@@ -130,7 +130,7 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - Tests passing.
 
 
-## [$(date +"%Y-%m-%d")] — Session X
+## [2026-06-04] — Session X
 **What I decided to work on:** I noticed a missing security boundary test and a potential XSS vulnerability where URL-encoded payloads like `javascript%3A` could bypass the markdown parser's `javascript:` link filter. I chose to implement this security hardening.
 **What I built/fixed:**
 - Added `decodeURIComponent` in `frontend/js/markdown.js` to correctly decode and block malicious protocols even if they are URL-encoded.
@@ -140,4 +140,10 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `frontend/js/markdown.js`
 - `tests/markdown.test.js`
 **Tests:** 51 passed / 5 added
+**Commits:** Pending
+## [2026-06-04] — Accessibility improvements
+**What I decided to work on:** I noticed a learning from `.jules/palette.md` where form labels and icon-only buttons in hidden panels lack `aria-label`s. Specifically, I found two buttons related to Telegram Bot configuration in `frontend/index.html` were missing accessibility attributes.
+**What I built/fixed:** Added `aria-label` for `#toggle-telegram-token` and `#save-telegram-btn` to improve screen-reader accessibility for the Telegram settings configuration inside the Settings hidden panel.
+**Files changed:** `frontend/index.html`
+**Tests:** 51 passed / 0 added
 **Commits:** Pending
