@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import app from '../server/app.js';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('API Auth Middleware', () => {
   const originalToken = process.env.API_TOKEN;
+  let testIp;
 
   beforeEach(() => {
     process.env.API_TOKEN = 'test-secret-token';
+    // Use valid IP strings instead of generic UUID to prevent express-rate-limit ERR_ERL_INVALID_IP_ADDRESS
+    testIp = `192.168.1.${Math.floor(Math.random() * 255)}`;
   });
 
   afterEach(() => {
@@ -18,33 +22,38 @@ describe('API Auth Middleware', () => {
   });
 
   it('should return 401 when API_TOKEN is set but no token provided', async () => {
-    const res = await request(app).get('/api/settings');
+    const res = await request(app).get('/api/settings').set('X-Forwarded-For', testIp);
     expect(res.status).toBe(401);
   });
 
   it('should return 401 when API_TOKEN is set but wrong token provided', async () => {
-    const res = await request(app).get('/api/settings').set('Authorization', 'Bearer wrong-token');
+    const res = await request(app).get('/api/settings').set('Authorization', 'Bearer wrong-token').set('X-Forwarded-For', testIp);
     expect(res.status).toBe(401);
   });
 
   it('should allow access when API_TOKEN is set and correct token provided', async () => {
     // we just need it to bypass the auth middleware, returning 200 or whatever the route does
     // since initDB isn't called here, we might get 500, but we shouldn't get 401
-    const res = await request(app).get('/api/system/info').set('Authorization', 'Bearer test-secret-token');
+    const res = await request(app).get('/api/system/info').set('Authorization', 'Bearer test-secret-token').set('X-Forwarded-For', testIp);
     expect(res.status).not.toBe(401);
   });
 });
 
 describe('Security Middlewares', () => {
+  let testIp;
+  beforeEach(() => {
+    testIp = `192.168.1.${Math.floor(Math.random() * 255)}`;
+  });
+
   it('should include helmet security headers', async () => {
-    const res = await request(app).get('/api/settings');
+    const res = await request(app).get('/api/settings').set('X-Forwarded-For', testIp);
     expect(res.headers['x-powered-by']).toBeUndefined(); // Helmet removes this by default
     expect(res.headers['x-frame-options']).toBe('SAMEORIGIN'); // Helmet sets this
     expect(res.headers['x-content-type-options']).toBe('nosniff'); // Helmet sets this
   });
 
   it('should enforce rate limiting on /api routes', async () => {
-    const rateLimitIp = '192.168.1.2'; // Use a distinct IP for this test
+    const rateLimitIp = testIp; // Use a distinct IP for this test
     // Make 100 requests (the limit)
     for (let i = 0; i < 100; i++) {
       await request(app).get('/api/settings').set('X-Forwarded-For', rateLimitIp);
@@ -58,7 +67,6 @@ describe('Security Middlewares', () => {
 });
 
 import { initDB, closeDB } from '../server/memory/store.js';
-import { v4 as uuidv4 } from 'uuid';
 
 describe('API Routes', () => {
   const originalToken = process.env.API_TOKEN;
@@ -67,7 +75,7 @@ describe('API Routes', () => {
   beforeEach(() => {
     delete process.env.API_TOKEN;
     initDB(':memory:');
-    testIp = uuidv4();
+    testIp = `192.168.1.${Math.floor(Math.random() * 255)}`;
   });
 
   afterEach(() => {
