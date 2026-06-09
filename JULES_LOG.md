@@ -158,3 +158,10 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 **Files changed:** `frontend/js/toast.js`, `frontend/js/main.js`, `frontend/css/styles.css`, `frontend/js/management.js`, `frontend/js/app.js`.
 **Tests:** 51 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-06] — Fix Test Flakiness / Security Tests State Leaks
+**What I decided to work on:** Based on log review and test execution, there was a test state leakage due to rate limit constraints during security middleware tests. Express-rate-limit tracks usage globally based on IP, and the tests were re-using a single `uuidv4()` string and later failing with `ERR_ERL_INVALID_IP_ADDRESS` validation errors from the package.
+**What I built/fixed:** Updated the testing suites (`tests/api.test.js`) to generate unique, valid IPv4 string headers (`192.168.1.X`) per test by randomizing the last octet. Bound it explicitly in Supertest instances using `set('X-Forwarded-For')`. This bypassed the invalid UUID crashes and isolated tests effectively.
+**Files changed:** `tests/api.test.js`
+**Tests:** 51 passed / 0 added
+**Commits:** Pending
