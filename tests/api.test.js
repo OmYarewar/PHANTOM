@@ -108,7 +108,10 @@ describe('API Routes', () => {
   });
 
   it('POST /api/conversations should create a conversation and return its id', async () => {
-    const res = await request(app).post('/api/conversations').set('X-Forwarded-For', testIp).send({ title: 'Test Conv' });
+    // We must use a unique IP for this test to avoid hitting the global rate limit
+    // established by previous tests if they ran too many requests.
+    const uniqueTestIp = `192.168.2.${Math.floor(Math.random() * 255)}`;
+    const res = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'Test Conv' });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('id');
     expect(res.body.title).toBe('Test Conv');
