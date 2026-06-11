@@ -612,7 +612,11 @@
   });
 
   sidebarToggle?.addEventListener('click', () => {
-    sidebar.classList.toggle('open');
+    if (window.innerWidth <= 768) {
+      sidebar.classList.toggle('open');
+    } else {
+      document.getElementById('app').classList.toggle('sidebar-collapsed');
+    }
   });
 
   function autoResize() {
