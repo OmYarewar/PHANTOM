@@ -78,21 +78,33 @@ window.Chat = {
     this._userScrolled = false; // reset on new user message
     const el = document.createElement('div');
     el.className = 'message user';
+
+    // Add user message content container
+    const contentEl = document.createElement('div');
     if (imageDataUrl) {
       const img = document.createElement('img');
       img.src = imageDataUrl;
       img.className = 'msg-image';
       img.alt = 'Uploaded image';
-      el.appendChild(img);
+      contentEl.appendChild(img);
       if (content) {
         const textEl = document.createElement('div');
         textEl.textContent = content;
         textEl.style.marginTop = '8px';
-        el.appendChild(textEl);
+        contentEl.appendChild(textEl);
       }
     } else {
-      el.textContent = content;
+      contentEl.textContent = content;
     }
+    el.appendChild(contentEl);
+
+    // Add timestamp
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const footerEl = document.createElement('div');
+    footerEl.className = 'message-footer user';
+    footerEl.innerHTML = `<span class="message-timestamp">${timeStr}</span>`;
+    el.appendChild(footerEl);
+
     this.messagesEl.appendChild(el);
     this.scrollToBottom(true);
   },
@@ -262,6 +274,25 @@ window.Chat = {
       // Final full render
       if (this.renderedContent || this.currentContent) {
         this.currentAssistantEl.innerHTML = window.renderMarkdown(this.renderedContent || this.currentContent);
+
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const footerEl = document.createElement('div');
+        footerEl.className = 'message-footer assistant';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'message-copy-btn';
+        copyBtn.innerHTML = '📋 Copy';
+        const textToCopy = this.renderedContent || this.currentContent;
+        copyBtn.onclick = () => window.copyText(textToCopy, copyBtn);
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'message-timestamp';
+        timeSpan.textContent = timeStr;
+
+        footerEl.appendChild(timeSpan);
+        footerEl.appendChild(copyBtn);
+
+        this.currentAssistantEl.appendChild(footerEl);
       }
     }
 
@@ -367,7 +398,17 @@ window.Chat = {
       if (msg.role === 'user') {
         const el = document.createElement('div');
         el.className = 'message user';
-        el.textContent = msg.content;
+
+        const contentEl = document.createElement('div');
+        contentEl.textContent = msg.content;
+        el.appendChild(contentEl);
+
+        const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const footerEl = document.createElement('div');
+        footerEl.className = 'message-footer user';
+        if (timeStr) footerEl.innerHTML = `<span class="message-timestamp">${timeStr}</span>`;
+        el.appendChild(footerEl);
+
         this.messagesEl.appendChild(el);
       } else if (msg.role === 'assistant') {
         if (msg.content) {
@@ -386,6 +427,27 @@ window.Chat = {
             const el = document.createElement('div');
             el.className = 'message assistant';
             el.innerHTML = window.renderMarkdown(displayContent);
+
+            const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            const footerEl = document.createElement('div');
+            footerEl.className = 'message-footer assistant';
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'message-copy-btn';
+            copyBtn.innerHTML = '📋 Copy';
+            const textToCopy = displayContent;
+            copyBtn.onclick = () => window.copyText(textToCopy, copyBtn);
+
+            if (timeStr) {
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'message-timestamp';
+                timeSpan.textContent = timeStr;
+                footerEl.appendChild(timeSpan);
+            }
+
+            footerEl.appendChild(copyBtn);
+            el.appendChild(footerEl);
+
             this.messagesEl.appendChild(el);
           }
         }

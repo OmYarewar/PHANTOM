@@ -95,3 +95,13 @@ window.copyCode = function(id) {
     }
   });
 };
+
+window.copyText = function(text, btnElement) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (btnElement) {
+      const orig = btnElement.innerHTML;
+      btnElement.innerHTML = 'Copied!';
+      setTimeout(() => { btnElement.innerHTML = orig; }, 1500);
+    }
+  });
+};

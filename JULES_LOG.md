@@ -165,3 +165,13 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 **Files changed:** `tests/api.test.js`
 **Tests:** 51 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-09] — Add Message Timestamps and Copy Button
+**What I decided to work on:** I decided to add message timestamps and a copy button for AI messages to improve the user experience on the frontend chat interface, based on the suggestions in the instructions.
+**What I built/fixed:** Added a `window.copyText` function in `frontend/js/markdown.js` to handle text copying. Modified `frontend/js/chat.js` to render timestamps for both user and assistant messages, and added a copy button to the assistant messages. Added corresponding CSS styles in `frontend/css/styles.css` to properly position and style the message footer. Addressed a bug where the footer was unconditionally appended to empty AI messages (e.g. during errors) by ensuring the footer is only appended when the assistant message has content.
+**Files changed:**
+- `frontend/js/markdown.js`
+- `frontend/js/chat.js`
+- `frontend/css/styles.css`
+**Tests:** 51 passed / 0 added
+**Commits:** Pending
