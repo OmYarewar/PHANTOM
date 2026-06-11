@@ -175,3 +175,16 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `frontend/css/styles.css`
 **Tests:** 51 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-11] — Session UI
+**What I decided to work on:** I noticed that the sidebar could only be toggled or collapsed on mobile view (`.mobile-only` class on the toggle button). As suggested in the UI/UX Improvement category, I decided to implement a "collapsible sidebar for conversation history" on desktop to allow the main chat area to utilize the full screen width.
+**What I built/fixed:**
+- Removed `.mobile-only` from the sidebar toggle button `#sidebar-toggle` in `frontend/index.html`.
+- Updated `frontend/js/app.js` to handle click events on the toggle button differently based on window width: it toggles the `.open` class on mobile and the `.sidebar-collapsed` class on the `#app` container on desktop.
+- Added a `@media (min-width: 769px)` block in `frontend/css/styles.css` with a negative margin-left on `.sidebar` when `.sidebar-collapsed` is active to smoothly transition the sidebar out of view, and added `margin-left` to the sidebar's CSS transitions.
+**Files changed:**
+- `frontend/index.html`
+- `frontend/css/styles.css`
+- `frontend/js/app.js`
+**Tests:** 51 passed / 0 added
+**Commits:** Pending
