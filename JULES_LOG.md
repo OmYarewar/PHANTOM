@@ -175,3 +175,16 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `frontend/css/styles.css`
 **Tests:** 51 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-13] — Session N+1
+**What I decided to work on:** I noticed that the sidebar toggle button was hidden on desktop, and there was no way to collapse the sidebar to gain more space for the main chat interface on larger screens.
+**What I built/fixed:**
+- Removed the `mobile-only` class from the `#sidebar-toggle` button in `frontend/index.html`.
+- Added a transition for `margin-left` and implemented the collapsed state in `frontend/css/styles.css` using a negative `margin-left` for the sidebar when the `.sidebar-collapsed` class is applied to `#app` on desktop displays.
+- Modified the sidebar toggle logic in `frontend/js/app.js` to correctly handle both mobile (`.open` class on sidebar) and desktop (`.sidebar-collapsed` class on `#app`) scenarios.
+**Files changed:**
+- `frontend/index.html`
+- `frontend/css/styles.css`
+- `frontend/js/app.js`
+**Tests:** 51 passed / 0 added
+**Commits:** Pending
