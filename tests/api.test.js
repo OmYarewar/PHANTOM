@@ -117,6 +117,29 @@ describe('API Routes', () => {
     expect(res.body.title).toBe('Test Conv');
   });
 
+  it('GET /api/conversations/:id/export should export conversation to markdown', async () => {
+    const uniqueTestIp = `192.168.3.${Math.floor(Math.random() * 255)}`;
+
+    // Create conversation
+    const convRes = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'Export Test' });
+    const convId = convRes.body.id;
+
+    // Add some messages manually to test the export formatting via store.js
+    const { addMessage } = await import('../server/memory/store.js');
+    addMessage(convId, { role: 'user', content: 'Hello' });
+    addMessage(convId, { role: 'assistant', content: 'World' });
+
+    const res = await request(app).get(`/api/conversations/${convId}/export`).set('X-Forwarded-For', uniqueTestIp);
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/markdown');
+    expect(res.headers['content-disposition']).toContain('attachment; filename=phantom_export_');
+    expect(res.text).toContain('# Export Test');
+    expect(res.text).toContain('## 👤 User');
+    expect(res.text).toContain('Hello');
+    expect(res.text).toContain('## 👻 PHANTOM');
+    expect(res.text).toContain('World');
+  });
+
   it('GET /api/system/info should return 200', async () => {
     const res = await request(app).get('/api/system/info').set('X-Forwarded-For', testIp);
     expect(res.status).toBe(200);

@@ -188,3 +188,18 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `frontend/js/app.js`
 **Tests:** 51 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-15] — Add Export Conversation Feature
+**What I decided to work on:** I decided to add a New Feature to allow users to export their conversations to a Markdown file. This is highly valuable for penetration testers who need to generate reports from their findings. I also noticed that adding this functionality was missing but easily achievable using existing conversation history data.
+**What I built/fixed:**
+- Added a `GET /api/conversations/:id/export` API endpoint in `server/routes/api.js` to format a given conversation history as a well-structured Markdown string. It forces a file download by setting the `Content-disposition` header.
+- Added an "Export" button in `frontend/index.html` inside the `.top-bar-actions` area to make it easily accessible.
+- Wired the button in `frontend/js/app.js` to open the export URL for the currently active conversation.
+- Added integration test coverage for the export endpoint in `tests/api.test.js`.
+**Files changed:**
+- `server/routes/api.js`
+- `frontend/index.html`
+- `frontend/js/app.js`
+- `tests/api.test.js`
+**Tests:** 52 passed / 1 added
+**Commits:** Pending

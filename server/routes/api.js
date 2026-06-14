@@ -111,6 +111,46 @@ router.put('/conversations/:id/title', (req, res) => {
   res.json({ success: true });
 });
 
+router.get('/conversations/:id/export', (req, res) => {
+  const conv = getConversation(req.params.id);
+  if (!conv) return res.status(404).json({ error: 'Conversation not found' });
+  const messages = getMessages(req.params.id);
+
+  let markdown = `# ${conv.title}\n\n`;
+  markdown += `*Exported on ${new Date().toLocaleString()}*\n\n---\n\n`;
+
+  messages.forEach(msg => {
+    if (msg.role === 'user') {
+      markdown += `## 👤 User\n\n${msg.content}\n\n`;
+    } else if (msg.role === 'assistant') {
+      if (msg.content) {
+        markdown += `## 👻 PHANTOM\n\n${msg.content}\n\n`;
+      }
+      if (msg.tool_calls) {
+        try {
+          const calls = typeof msg.tool_calls === 'string' ? JSON.parse(msg.tool_calls) : msg.tool_calls;
+          calls.forEach(c => {
+            const argsStr = typeof c.args === 'object' ? JSON.stringify(c.args, null, 2) : c.args;
+            markdown += `> **🔧 Tool Call:** \`${c.name}\`\n> \`\`\`json\n> ${argsStr.replace(/\n/g, '\n> ')}\n> \`\`\`\n\n`;
+          });
+        } catch (e) {
+          // Ignore parsing errors for malformed tool_calls
+        }
+      }
+    } else if (msg.role === 'tool') {
+      let contentStr = msg.content;
+      if (typeof msg.content === 'object') {
+        contentStr = JSON.stringify(msg.content, null, 2);
+      }
+      markdown += `<details><summary><b>📋 Tool Result: ${msg.name}</b></summary>\n\n\`\`\`\n${contentStr}\n\`\`\`\n</details>\n\n`;
+    }
+  });
+
+  res.setHeader('Content-disposition', `attachment; filename=phantom_export_${conv.id.substring(0, 8)}.md`);
+  res.setHeader('Content-type', 'text/markdown; charset=utf-8');
+  res.send(markdown);
+});
+
 // ─── Tools ───
 router.get('/tools', (req, res) => {
   res.json(getToolDefinitions().map(t => ({

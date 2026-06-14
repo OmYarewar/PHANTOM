@@ -607,6 +607,17 @@
   stopBtn.addEventListener('click', stopAI);
   newChatBtn.addEventListener('click', newChat);
 
+  const exportBtn = document.getElementById('export-chat-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      if (!currentConversationId) {
+        window.Toast.show('No active conversation to export.', 'warning');
+        return;
+      }
+      window.open(`/api/conversations/${currentConversationId}/export`, '_blank');
+    });
+  }
+
   searchInput.addEventListener('input', () => {
     renderConversationList(searchInput.value);
   });
