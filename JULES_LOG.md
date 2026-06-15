@@ -210,3 +210,10 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 **Files changed:** None.
 **Tests:** 52 passed / 0 added
 **Commits:** None required.
+
+## [2026-06-15] — Fix better-sqlite3 build error on Node v26
+**What I decided to work on:** I noticed that the `npm install` command was failing on the user's machine due to a `better-sqlite3` build error when `node-gyp rebuild` was triggered. The issue was that the project specified `better-sqlite3: ^11.7.0`, which lacks support for the V8 API breaking changes introduced in Node.js v26.1.0.
+**What I built/fixed:** Updated `better-sqlite3` dependency in `package.json` to version `^12.10.1`, which contains the necessary compatibility updates for Node v26. Ran `npm install` and verified tests to ensure there were no regressions. Also properly moved `concurrently` to dependencies to resolve the earlier missing command error the user faced since `npm run dev` depends on it.
+**Files changed:** `package.json`, `package-lock.json`
+**Tests:** 52 passed / 0 added
+**Commits:** $(git rev-parse HEAD)
