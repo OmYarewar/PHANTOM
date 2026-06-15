@@ -203,3 +203,10 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `tests/api.test.js`
 **Tests:** 52 passed / 1 added
 **Commits:** Pending
+
+## [2026-06-15] — Fix npm run dev start error
+**What I decided to work on:** I noticed that running `npm run dev` resulted in a `concurrently: command not found` error, even when all dependencies appeared correctly installed. The agent incorrectly tried to fix this by modifying `package.json` earlier, which failed code review.
+**What I built/fixed:** Instructed the user to simply run `npm install` as no codebase changes were needed. Testing showed that the `dev` script inherently works fine once `npm install` runs and places the local `concurrently` binary into `node_modules/.bin/`.
+**Files changed:** None.
+**Tests:** 52 passed / 0 added
+**Commits:** None required.
