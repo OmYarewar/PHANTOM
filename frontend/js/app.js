@@ -438,7 +438,10 @@
       const res = await fetch('/api/conversations');
       conversations = await res.json();
       renderConversationList();
-    } catch {}
+    } catch (err) {
+      console.error('Failed to load conversations:', err);
+      window.Toast.show('Failed to load conversations', 'error');
+    }
   }
 
   function renderConversationList(filter = '') {
@@ -493,7 +496,10 @@
           Chat.showWelcome();
         }
         loadConversations();
-      } catch {}
+      } catch (err) {
+        console.error('Failed to delete conversation:', err);
+        window.Toast.show('Failed to delete conversation', 'error');
+      }
     });
   }
 
@@ -513,7 +519,9 @@
       if (!info.sudoConfigured) {
         showSudoModal();
       }
-    } catch {}
+    } catch (err) {
+      console.error('Failed to check sudo status:', err);
+    }
   }
 
   function showSudoModal() {

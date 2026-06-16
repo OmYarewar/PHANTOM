@@ -119,7 +119,10 @@ window.Management = {
       document.getElementById('mcp-name-input').value = '';
       document.getElementById('mcp-command-input').value = '';
       this.loadMCPServers();
-    } catch {} finally {
+    } catch (err) {
+      console.error('Failed to save MCP server:', err);
+      window.Toast.show('Failed to save MCP server', 'error');
+    } finally {
       saveBtn.disabled = false;
       cancelBtn.disabled = false;
       saveBtn.textContent = originalText;
@@ -131,7 +134,10 @@ window.Management = {
       try {
         await fetch(`/api/mcp/servers/${id}`, { method: 'DELETE' });
         this.loadMCPServers();
-      } catch {}
+      } catch (err) {
+        console.error('Failed to delete MCP server:', err);
+        window.Toast.show('Failed to delete MCP server', 'error');
+      }
     });
   },
 
@@ -191,7 +197,10 @@ window.Management = {
       try {
         await fetch(`/api/skills/${encodeURIComponent(name)}`, { method: 'DELETE' });
         this.loadSkills();
-      } catch {}
+      } catch (err) {
+        console.error('Failed to delete skill:', err);
+        window.Toast.show('Failed to delete skill', 'error');
+      }
     });
   },
 

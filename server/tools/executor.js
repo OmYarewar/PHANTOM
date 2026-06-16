@@ -115,7 +115,9 @@ async function writeSkill({ name, description, code, entry_point = 'script.py' }
     // Make script executable if it's sh or py
     try {
       execSync(`chmod +x ${escapeShellArg(join(skillsDir, entry_point))}`);
-    } catch {}
+    } catch (err) {
+      console.error(`[writeSkill] Error setting permissions for ${name}:`, err.message);
+    }
 
     // Write the skill manifest
     const manifest = {
@@ -748,11 +750,17 @@ async function editSourceCode({ file_path, content, description }) {
       const original = await rf(resolvedPath, 'utf8');
       const backupDir = join(config.workspace, '.backups');
       const { mkdirSync } = await import('fs');
-      try { mkdirSync(backupDir, { recursive: true }); } catch {}
+      try {
+        mkdirSync(backupDir, { recursive: true });
+      } catch (err) {
+        console.warn(`[editSourceCode] Failed to create .backups dir:`, err.message);
+      }
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const backupName = resolvedPath.replace(/\//g, '_').slice(1);
       await wf(join(backupDir, `${backupName}.${timestamp}.bak`), original, 'utf8');
-    } catch {}
+    } catch (err) {
+      console.warn(`[editSourceCode] Failed to backup file:`, err.message);
+    }
 
     await wf(resolvedPath, content, 'utf8');
     return `Source file edited: ${resolvedPath}\nDescription: ${description || 'No description'}\nNote: Restart may be needed for changes to take effect.`;
@@ -769,7 +777,11 @@ async function saveTrace({ task, approach, outcome, score, notes }) {
     const { writeFile: wf, mkdirSync: mkd } = await import('fs');
     const { writeFile: wfp } = await import('fs/promises');
     const tracesDir = join(config.workspace, '.traces');
-    try { mkd(tracesDir, { recursive: true }); } catch {}
+    try {
+      mkd(tracesDir, { recursive: true });
+    } catch (err) {
+      console.warn(`[saveTrace] Failed to create .traces dir:`, err.message);
+    }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const trace = {
