@@ -226,3 +226,16 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `server/ai/system-prompt.js`
 **Tests:** 52 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-16] — Add Error Catching
+**What I decided to work on:** I decided to perform a Bug Hunt focusing on unhandled promise rejections and potential errors from missing catch blocks in async functions across the Express backend and Vite frontend. I noticed that several asynchronous functions and promise handlers had empty catch blocks which can hide issues and fail silently.
+**What I built/fixed:**
+- Added `console.error` and `window.Toast.show` inside the empty `catch` blocks of `loadConversations`, `deleteConversation`, and `checkSudoStatus` in `frontend/js/app.js`.
+- Added `console.error` and `window.Toast.show` inside the empty `catch` blocks of `saveMCP`, `deleteMCP`, and `deleteSkill` in `frontend/js/management.js`.
+- Added `console.error` and `console.warn` inside the empty `catch` blocks of `writeSkill`, `editSourceCode`, and `saveTrace` in `server/tools/executor.js`.
+**Files changed:**
+- `frontend/js/app.js`
+- `frontend/js/management.js`
+- `server/tools/executor.js`
+**Tests:** 61 passed / 0 added
+**Commits:** Pending
