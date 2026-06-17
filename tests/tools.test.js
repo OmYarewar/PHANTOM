@@ -63,7 +63,7 @@ describe('Memory Store', () => {
     expect(results[0].category).toBe('Test');
     expect(results[0].key).toBe('test-key');
     expect(results[0].value).toBe('test-value');
-  });
+  }, 50000);
 });
 
 describe('validateUrlForSSRF', () => {

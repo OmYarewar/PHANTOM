@@ -239,3 +239,12 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `server/tools/executor.js`
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-16] — Fix Test Timeout
+**What I decided to work on:** I decided to investigate and fix the test failure causing the pipeline to fail (`Error: Test timed out in 5000ms`). The `save_memory and recall_memory should round-trip correctly` test in `tests/tools.test.js` was hitting the default 5000ms Vitest timeout because `saveMemory` uses the `@xenova/transformers` library to initialize the `all-MiniLM-L6-v2` model and generate vector embeddings on its first run, which frequently takes longer than 5 seconds.
+**What I built/fixed:**
+- Increased the test timeout to 50000ms by passing `50000` as the third argument to the `it` block in `tests/tools.test.js`.
+**Files changed:**
+- `tests/tools.test.js`
+**Tests:** 61 passed / 0 added
+**Commits:** Pending
