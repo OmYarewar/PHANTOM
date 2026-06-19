@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { executeTool, validateUrlForSSRF } from '../server/tools/executor.js';
+import { executeTool, validateUrlForSSRF, detectPackageManager } from '../server/tools/executor.js';
 import { initDB, closeDB, saveMemory, searchMemories } from '../server/memory/store.js';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -64,6 +64,14 @@ describe('Memory Store', () => {
     expect(results[0].key).toBe('test-key');
     expect(results[0].value).toBe('test-value');
   }, 50000);
+});
+
+describe('detectPackageManager', () => {
+  it('should correctly return the package manager', () => {
+    // Tests that the package manager detection works without erroring.
+    const pm = detectPackageManager();
+    expect(['apt', 'pacman', 'yum']).toContain(pm);
+  });
 });
 
 describe('validateUrlForSSRF', () => {

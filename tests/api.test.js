@@ -156,9 +156,10 @@ describe('API Routes', () => {
 
 
   it('POST /api/skills/upload should reject zip files containing path traversal (Zip Slip)', async () => {
+    const uniqueTestIp = `192.168.4.${Math.floor(Math.random() * 255)}`;
     const res = await request(app)
       .post('/api/skills/upload')
-      .set('X-Forwarded-For', testIp)
+      .set('X-Forwarded-For', uniqueTestIp)
       .attach('file', 'tests/evil.zip');
 
     expect(res.status).toBe(400);
@@ -166,9 +167,10 @@ describe('API Routes', () => {
   });
 
   it('POST /api/skills/upload should accept safe zip files', async () => {
+    const uniqueTestIp = `192.168.5.${Math.floor(Math.random() * 255)}`;
     const res = await request(app)
       .post('/api/skills/upload')
-      .set('X-Forwarded-For', testIp)
+      .set('X-Forwarded-For', uniqueTestIp)
       .attach('file', 'tests/safe.zip');
 
     expect(res.status).toBe(200);

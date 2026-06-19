@@ -1,7 +1,7 @@
 import { spawn, execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
-import { dirname, resolve, join, sep } from 'path';
+import path, { dirname, resolve, join, sep } from 'path';
 import os from 'os';
 import { saveMemory, searchMemories, searchConversations, createConversation } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
@@ -451,24 +451,37 @@ async function installTool({ name, method = 'auto', source }) {
   return await executeCommand({ command: cmd, timeout: 300 });
 }
 
-function detectPackageManager() {
-  try {
-    execSync('which apt-get 2>/dev/null');
-    return 'apt';
-  } catch {}
-  try {
-    execSync('which pacman 2>/dev/null');
-    return 'pacman';
-  } catch {}
-  try {
-    execSync('which yum 2>/dev/null');
-    return 'yum';
-  } catch {}
-  try {
-    execSync('which dnf 2>/dev/null');
-    return 'yum';
-  } catch {}
-  return 'apt'; // default
+let cachedPackageManager = null;
+
+export function detectPackageManager() {
+  if (cachedPackageManager) {
+    return cachedPackageManager;
+  }
+
+  const paths = (process.env.PATH || '').split(path.delimiter);
+
+  const checkTool = (tool) => {
+    for (const p of paths) {
+      if (existsSync(join(p, tool))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  if (checkTool('apt-get')) {
+    cachedPackageManager = 'apt';
+  } else if (checkTool('pacman')) {
+    cachedPackageManager = 'pacman';
+  } else if (checkTool('yum')) {
+    cachedPackageManager = 'yum';
+  } else if (checkTool('dnf')) {
+    cachedPackageManager = 'yum';
+  } else {
+    cachedPackageManager = 'apt'; // default
+  }
+
+  return cachedPackageManager;
 }
 
 /**
