@@ -259,3 +259,18 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `server/telegram/sender.js`
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
+
+## [2026-06-19] — Performance Fix: detectPackageManager
+**What I decided to work on:** I noticed that the `detectPackageManager` function in `server/tools/executor.js` was using `execSync` to check for package managers, which blocks the Node.js event loop. Additionally, the IP rate-limiting in `tests/api.test.js` was causing failing tests because tests shared the same mock IP.
+**What I built/fixed:**
+- Refactored `detectPackageManager` in `server/tools/executor.js` to use `process.env.PATH` splitting and `fs.existsSync`, avoiding `execSync` completely.
+- Added module-level caching for `detectPackageManager` to prevent repeated path traversal checks.
+- Exported `detectPackageManager` to make it testable.
+- Added a unit test in `tests/tools.test.js` to verify the function works correctly.
+- Fixed `tests/api.test.js` by assigning unique `X-Forwarded-For` mock IPs to tests causing rate-limit conflicts.
+**Files changed:**
+- `server/tools/executor.js`
+- `tests/tools.test.js`
+- `tests/api.test.js`
+**Tests:** 62 passed / 1 added
+**Commits:** Pending
