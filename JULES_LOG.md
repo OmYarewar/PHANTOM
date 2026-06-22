@@ -259,3 +259,6 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `server/telegram/sender.js`
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
+## Changes
+- Moved `agent_improvements_sync`, `agent_sync`, `ai_improvements_sync`, `ai_sync`, `frontend/new_features`, `new_features` directories into `docs/sync_notes` directory to clean up the root repository.
+- Tested the codebase with `npm test` to ensure no core functionalities were disrupted. Tests passed.
