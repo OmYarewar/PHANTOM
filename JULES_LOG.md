@@ -262,3 +262,10 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 ## Changes
 - Moved `agent_improvements_sync`, `agent_sync`, `ai_improvements_sync`, `ai_sync`, `frontend/new_features`, `new_features` directories into `docs/sync_notes` directory to clean up the root repository.
 - Tested the codebase with `npm test` to ensure no core functionalities were disrupted. Tests passed.
+
+## [2026-06-18] — Session X
+**What I decided to work on:** Based on log review and test execution, there was a test state leakage due to rate limit constraints during security middleware tests in `tests/api.test.js`. Express-rate-limit tracks usage globally based on IP, and the tests occasionally resulted in rate-limiting (`429`) errors (or `ERR_ERL_INVALID_IP_ADDRESS` if non-IP strings are used) because the generated IPs collided (using `Math.random() * 255` only has 256 possibilities) or hit the limit during rapid consecutive test runs. I decided to fix this Bug Hunt task.
+**What I built/fixed:** Updated the testing suite `tests/api.test.js` to use a sequentially incrementing global counter (`globalIpCounter++`) to construct unique, valid IPv4 string headers (`192.168.x.x`) per test block instead of relying on limited random values. This mathematically guarantees a unique IP address for each test, bypassing both the invalid IP crashes and isolated tests effectively from the global rate limiter without collisions.
+**Files changed:** `tests/api.test.js`
+**Tests:** 61 passed / 0 added
+**Commits:** Pending

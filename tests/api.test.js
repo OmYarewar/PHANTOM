@@ -3,6 +3,8 @@ import request from 'supertest';
 import app from '../server/app.js';
 import { v4 as uuidv4 } from 'uuid';
 
+let globalIpCounter = 1;
+
 describe('API Auth Middleware', () => {
   const originalToken = process.env.API_TOKEN;
   let testIp;
@@ -10,7 +12,10 @@ describe('API Auth Middleware', () => {
   beforeEach(() => {
     process.env.API_TOKEN = 'test-secret-token';
     // Use valid IP strings instead of generic UUID to prevent express-rate-limit ERR_ERL_INVALID_IP_ADDRESS
-    testIp = `192.168.1.${Math.floor(Math.random() * 255)}`;
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    testIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
   });
 
   afterEach(() => {
@@ -42,7 +47,10 @@ describe('API Auth Middleware', () => {
 describe('Security Middlewares', () => {
   let testIp;
   beforeEach(() => {
-    testIp = `192.168.1.${Math.floor(Math.random() * 255)}`;
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    testIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
   });
 
   it('should include helmet security headers', async () => {
@@ -75,7 +83,10 @@ describe('API Routes', () => {
   beforeEach(() => {
     delete process.env.API_TOKEN;
     initDB(':memory:');
-    testIp = `192.168.1.${Math.floor(Math.random() * 255)}`;
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    testIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
   });
 
   afterEach(() => {
@@ -110,7 +121,10 @@ describe('API Routes', () => {
   it('POST /api/conversations should create a conversation and return its id', async () => {
     // We must use a unique IP for this test to avoid hitting the global rate limit
     // established by previous tests if they ran too many requests.
-    const uniqueTestIp = `192.168.2.${Math.floor(Math.random() * 255)}`;
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
     const res = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'Test Conv' });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('id');
@@ -118,7 +132,10 @@ describe('API Routes', () => {
   });
 
   it('GET /api/conversations/:id/export should export conversation to markdown', async () => {
-    const uniqueTestIp = `192.168.3.${Math.floor(Math.random() * 255)}`;
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
 
     // Create conversation
     const convRes = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'Export Test' });
