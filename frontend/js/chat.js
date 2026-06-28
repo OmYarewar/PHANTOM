@@ -281,6 +281,7 @@ window.Chat = {
 
         const copyBtn = document.createElement('button');
         copyBtn.className = 'message-copy-btn';
+        copyBtn.setAttribute('aria-label', 'Copy message');
         copyBtn.innerHTML = '📋 Copy';
         const textToCopy = this.renderedContent || this.currentContent;
         copyBtn.onclick = () => window.copyText(textToCopy, copyBtn);
@@ -434,6 +435,7 @@ window.Chat = {
 
             const copyBtn = document.createElement('button');
             copyBtn.className = 'message-copy-btn';
+            copyBtn.setAttribute('aria-label', 'Copy message');
             copyBtn.innerHTML = '📋 Copy';
             const textToCopy = displayContent;
             copyBtn.onclick = () => window.copyText(textToCopy, copyBtn);
