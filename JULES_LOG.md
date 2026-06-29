@@ -283,3 +283,13 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - **Fixes**: Configured `executeCommand` logic in `server/tools/executor.js` to trigger the actual shell commands needed to initialize and launch a Ruflo swarm (`npx claude-flow init` and `npx claude-flow swarm start -o "<goal>" -s local`). Tested execution flow and assured tool inputs use strict streaming formats to prevent UI blockages.
 - **Files Changed**: `package.json`, `package-lock.json`, `server/tools/registry.js`, `server/tools/executor.js`.
 - **Test Status**: All 61 existing test cases pass (Vitest). Verification scripts successfully run `ruflo_agent_swarm` logic, proving process connectivity to `npx claude-flow`.
+
+## Session Log
+- **Goal**: Add a customizable "System Prompt" field in settings to change the core behavior of the AI.
+- **Changes**:
+  - Updated `frontend/index.html` with a new `textarea` for the system prompt and a reset button.
+  - Updated `frontend/js/settings.js` to load, save, and reset the new `systemPrompt` setting.
+  - Updated `server/config.js` and `server/routes/api.js` to handle `system_prompt` state persistently.
+  - Updated `server/ai/system-prompt.js` to replace the default identity with the custom prompt when configured.
+  - Added `.jules/bolt.md` reflecting insights on handling modals in Playwright e2e tests.
+- **Tests**: Ran `npm test`, passed 61 assertions successfully. Playwright script visually verified the UI configuration.
