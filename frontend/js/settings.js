@@ -73,7 +73,13 @@ window.Settings = {
     // AI Doctor button
     document.getElementById('ai-doctor-btn').addEventListener('click', () => this.openDoctor());
 
+    // Reset system prompt
+    document.getElementById('reset-system-prompt').addEventListener('click', () => {
+      document.getElementById('setting-system-prompt').value = '';
+    });
+
     // Load settings on init
+
     this.load();
 
     // Keyboard shortcut
@@ -109,6 +115,11 @@ window.Settings = {
       document.getElementById('setting-workspace').value = data.workspace || '';
       document.getElementById('setting-telegram-token').value = data.telegramBotToken || '';
       document.getElementById('setting-telegram-userid').value = data.telegramUserId || '';
+      const systemPromptEl = document.getElementById('setting-system-prompt');
+      if (systemPromptEl) {
+          systemPromptEl.value = data.systemPrompt || '';
+      }
+
       const hasTgConfig = !!(data.telegramBotToken || data.telegramUserId);
       const tgEnable = document.getElementById('setting-telegram-enable');
       if (tgEnable) {
@@ -138,6 +149,7 @@ window.Settings = {
       workspace: document.getElementById('setting-workspace').value,
       telegramBotToken: document.getElementById('setting-telegram-enable').checked ? document.getElementById('setting-telegram-token').value : '',
       telegramUserId: document.getElementById('setting-telegram-enable').checked ? document.getElementById('setting-telegram-userid').value : '',
+      systemPrompt: document.getElementById('setting-system-prompt')?.value || '',
     };
 
     const apiKey = document.getElementById('setting-api-key').value;

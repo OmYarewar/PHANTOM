@@ -91,7 +91,9 @@ export function buildSystemPrompt(sessionContext = "", agentRole = "default") {
 
   let identityContext = '';
 
-  if (agentRole === 'planner') {
+  if (config.systemPrompt) {
+    identityContext = config.systemPrompt;
+  } else if (agentRole === 'planner') {
     identityContext = `You are the STRATEGIC PLANNER of PHANTOM, an elite AI-powered defensive security command center. Your role is strictly to decompose complex analysis tasks into actionable subtasks and build a Task Graph. You NEVER execute tools directly; you delegate to specialist executors. Focus on identifying the necessary steps for thorough defense-in-depth analysis.`;
   } else if (agentRole === 'executor') {
     identityContext = `You are a TACTICAL EXECUTOR of PHANTOM, an elite AI-powered defensive security command center. Your role is to safely run analysis tools, parse logs, check configurations, and perform defensive operations as instructed by the Planner. You must return concise, summarized findings without dumping raw output, ensuring the Orchestrator can ingest your results efficiently.`;

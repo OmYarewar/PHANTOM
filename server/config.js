@@ -47,6 +47,7 @@ const config = {
       dimensions: parseInt(process.env.VECTOR_SEARCH_DIMENSIONS || '384', 10),
     }
   },
+  systemPrompt: null,
   root: ROOT,
 };
 
@@ -68,6 +69,7 @@ export function updateConfig(updates) {
   if (updates.skillsTrustTierDefault !== undefined) config.skills.trustTierDefault = parseInt(updates.skillsTrustTierDefault, 10);
   if (updates.vectorSearchEnabled !== undefined) config.memory.vectorSearch.enabled = updates.vectorSearchEnabled;
   if (updates.vectorSearchDimensions !== undefined) config.memory.vectorSearch.dimensions = parseInt(updates.vectorSearchDimensions, 10);
+  if (updates.systemPrompt !== undefined) config.systemPrompt = updates.systemPrompt || null;
 }
 
 /**
@@ -88,6 +90,7 @@ export function loadPersistedSettings(getSetting) {
   const skillsTrustTierDefault = getSetting('skills_trust_tier_default', null);
   const vectorSearchEnabled = getSetting('vector_search_enabled', null);
   const vectorSearchDimensions = getSetting('vector_search_dimensions', null);
+  const systemPrompt = getSetting('system_prompt', null);
 
   if (baseUrl) config.api.baseUrl = baseUrl;
   if (apiKey) config.api.apiKey = apiKey;
@@ -103,6 +106,7 @@ export function loadPersistedSettings(getSetting) {
   if (skillsTrustTierDefault !== null) config.skills.trustTierDefault = parseInt(skillsTrustTierDefault, 10);
   if (vectorSearchEnabled !== null) config.memory.vectorSearch.enabled = vectorSearchEnabled === 'true';
   if (vectorSearchDimensions !== null) config.memory.vectorSearch.dimensions = parseInt(vectorSearchDimensions, 10);
+  if (systemPrompt !== null) config.systemPrompt = systemPrompt;
 
   // Ensure workspace directory exists
   try {

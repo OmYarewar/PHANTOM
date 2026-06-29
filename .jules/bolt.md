@@ -1,0 +1,1 @@
+- UI Settings: When writing e2e tests with Playwright that interact with modals or panels that might be obscured by backdrops (like `.sudo-modal-backdrop`), use `.evaluate()` with native JS click events or `force=True` on `.click()` to reliably trigger elements without encountering timeout errors waiting for stability/visibility.

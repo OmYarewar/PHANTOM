@@ -40,11 +40,12 @@ router.get('/settings', (req, res) => {
     sudoConfigured: !!settings.sudo_password,
     telegramBotToken: settings.telegram_bot_token ? '••••••••' : '',
     telegramUserId: settings.telegram_user_id || '',
+    systemPrompt: settings.system_prompt || config.systemPrompt || '',
   });
 });
 
 router.put('/settings', (req, res) => {
-  const { baseUrl, apiKey, model, temperature, maxTokens, sudoPassword, workspace, telegramBotToken, telegramUserId } = req.body;
+  const { baseUrl, apiKey, model, temperature, maxTokens, sudoPassword, workspace, telegramBotToken, telegramUserId, systemPrompt } = req.body;
 
   if (baseUrl) { setSetting('api_base_url', baseUrl); updateConfig({ baseUrl }); }
   if (apiKey && apiKey !== '••••••••') { setSetting('api_key', apiKey); updateConfig({ apiKey }); }
@@ -55,6 +56,7 @@ router.put('/settings', (req, res) => {
   if (workspace) { setSetting('workspace', workspace); updateConfig({ workspace }); }
   if (telegramBotToken !== undefined && telegramBotToken !== '••••••••') { setSetting('telegram_bot_token', telegramBotToken); updateConfig({ telegramBotToken }); }
   if (telegramUserId !== undefined) { setSetting('telegram_user_id', telegramUserId); updateConfig({ telegramUserId }); }
+  if (systemPrompt !== undefined) { setSetting('system_prompt', systemPrompt); updateConfig({ systemPrompt }); }
 
   resetClient();
   res.json({ success: true, message: 'Settings updated' });
