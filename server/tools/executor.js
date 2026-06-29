@@ -96,6 +96,7 @@ export async function executeTool(name, args, onProgress) {
     case 'analyze_target_graph': return analyzeTargetGraph(args);
     case 'send_file_to_telegram': return await sendFileToTelegramTool(args);
     case 'get_system_capabilities': return await getSystemCapabilitiesTool();
+    case 'ruflo_agent_swarm': return await rufloAgentSwarm(args, onProgress);
     default:
       return `Unknown tool: ${name}`;
   }
@@ -893,4 +894,22 @@ async function sendFileToTelegramTool({ file_path, caption = '' }) {
 
   const { sendFile } = await import('../telegram/sender.js');
   return await sendFile(session.bot, session.chatId, file_path, caption);
+}
+
+/**
+ * Executes a multi-agent swarm via Ruflo.
+ */
+async function rufloAgentSwarm({ goal }, onProgress) {
+  try {
+    if (onProgress) onProgress('Initializing Ruflo multi-agent swarm...');
+
+    // First run init to ensure config is set up
+    await executeCommand({ command: 'npx claude-flow init --start-daemon --minimal', timeout: 120 }, onProgress);
+
+    if (onProgress) onProgress(`Starting swarm with goal: ${goal}`);
+    // Then start the swarm
+    return await executeCommand({ command: `npx claude-flow swarm start -o "${goal}" -s local`, timeout: 600 }, onProgress);
+  } catch (err) {
+    return `Error executing Ruflo swarm: ${err.message}`;
+  }
 }

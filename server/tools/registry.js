@@ -579,5 +579,23 @@ export function getToolDefinitions() {
         },
       },
     },
+
+    {
+      type: 'function',
+      function: {
+        name: 'ruflo_agent_swarm',
+        description: 'Initialize and execute an autonomous multi-agent swarm using the Ruflo platform to achieve a complex goal. Use this for advanced, multi-step, multi-agent tasks.',
+        parameters: {
+          type: 'object',
+          properties: {
+            goal: {
+              type: 'string',
+              description: 'The complex objective or task for the swarm to execute.',
+            },
+          },
+          required: ['goal'],
+        },
+      },
+    },
   ];
 }
