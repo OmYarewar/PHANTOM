@@ -6,6 +6,34 @@ import config, { updateConfig } from '../config.js';
 import OpenAI from 'openai';
 
 let openaiClient = null;
+function sanitizeToolCalls(toolCalls) {
+  if (!toolCalls || !Array.isArray(toolCalls)) return toolCalls;
+  return toolCalls.map(tc => {
+    if (!tc || !tc.function) return tc;
+    let sanitizedArgs = tc.function.arguments;
+    if (typeof sanitizedArgs === 'string') {
+      try {
+        const parsed = JSON.parse(sanitizedArgs || '{}');
+        if (typeof parsed !== 'object' || parsed === null) {
+          sanitizedArgs = JSON.stringify({ _raw_invalid: sanitizedArgs });
+        }
+      } catch (e) {
+        sanitizedArgs = JSON.stringify({ _raw_invalid: sanitizedArgs });
+      }
+    } else if (typeof sanitizedArgs === 'object' && sanitizedArgs !== null) {
+       sanitizedArgs = JSON.stringify(sanitizedArgs);
+    } else {
+       sanitizedArgs = "{}";
+    }
+    return {
+      ...tc,
+      function: {
+        ...tc.function,
+        arguments: sanitizedArgs
+      }
+    };
+  });
+}
 
 function getClient() {
   if (!openaiClient || openaiClient._baseURL !== config.api.baseUrl) {
@@ -95,7 +123,7 @@ export async function processMessage(conversationId, userMessage, sessionContext
 
   for (const msg of recentHistory) {
     const m = { role: msg.role, content: msg.content };
-    if (msg.tool_calls) m.tool_calls = msg.tool_calls;
+    if (msg.tool_calls) m.tool_calls = sanitizeToolCalls(msg.tool_calls);
     if (msg.tool_call_id) {
       m.tool_call_id = msg.tool_call_id;
       m.role = 'tool';
@@ -262,7 +290,7 @@ export async function processMessage(conversationId, userMessage, sessionContext
       // If we have tool calls, execute them
       if (toolCalls.length > 0) {
         // Save assistant message with tool calls
-        const assistantMsg = { role: 'assistant', content: fullContent || null, tool_calls: toolCalls };
+        const assistantMsg = { role: 'assistant', content: fullContent || null, tool_calls: sanitizeToolCalls(toolCalls) };
         addMessage(conversationId, assistantMsg);
         messages.push(assistantMsg);
 
