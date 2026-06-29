@@ -277,3 +277,9 @@ Update Telegram bot integration: normal text replies, model command, formatted t
 - `frontend/js/chat.js`
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
+
+### Claude-Flow / Ruflo Agent Integration
+- **Decisions**: Integrated `claude-flow` as a native PHANTOM tool. This exposes the `ruflo_agent_swarm` tool in `server/tools/registry.js`, enabling the AI to delegate complex, multi-step sub-agent tasks using Ruflo's advanced multi-agent orchestrator. Installed `claude-flow@latest` dependency in `package.json`.
+- **Fixes**: Configured `executeCommand` logic in `server/tools/executor.js` to trigger the actual shell commands needed to initialize and launch a Ruflo swarm (`npx claude-flow init` and `npx claude-flow swarm start -o "<goal>" -s local`). Tested execution flow and assured tool inputs use strict streaming formats to prevent UI blockages.
+- **Files Changed**: `package.json`, `package-lock.json`, `server/tools/registry.js`, `server/tools/executor.js`.
+- **Test Status**: All 61 existing test cases pass (Vitest). Verification scripts successfully run `ruflo_agent_swarm` logic, proving process connectivity to `npx claude-flow`.
