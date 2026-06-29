@@ -294,3 +294,8 @@ Update Telegram bot integration: normal text replies, model command, formatted t
   - Added `.jules/bolt.md` reflecting insights on handling modals in Playwright e2e tests.
 - **Tests**: Ran `npm test`, passed 61 assertions successfully. Playwright script visually verified the UI configuration.
 Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' instead of '-s local' to fix the 'Invalid value for --strategy' error. Tested and committed the fix as a88719e4af83ece3102983517579e636359775f3.
+- Date: $(date +%Y-%m-%d)
+- Task: Fix 400 JSON parsing error in `llm-client.js`.
+- Decisions: Implemented `sanitizeToolCalls` helper function to handle strict LLM JSON parsing constraints (especially for "moonshotai/kimi-k2.6"). If a `tool_call` arguments string is invalid JSON, it is safely re-wrapped into `JSON.stringify({ _raw_invalid: <raw_string> })` before being stored in history.
+- Files Changed: `server/ai/llm-client.js`
+- Test Status: `npm test` passed. All unit tests successfully verified.
