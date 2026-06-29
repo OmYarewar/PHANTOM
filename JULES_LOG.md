@@ -299,3 +299,8 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - Decisions: Implemented `sanitizeToolCalls` helper function to handle strict LLM JSON parsing constraints (especially for "moonshotai/kimi-k2.6"). If a `tool_call` arguments string is invalid JSON, it is safely re-wrapped into `JSON.stringify({ _raw_invalid: <raw_string> })` before being stored in history.
 - Files Changed: `server/ai/llm-client.js`
 - Test Status: `npm test` passed. All unit tests successfully verified.
+
+## Added 500 AI Agent Projects
+- Integrated `500-AI-Agents-Projects` repo into PHANTOM `workspace/skills/` directory.
+- Created `skill.json` manifests for all agents to allow PHANTOM AI to discover and use them.
+- `workspace/` is gitignored so changes will only affect the current local installation environment.
