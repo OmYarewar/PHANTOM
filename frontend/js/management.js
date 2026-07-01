@@ -89,7 +89,9 @@ window.Management = {
           <button class="btn-icon-sm danger" onclick="Management.deleteMCP('${s.id}')" title="Remove" aria-label="Remove MCP server">🗑️</button>
         </div>
       `).join('');
-    } catch {
+    } catch (err) {
+      console.error(err);
+      window.Toast.show('Failed to load MCP servers', 'error');
       document.getElementById('manage-mcp-list').innerHTML = '<p class="empty-msg">Failed to load MCP servers</p>';
     }
   },
@@ -160,7 +162,9 @@ window.Management = {
           <button class="btn-icon-sm danger" onclick="Management.deleteSkill('${this.esc(s.name)}')" title="Remove" aria-label="Remove Skill">🗑️</button>
         </div>
       `).join('');
-    } catch {
+    } catch (err) {
+      console.error(err);
+      window.Toast.show('Failed to load skills', 'error');
       document.getElementById('manage-skills-list').innerHTML = '<p class="empty-msg">Failed to load skills</p>';
     }
   },

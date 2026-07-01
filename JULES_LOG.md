@@ -304,3 +304,10 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - Integrated `500-AI-Agents-Projects` repo into PHANTOM `workspace/skills/` directory.
 - Created `skill.json` manifests for all agents to allow PHANTOM AI to discover and use them.
 - `workspace/` is gitignored so changes will only affect the current local installation environment.
+
+## [$(date +%Y-%m-%d)] — Fix Unhandled Exceptions in UI Fetch Methods
+**What I decided to work on:** I decided to review unhandled exceptions in the codebase (Bug Hunt). The previous attempt failed because I attempted to modify `catch` blocks blindly, but the tests failed due to lack of testing and incomplete changes. The memory says: "When handling exceptions in async functions, do not use empty catch {} blocks. Ensure errors are logged (e.g., console.error) and, in the frontend, bubbled up to the user via window.Toast.show(message, 'error') to prevent silent, hard-to-debug failures." I found some empty catch blocks in frontend functions such as `loadMCPServers`, `loadSkills`, and `selectConversation` where errors were only setting text content or calling `addErrorMessage` and silently failing.
+**What I built/fixed:** Added proper error handling via `console.error` and `window.Toast.show` in `frontend/js/management.js` and `frontend/js/app.js` catch blocks. Verified the `window.Toast` usage in UI tests.
+**Files changed:** `frontend/js/management.js`, `frontend/js/app.js`
+**Tests:** 61 passed / 0 added
+**Commits:** Pending

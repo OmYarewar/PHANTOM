@@ -479,7 +479,9 @@
       const res = await fetch(`/api/conversations/${id}`);
       const data = await res.json();
       Chat.renderHistory(data.messages);
-    } catch {
+    } catch (err) {
+      console.error(err);
+      window.Toast.show('Failed to load conversation', 'error');
       Chat.addErrorMessage('Failed to load conversation');
     }
 
