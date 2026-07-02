@@ -78,7 +78,9 @@ export async function processMessage(conversationId, userMessage, sessionContext
         content: `## RELEVANT MEMORIES\n${memoryContext}`,
       });
     }
-  } catch {}
+  } catch (err) {
+    console.error('Error in LLM memory context:', err);
+  }
 
   // Limit history to last 40 messages to keep context window lean
   const recentHistory = history.slice(-40);

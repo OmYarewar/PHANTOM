@@ -342,10 +342,14 @@ router.get('/skills', (req, res) => {
         if (existsSync(metaPath)) {
           meta = { ...meta, ...JSON.parse(readFileSync(metaPath, 'utf8')) };
         }
-      } catch {}
+      } catch (err) {
+        console.error('Error reading skill meta:', err);
+      }
       try {
         meta.files = readdirSync(skillPath).slice(0, 20);
-      } catch {}
+      } catch (err) {
+        console.error('Error reading skill files:', err);
+      }
       return meta;
     });
     res.json(skills);
@@ -383,7 +387,7 @@ router.post('/skills/upload', upload.single('file'), (req, res) => {
     if (!existsSync(extractTo)) mkdirSync(extractTo, { recursive: true });
     zip.extractAllTo(extractTo, true);
     // Cleanup temp file
-    try { rmSync(req.file.path); } catch {}
+    try { rmSync(req.file.path); } catch (err) { console.error('Error cleaning up temp file:', err); }
     res.json({ success: true, name: skillName, message: `Skill "${skillName}" imported successfully` });
   } catch (err) {
     res.status(500).json({ error: `Failed to import skill: ${err.message}` });

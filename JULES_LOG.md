@@ -311,3 +311,15 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 **Files changed:** `frontend/js/management.js`, `frontend/js/app.js`
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
+
+## [$(date +%Y-%m-%d)] — Fix Empty Catch Blocks
+**What I decided to work on:** I decided to review unhandled exceptions in the codebase (Bug Hunt). The memory says: "When handling exceptions in async functions, do not use empty catch {} blocks. Ensure errors are logged (e.g., console.error)". I found multiple empty catch blocks in both frontend and backend files, causing silent failures for parsing and file operations.
+**What I built/fixed:** Replaced empty catch blocks with proper `console.error` logging in `frontend/js/settings.js`, `frontend/js/chat.js`, `server/routes/api.js`, `server/ai/system-prompt.js`, and `server/ai/llm-client.js`.
+**Files changed:**
+- `frontend/js/settings.js`
+- `frontend/js/chat.js`
+- `server/routes/api.js`
+- `server/ai/system-prompt.js`
+- `server/ai/llm-client.js`
+**Tests:** 61 passed / 0 added
+**Commits:** Pending
