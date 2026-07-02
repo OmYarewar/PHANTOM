@@ -24,7 +24,9 @@ function getSystemInfo() {
       } catch { info.distro = 'Linux'; }
       try {
         info.kernel = os.release();
-      } catch {}
+      } catch (err) {
+        console.error('Error fetching OS release:', err);
+      }
     }
 
     const tools = ['nmap', 'python3', 'pip', 'git', 'curl', 'wget', 'nikto', 'sqlmap', 'hydra', 'john',
@@ -61,7 +63,9 @@ function getAvailableSkills() {
         try {
           const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
           return `- ${meta.name || e.name}: ${meta.description || 'No description'}`;
-        } catch {}
+        } catch (err) {
+          console.error('Error parsing skill meta:', err);
+        }
       }
       return `- ${e.name}`;
     });
