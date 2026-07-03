@@ -316,6 +316,29 @@ window.Chat = {
 
   addToolCall(data) {
     this.hideWelcome();
+
+    if (data.name === 'write_file' || data.name === 'edit_source_code') {
+      const card = document.createElement('div');
+      card.className = 'tool-card file-mod-card';
+      card.id = `tool-${data.id}`;
+
+      const filePath = typeof data.args === 'object' ? (data.args.path || data.args.file_path || 'unknown file') : 'unknown file';
+      const actionName = data.name === 'write_file' ? 'Creating file' : 'Editing file';
+      const icon = data.name === 'write_file' ? '📄' : '📝';
+
+      card.innerHTML = `
+        <div class="tool-card-header file-mod-header" onclick="this.nextElementSibling.classList.toggle('expanded')" style="background: var(--bg-tertiary); border-left: 3px solid var(--accent);">
+          <span>${icon} <strong>${actionName}</strong></span>
+          <span style="flex:1;margin-left:8px;opacity:0.8;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.escapeHtml(filePath)}</span>
+          <span class="tool-status running"><span class="spinner"></span></span>
+        </div>
+        <div class="tool-card-body expanded" style="background: #1e1e1e;"></div>
+      `;
+      this.messagesEl.appendChild(card);
+      this.scrollToBottom(true);
+      return;
+    }
+
     const card = document.createElement('div');
     card.className = 'tool-card';
     card.id = `tool-${data.id}`;
@@ -457,6 +480,26 @@ window.Chat = {
           for (const tc of msg.tool_calls) {
             let args = {};
             try { args = typeof tc.function.arguments === 'string' ? JSON.parse(tc.function.arguments) : tc.function.arguments; } catch {}
+
+            if (tc.function.name === 'write_file' || tc.function.name === 'edit_source_code') {
+              const filePath = args.path || args.file_path || 'unknown file';
+              const actionName = tc.function.name === 'write_file' ? 'Created file' : 'Edited file';
+              const icon = tc.function.name === 'write_file' ? '📄' : '📝';
+
+              const card = document.createElement('div');
+              card.className = 'tool-card file-mod-card';
+              card.innerHTML = `
+                <div class="tool-card-header file-mod-header" onclick="this.nextElementSibling.classList.toggle('expanded')" style="background: var(--bg-tertiary); border-left: 3px solid var(--accent);">
+                  <span>${icon} <strong>${actionName}</strong></span>
+                  <span style="flex:1;margin-left:8px;opacity:0.8;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.escapeHtml(filePath)}</span>
+                  <span class="tool-status done">✓</span>
+                </div>
+                <div class="tool-card-body" style="background: #1e1e1e;">Loading...</div>
+              `;
+              this.messagesEl.appendChild(card);
+              continue;
+            }
+
             const argsPreview = args.command || args.path || args.query || args.name || '';
             const card = document.createElement('div');
             card.className = 'tool-card';

@@ -55,7 +55,7 @@ function getAvailableSkills() {
     const skillsDir = join(config.workspace, 'skills');
     if (!existsSync(skillsDir)) return [];
     const entries = readdirSync(skillsDir, { withFileTypes: true });
-    return entries.filter(e => e.isDirectory()).map(e => {
+    const skills = entries.filter(e => e.isDirectory()).map(e => {
       const metaPath = join(skillsDir, e.name, 'skill.json');
       if (existsSync(metaPath)) {
         try {
@@ -65,10 +65,28 @@ function getAvailableSkills() {
       }
       return `- ${e.name}`;
     });
+    return skills;
   } catch { return []; }
 }
 
 /**
+ * Load available agents from server/agents
+ */
+function getAvailableAgents() {
+  try {
+    const agentsDir = join(__dirname, '..', 'agents');
+    if (!existsSync(agentsDir)) return [];
+    const entries = readdirSync(agentsDir, { withFileTypes: true });
+    return entries.filter(e => e.isFile() && e.name.endsWith('.md')).map(e => {
+      const name = e.name.replace('.md', '');
+      return `- ${name}: Sub-agent available for delegation`;
+    });
+  } catch { return []; }
+}
+
+/**
+ * Load execution trace summaries for meta-optimization
+ *//**
  * Load execution trace summaries for meta-optimization
  */
 function getRecentTraces() {
@@ -87,6 +105,7 @@ function getRecentTraces() {
 export function buildSystemPrompt(sessionContext = "", agentRole = "default") {
   const sys = getSystemInfo();
   const skills = getAvailableSkills();
+  const agents = getAvailableAgents();
   const traces = getRecentTraces();
 
   let identityContext = '';
