@@ -156,7 +156,9 @@ export function startBot(cfg) {
       async function showTyping() {
         try {
           await bot.sendChatAction(chatId, 'typing');
-        } catch(err) {}
+        } catch (err) {
+          console.error('[Telegram] Failed to send typing indicator:', err.message);
+        }
       }
       await showTyping();
       typingInterval = setInterval(showTyping, 4000);
@@ -257,7 +259,9 @@ export function stopBot() {
   if (bot) {
     try {
       bot.stopPolling();
-    } catch {}
+    } catch (err) {
+      console.error('[Telegram] Failed to stop polling:', err.message);
+    }
     bot = null;
   }
 }
