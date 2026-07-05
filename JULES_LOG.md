@@ -323,3 +323,16 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 
 **Status**: Success.
 **Commit Hash**: (pending)
+
+## [$(date +%Y-%m-%d)] — Session X
+**What I decided to work on:** I decided to perform a Bug Hunt focusing on unhandled promise rejections and potential errors from missing catch blocks in async functions, and also fixing accessibility issues.
+**What I built/fixed:**
+- Added `aria-label` to the System Prompt reset button in `frontend/index.html` to improve accessibility.
+- Added `console.error` inside empty catch blocks in `server/telegram/bot.js` for typing indicators and polling errors.
+- Added `console.warn` inside empty catch blocks in `server/routes/api.js` for `skill.json` parsing and temporary file cleanup during skill uploads.
+**Files changed:**
+- `frontend/index.html`
+- `server/telegram/bot.js`
+- `server/routes/api.js`
+**Tests:** 61 passed / 0 added
+**Commits:** Pending
