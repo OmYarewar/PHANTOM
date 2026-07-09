@@ -193,3 +193,22 @@ describe('API Routes', () => {
     expect(res.body.name).toBe('safe');
   });
 });
+describe('API Routes Error Handling', () => {
+  let testIp;
+  beforeEach(() => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    testIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+  });
+
+  it('GET /api/conversations/:id should return 500 when database throws an error', async () => {
+    // We will cause a SQLite error by closing the DB before the request
+    closeDB();
+    const res = await request(app).get('/api/conversations/123').set('X-Forwarded-For', testIp);
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error');
+    // Re-initialize for subsequent tests
+    initDB(':memory:');
+  });
+});

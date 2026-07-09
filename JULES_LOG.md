@@ -353,3 +353,16 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - `server/tools/executor.js`
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
+
+## [$(date +%Y-%m-%d)] — Bug Hunt: Unhandled Promise Rejections & Sync Exceptions in Express API
+**What I decided to work on:** I chose to perform a Bug Hunt focusing on unhandled exceptions in the codebase's Express API routes (`server/routes/api.js`). Many synchronous operations (like SQLite queries `.get()`, `.all()`, `.run()`) and database calls inside these routes were not wrapped in `try/catch` blocks. If an error occurred, Express would default to returning an HTML 500 error or crash, breaking the expected JSON response contract with the Vite frontend.
+**What I built/fixed:**
+- Added `try/catch` wrappers around all the previously unprotected route handlers in `server/routes/api.js` (including endpoints for settings, telegram status, conversations, tools, memory, and MCP servers).
+- Ensured any caught error properly responds with `res.status(500).json({ error: err.message })`.
+- Added a specific test case in `tests/api.test.js` to simulate a database failure during an API request and verify the JSON 500 error response is correctly returned.
+- Cleaned up temporary patch files used during the operation to avoid workspace pollution.
+**Files changed:**
+- `server/routes/api.js`
+- `tests/api.test.js`
+**Tests:** 62 passed / 1 added
+**Commits:** Pending

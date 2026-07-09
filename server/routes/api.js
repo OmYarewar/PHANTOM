@@ -28,38 +28,46 @@ const upload = multer({ dest: '/tmp/phantom-uploads/', limits: { fileSize: 50 * 
 
 // ─── Settings ───
 router.get('/settings', (req, res) => {
-  const settings = getAllSettings();
-  res.json({
-    baseUrl: settings.api_base_url || config.api.baseUrl,
-    apiKey: settings.api_key ? '••••••••' + settings.api_key.slice(-4) : '',
-    apiKeySet: !!settings.api_key || !!config.api.apiKey,
-    model: settings.api_model || config.api.model,
-    temperature: parseFloat(settings.api_temperature || config.api.temperature),
-    maxTokens: parseInt(settings.api_max_tokens || config.api.maxTokens),
-    workspace: settings.workspace || config.workspace,
-    sudoConfigured: !!settings.sudo_password,
-    telegramBotToken: settings.telegram_bot_token ? '••••••••' : '',
-    telegramUserId: settings.telegram_user_id || '',
-    systemPrompt: settings.system_prompt || config.systemPrompt || '',
-  });
+  try {
+    const settings = getAllSettings();
+    res.json({
+      baseUrl: settings.api_base_url || config.api.baseUrl,
+      apiKey: settings.api_key ? '••••••••' + settings.api_key.slice(-4) : '',
+      apiKeySet: !!settings.api_key || !!config.api.apiKey,
+      model: settings.api_model || config.api.model,
+      temperature: parseFloat(settings.api_temperature || config.api.temperature),
+      maxTokens: parseInt(settings.api_max_tokens || config.api.maxTokens),
+      workspace: settings.workspace || config.workspace,
+      sudoConfigured: !!settings.sudo_password,
+      telegramBotToken: settings.telegram_bot_token ? '••••••••' : '',
+      telegramUserId: settings.telegram_user_id || '',
+      systemPrompt: settings.system_prompt || config.systemPrompt || '',
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.put('/settings', (req, res) => {
-  const { baseUrl, apiKey, model, temperature, maxTokens, sudoPassword, workspace, telegramBotToken, telegramUserId, systemPrompt } = req.body;
+  try {
+    const { baseUrl, apiKey, model, temperature, maxTokens, sudoPassword, workspace, telegramBotToken, telegramUserId, systemPrompt } = req.body;
 
-  if (baseUrl) { setSetting('api_base_url', baseUrl); updateConfig({ baseUrl }); }
-  if (apiKey && apiKey !== '••••••••') { setSetting('api_key', apiKey); updateConfig({ apiKey }); }
-  if (model) { setSetting('api_model', model); updateConfig({ model }); }
-  if (temperature !== undefined) { setSetting('api_temperature', String(temperature)); updateConfig({ temperature }); }
-  if (maxTokens !== undefined) { setSetting('api_max_tokens', String(maxTokens)); updateConfig({ maxTokens }); }
-  if (sudoPassword !== undefined) { setSetting('sudo_password', sudoPassword); }
-  if (workspace) { setSetting('workspace', workspace); updateConfig({ workspace }); }
-  if (telegramBotToken !== undefined && telegramBotToken !== '••••••••') { setSetting('telegram_bot_token', telegramBotToken); updateConfig({ telegramBotToken }); }
-  if (telegramUserId !== undefined) { setSetting('telegram_user_id', telegramUserId); updateConfig({ telegramUserId }); }
-  if (systemPrompt !== undefined) { setSetting('system_prompt', systemPrompt); updateConfig({ systemPrompt }); }
+    if (baseUrl) { setSetting('api_base_url', baseUrl); updateConfig({ baseUrl }); }
+    if (apiKey && apiKey !== '••••••••') { setSetting('api_key', apiKey); updateConfig({ apiKey }); }
+    if (model) { setSetting('api_model', model); updateConfig({ model }); }
+    if (temperature !== undefined) { setSetting('api_temperature', String(temperature)); updateConfig({ temperature }); }
+    if (maxTokens !== undefined) { setSetting('api_max_tokens', String(maxTokens)); updateConfig({ maxTokens }); }
+    if (sudoPassword !== undefined) { setSetting('sudo_password', sudoPassword); }
+    if (workspace) { setSetting('workspace', workspace); updateConfig({ workspace }); }
+    if (telegramBotToken !== undefined && telegramBotToken !== '••••••••') { setSetting('telegram_bot_token', telegramBotToken); updateConfig({ telegramBotToken }); }
+    if (telegramUserId !== undefined) { setSetting('telegram_user_id', telegramUserId); updateConfig({ telegramUserId }); }
+    if (systemPrompt !== undefined) { setSetting('system_prompt', systemPrompt); updateConfig({ systemPrompt }); }
 
-  resetClient();
-  res.json({ success: true, message: 'Settings updated' });
+    resetClient();
+    res.json({ success: true, message: 'Settings updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.post('/settings/test', async (req, res) => {
@@ -73,7 +81,11 @@ router.post('/settings/test', async (req, res) => {
 
 // ─── Telegram ───
 router.get('/telegram/status', (req, res) => {
-  res.json(getBotStatus());
+  try {
+    res.json(getBotStatus());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.post('/telegram/restart', (req, res) => {
@@ -88,102 +100,146 @@ router.post('/telegram/restart', (req, res) => {
 
 // ─── Conversations ───
 router.get('/conversations', (req, res) => {
-  res.json(getConversations());
+  try {
+    res.json(getConversations());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.post('/conversations', (req, res) => {
-  const conv = createConversation(req.body.title || 'New Conversation');
-  res.json(conv);
+  try {
+    const conv = createConversation(req.body.title || 'New Conversation');
+    res.json(conv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.get('/conversations/:id', (req, res) => {
-  const conv = getConversation(req.params.id);
-  if (!conv) return res.status(404).json({ error: 'Conversation not found' });
-  const messages = getMessages(req.params.id);
-  res.json({ ...conv, messages });
+  try {
+    const conv = getConversation(req.params.id);
+    if (!conv) return res.status(404).json({ error: 'Conversation not found' });
+    const messages = getMessages(req.params.id);
+    res.json({ ...conv, messages });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.delete('/conversations/:id', (req, res) => {
-  deleteConversation(req.params.id);
-  res.json({ success: true });
+  try {
+    deleteConversation(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.put('/conversations/:id/title', (req, res) => {
-  updateConversationTitle(req.params.id, req.body.title);
-  res.json({ success: true });
+  try {
+    updateConversationTitle(req.params.id, req.body.title);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.get('/conversations/:id/export', (req, res) => {
-  const conv = getConversation(req.params.id);
-  if (!conv) return res.status(404).json({ error: 'Conversation not found' });
-  const messages = getMessages(req.params.id);
+  try {
+    const conv = getConversation(req.params.id);
+    if (!conv) return res.status(404).json({ error: 'Conversation not found' });
+    const messages = getMessages(req.params.id);
 
-  let markdown = `# ${conv.title}\n\n`;
-  markdown += `*Exported on ${new Date().toLocaleString()}*\n\n---\n\n`;
+    let markdown = `# ${conv.title}\n\n`;
+    markdown += `*Exported on ${new Date().toLocaleString()}*\n\n---\n\n`;
 
-  messages.forEach(msg => {
-    if (msg.role === 'user') {
-      markdown += `## 👤 User\n\n${msg.content}\n\n`;
-    } else if (msg.role === 'assistant') {
-      if (msg.content) {
-        markdown += `## 👻 PHANTOM\n\n${msg.content}\n\n`;
-      }
-      if (msg.tool_calls) {
-        try {
-          const calls = typeof msg.tool_calls === 'string' ? JSON.parse(msg.tool_calls) : msg.tool_calls;
-          calls.forEach(c => {
-            const argsStr = typeof c.args === 'object' ? JSON.stringify(c.args, null, 2) : c.args;
-            markdown += `> **🔧 Tool Call:** \`${c.name}\`\n> \`\`\`json\n> ${argsStr.replace(/\n/g, '\n> ')}\n> \`\`\`\n\n`;
-          });
-        } catch (e) {
-          // Ignore parsing errors for malformed tool_calls
+    messages.forEach(msg => {
+      if (msg.role === 'user') {
+        markdown += `## 👤 User\n\n${msg.content}\n\n`;
+      } else if (msg.role === 'assistant') {
+        if (msg.content) {
+          markdown += `## 👻 PHANTOM\n\n${msg.content}\n\n`;
         }
+        if (msg.tool_calls) {
+          try {
+            const calls = typeof msg.tool_calls === 'string' ? JSON.parse(msg.tool_calls) : msg.tool_calls;
+            calls.forEach(c => {
+              const argsStr = typeof c.args === 'object' ? JSON.stringify(c.args, null, 2) : c.args;
+              markdown += `> **🔧 Tool Call:** \`${c.name}\`\n> \`\`\`json\n> ${argsStr.replace(/\n/g, '\n> ')}\n> \`\`\`\n\n`;
+            });
+          } catch (e) {
+            // Ignore parsing errors for malformed tool_calls
+          }
+        }
+      } else if (msg.role === 'tool') {
+        let contentStr = msg.content;
+        if (typeof msg.content === 'object') {
+          contentStr = JSON.stringify(msg.content, null, 2);
+        }
+        markdown += `<details><summary><b>📋 Tool Result: ${msg.name}</b></summary>\n\n\`\`\`\n${contentStr}\n\`\`\`\n</details>\n\n`;
       }
-    } else if (msg.role === 'tool') {
-      let contentStr = msg.content;
-      if (typeof msg.content === 'object') {
-        contentStr = JSON.stringify(msg.content, null, 2);
-      }
-      markdown += `<details><summary><b>📋 Tool Result: ${msg.name}</b></summary>\n\n\`\`\`\n${contentStr}\n\`\`\`\n</details>\n\n`;
-    }
-  });
+    });
 
-  res.setHeader('Content-disposition', `attachment; filename=phantom_export_${conv.id.substring(0, 8)}.md`);
-  res.setHeader('Content-type', 'text/markdown; charset=utf-8');
-  res.send(markdown);
+    res.setHeader('Content-disposition', `attachment; filename=phantom_export_${conv.id.substring(0, 8)}.md`);
+    res.setHeader('Content-type', 'text/markdown; charset=utf-8');
+    res.send(markdown);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Tools ───
 router.get('/tools', (req, res) => {
-  res.json(getToolDefinitions().map(t => ({
-    name: t.function.name,
-    description: t.function.description,
-  })));
+  try {
+    res.json(getToolDefinitions().map(t => ({
+      name: t.function.name,
+      description: t.function.description,
+    })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Memory ───
 router.get('/memory', (req, res) => {
-  const { query, category } = req.query;
-  if (query) {
-    res.json(searchMemories(query, category));
-  } else {
-    res.json(getAllMemories(category));
+  try {
+    const { query, category } = req.query;
+    if (query) {
+      res.json(searchMemories(query, category));
+    } else {
+      res.json(getAllMemories(category));
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ─── MCP Servers ───
 router.get('/mcp/servers', (req, res) => {
-  res.json(getMCPServers());
+  try {
+    res.json(getMCPServers());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.post('/mcp/servers', (req, res) => {
-  const id = addMCPServer(req.body);
-  res.json({ success: true, id });
+  try {
+    const id = addMCPServer(req.body);
+    res.json({ success: true, id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.delete('/mcp/servers/:id', (req, res) => {
-  removeMCPServer(req.params.id);
-  res.json({ success: true });
+  try {
+    removeMCPServer(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── Sudo Validation ───
