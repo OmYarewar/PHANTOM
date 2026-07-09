@@ -366,3 +366,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - `tests/api.test.js`
 **Tests:** 62 passed / 1 added
 **Commits:** Pending
+## [2026-07-09 05:22:16] Fixed OpenAI client instantiation bug
+- Fixed a bug in `server/ai/llm-client.js` where the check `openaiClient._baseURL` was incorrectly used instead of `openaiClient.baseURL`. This caused the client to be unnecessarily recreated on every call and occasionally triggered 'LLM Error: 404 status code (no body)' when the URL format mismatch occurred.
+- Ran `npm test` to ensure all unit tests pass.
+- Changes committed: updated one line in `server/ai/llm-client.js`.

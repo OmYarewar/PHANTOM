@@ -29,7 +29,7 @@ function sanitizeToolCalls(toolCalls) {
 }
 
 function getClient() {
-  if (!openaiClient || openaiClient._baseURL !== config.api.baseUrl) {
+  if (!openaiClient || openaiClient.baseURL !== config.api.baseUrl) {
     openaiClient = new OpenAI({
       apiKey: config.api.apiKey || 'sk-placeholder',
       baseURL: config.api.baseUrl,
