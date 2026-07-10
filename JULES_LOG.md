@@ -370,3 +370,15 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - Fixed a bug in `server/ai/llm-client.js` where the check `openaiClient._baseURL` was incorrectly used instead of `openaiClient.baseURL`. This caused the client to be unnecessarily recreated on every call and occasionally triggered 'LLM Error: 404 status code (no body)' when the URL format mismatch occurred.
 - Ran `npm test` to ensure all unit tests pass.
 - Changes committed: updated one line in `server/ai/llm-client.js`.
+
+## [$(date +%Y-%m-%d)] — Bug Hunt: Fix empty catch blocks and tool payload parsing
+**What I decided to work on:** I decided to perform a Bug Hunt focusing on fixing tool payload parsing in the frontend and addressing empty catch blocks in the backend.
+I noticed that the frontend WebSocket handler for `tool_result` events in `frontend/js/app.js` was missing explicit checks for `msg.name` before parsing the result payload, meaning tools like `show_code_demo` and `analyze_target_graph` weren't triggering the UI logic correctly. I also found completely empty `catch` blocks in `server/telegram/sender.js` that were silently swallowing Markdown rendering fallback errors.
+**What I built/fixed:**
+- Updated the `tool_result` handler in `frontend/js/app.js` to explicitly check if `msg.name` is one of `show_preview_window`, `show_code_demo`, or `analyze_target_graph`. It now safely parses `msg.result` and falls back to a default success message.
+- Replaced two empty `catch` blocks in `server/telegram/sender.js` with `catch (e) { console.error('[Telegram] Fallback failed:', e.message); }` to ensure exceptions are logged properly.
+**Files changed:**
+- `frontend/js/app.js`
+- `server/telegram/sender.js`
+**Tests:** 62 passed / 0 added
+**Commits:** Pending

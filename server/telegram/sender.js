@@ -42,7 +42,9 @@ export async function sendAIReply(bot, chatId, markdownText) {
     } catch (err) {
       console.error('[Telegram] MarkdownV2 failed (chunk 0):', err.message);
       const plain = markdownText.slice(0, 4096).replace(/[*_`~\\]/g, '').replace(/\n{3,}/g, '\n\n');
-      try { await bot.sendMessage(chatId, plain); } catch (e) {}
+      try { await bot.sendMessage(chatId, plain); } catch (e) {
+        console.error('[Telegram] Fallback failed:', e.message);
+      }
     }
 
     // Fire the rest in parallel with small delays
@@ -56,7 +58,9 @@ export async function sendAIReply(bot, chatId, markdownText) {
       } catch (err) {
         console.error('[Telegram] MarkdownV2 failed (chunk ' + i + '):', err.message);
         const plain = markdownText.slice(i*4096, (i+1)*4096).replace(/[*_`~\\]/g, '').replace(/\n{3,}/g, '\n\n');
-        try { await bot.sendMessage(chatId, plain); } catch (e) {}
+        try { await bot.sendMessage(chatId, plain); } catch (e) {
+          console.error('[Telegram] Fallback failed:', e.message);
+        }
       }
     }
   }

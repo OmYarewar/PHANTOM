@@ -201,26 +201,26 @@
         break;
 
       case 'tool_result':
-          if (msg.name === 'show_preview_window' || msg.name === 'show_code_demo' || msg.name === 'analyze_target_graph') {
-            try {
-              const resObj = typeof msg.result === 'string' ? JSON.parse(msg.result) : msg.result;
-              if (resObj.html_content) {
-                window.showPreview(resObj.html_content, resObj.title || 'Preview');
+        if (['show_preview_window', 'show_code_demo', 'analyze_target_graph'].includes(msg.name)) {
+          try {
+            const resObj = typeof msg.result === 'string' ? JSON.parse(msg.result) : msg.result;
+            if (resObj && resObj.html_content) {
+              window.showPreview(resObj.html_content, resObj.title || 'Preview');
 
-                if (resObj.open_new_window) {
-                  // Wait a tick for the UI to update, then click the popout button automatically
-                  setTimeout(() => {
-                    document.getElementById('preview-popout-btn')?.click();
-                  }, 100);
-                }
-
-                // modify msg.result to only show success message in chat
-                msg.result = resObj.message;
+              if (resObj.open_new_window) {
+                // Wait a tick for the UI to update, then click the popout button automatically
+                setTimeout(() => {
+                  document.getElementById('preview-popout-btn')?.click();
+                }, 100);
               }
-            } catch (e) {
-              console.error('Failed to parse show_preview_window result:', e);
+
+              // modify msg.result to only show success message in chat
+              msg.result = resObj.message || 'Success';
             }
+          } catch (e) {
+            console.error(`Failed to parse ${msg.name} result:`, e);
           }
+        }
         Chat.addToolResult(msg);
         break;
 
