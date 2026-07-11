@@ -323,7 +323,7 @@ export async function processMessage(conversationId, userMessage, sessionContext
           const duration = Date.now() - startTime;
 
           // Truncate very long results
-          const maxResultLen = 15000;
+          const maxResultLen = 50000;
           let truncatedResult = result;
           if (typeof result === 'string' && result.length > maxResultLen) {
             truncatedResult = result.substring(0, maxResultLen) + `\n\n... [truncated, ${result.length - maxResultLen} chars omitted]`;

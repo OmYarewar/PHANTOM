@@ -1,7 +1,10 @@
 import os from 'os';
 import config from '../config.js';
 import { readFileSync, existsSync, readdirSync } from 'fs';
-import path, { join } from 'path';
+import path, { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function getSystemInfo() {
   try {

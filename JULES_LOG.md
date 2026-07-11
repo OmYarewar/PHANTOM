@@ -382,3 +382,10 @@ I noticed that the frontend WebSocket handler for `tool_result` events in `front
 - `server/telegram/sender.js`
 **Tests:** 62 passed / 0 added
 **Commits:** Pending
+
+## Pre-Commit Updates
+
+- Fixed ES Module import error where `__dirname` was undefined in `server/ai/system-prompt.js`
+- Increased `maxResultLen` in `server/ai/llm-client.js` from `15000` to `50000` to prevent early truncation of large tool outputs (such as `webRequest`)
+
+Tests passing.

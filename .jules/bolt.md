@@ -1,1 +1,2 @@
 - UI Settings: When writing e2e tests with Playwright that interact with modals or panels that might be obscured by backdrops (like `.sudo-modal-backdrop`), use `.evaluate()` with native JS click events or `force=True` on `.click()` to reliably trigger elements without encountering timeout errors waiting for stability/visibility.
+- Tool Outputs: When configuring maximum context lengths for AI responses, ensure alignment between the truncation settings in the `executor.js` tools and the AI processing pipeline (`llm-client.js`).
