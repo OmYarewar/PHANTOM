@@ -208,45 +208,40 @@ export async function processMessage(conversationId, userMessage, sessionContext
 
         // Handle text content — detect <think> blocks inline
         if (delta.content) {
-          const text = delta.content;
+          let text = delta.content;
 
-          // Check for <think> block opening
-          if (text.includes('<think>')) {
-            isInThinkBlock = true;
-            const parts = text.split('<think>');
-            if (parts[0]) {
-              fullContent += parts[0];
-              onChunk(parts[0]);
+          while (text.length > 0) {
+            if (!isInThinkBlock) {
+              const startIdx = text.indexOf('<think>');
+              if (startIdx !== -1) {
+                // Text before <think> is content
+                if (startIdx > 0) {
+                  const contentText = text.substring(0, startIdx);
+                  fullContent += contentText;
+                  onChunk(contentText);
+                }
+                isInThinkBlock = true;
+                text = text.substring(startIdx + '<think>'.length);
+              } else {
+                fullContent += text;
+                onChunk(text);
+                text = '';
+              }
+            } else {
+              const endIdx = text.indexOf('</think>');
+              if (endIdx !== -1) {
+                // Text before </think> is thinking
+                if (endIdx > 0) {
+                  const thinkText = text.substring(0, endIdx);
+                  if (onThinking) onThinking(thinkText);
+                }
+                isInThinkBlock = false;
+                text = text.substring(endIdx + '</think>'.length);
+              } else {
+                if (onThinking) onThinking(text);
+                text = '';
+              }
             }
-            if (parts[1]) {
-
-              if (onThinking) onThinking(parts[1]);
-            }
-            continue;
-          }
-
-          // Check for </think> block closing
-          if (text.includes('</think>')) {
-            isInThinkBlock = false;
-            const parts = text.split('</think>');
-            if (parts[0]) {
-
-              if (onThinking) onThinking(parts[0]);
-            }
-            if (parts[1]) {
-              fullContent += parts[1];
-              onChunk(parts[1]);
-            }
-            continue;
-          }
-
-          // Route to thinking or content
-          if (isInThinkBlock) {
-
-            if (onThinking) onThinking(text);
-          } else {
-            fullContent += text;
-            onChunk(text);
           }
         }
 
