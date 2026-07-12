@@ -294,7 +294,7 @@ Update Telegram bot integration: normal text replies, model command, formatted t
   - Added `.jules/bolt.md` reflecting insights on handling modals in Playwright e2e tests.
 - **Tests**: Ran `npm test`, passed 61 assertions successfully. Playwright script visually verified the UI configuration.
 Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' instead of '-s local' to fix the 'Invalid value for --strategy' error. Tested and committed the fix as a88719e4af83ece3102983517579e636359775f3.
-- Date: $(date +%Y-%m-%d)
+- Date: 2026-07-12
 - Task: Fix 400 JSON parsing error in `llm-client.js`.
 - Decisions: Implemented `sanitizeToolCalls` helper function to handle strict LLM JSON parsing constraints (especially for "moonshotai/kimi-k2.6"). If a `tool_call` arguments string is invalid JSON, it is safely re-wrapped into `JSON.stringify({ _raw_invalid: <raw_string> })` before being stored in history.
 - Files Changed: `server/ai/llm-client.js`
@@ -305,7 +305,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - Created `skill.json` manifests for all agents to allow PHANTOM AI to discover and use them.
 - `workspace/` is gitignored so changes will only affect the current local installation environment.
 
-## [$(date +%Y-%m-%d)] — Fix Unhandled Exceptions in UI Fetch Methods
+## [2026-07-12] — Fix Unhandled Exceptions in UI Fetch Methods
 **What I decided to work on:** I decided to review unhandled exceptions in the codebase (Bug Hunt). The previous attempt failed because I attempted to modify `catch` blocks blindly, but the tests failed due to lack of testing and incomplete changes. The memory says: "When handling exceptions in async functions, do not use empty catch {} blocks. Ensure errors are logged (e.g., console.error) and, in the frontend, bubbled up to the user via window.Toast.show(message, 'error') to prevent silent, hard-to-debug failures." I found some empty catch blocks in frontend functions such as `loadMCPServers`, `loadSkills`, and `selectConversation` where errors were only setting text content or calling `addErrorMessage` and silently failing.
 **What I built/fixed:** Added proper error handling via `console.error` and `window.Toast.show` in `frontend/js/management.js` and `frontend/js/app.js` catch blocks. Verified the `window.Toast` usage in UI tests.
 **Files changed:** `frontend/js/management.js`, `frontend/js/app.js`
@@ -324,7 +324,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 **Status**: Success.
 **Commit Hash**: (pending)
 
-## [$(date +%Y-%m-%d)] — Session X
+## [2026-07-12] — Session X
 **What I decided to work on:** I decided to perform a Bug Hunt focusing on unhandled promise rejections and potential errors from missing catch blocks in async functions, and also fixing accessibility issues.
 **What I built/fixed:**
 - Added `aria-label` to the System Prompt reset button in `frontend/index.html` to improve accessibility.
@@ -354,7 +354,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
 
-## [$(date +%Y-%m-%d)] — Bug Hunt: Unhandled Promise Rejections & Sync Exceptions in Express API
+## [2026-07-12] — Bug Hunt: Unhandled Promise Rejections & Sync Exceptions in Express API
 **What I decided to work on:** I chose to perform a Bug Hunt focusing on unhandled exceptions in the codebase's Express API routes (`server/routes/api.js`). Many synchronous operations (like SQLite queries `.get()`, `.all()`, `.run()`) and database calls inside these routes were not wrapped in `try/catch` blocks. If an error occurred, Express would default to returning an HTML 500 error or crash, breaking the expected JSON response contract with the Vite frontend.
 **What I built/fixed:**
 - Added `try/catch` wrappers around all the previously unprotected route handlers in `server/routes/api.js` (including endpoints for settings, telegram status, conversations, tools, memory, and MCP servers).
@@ -371,7 +371,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - Ran `npm test` to ensure all unit tests pass.
 - Changes committed: updated one line in `server/ai/llm-client.js`.
 
-## [$(date +%Y-%m-%d)] — Bug Hunt: Fix empty catch blocks and tool payload parsing
+## [2026-07-12] — Bug Hunt: Fix empty catch blocks and tool payload parsing
 **What I decided to work on:** I decided to perform a Bug Hunt focusing on fixing tool payload parsing in the frontend and addressing empty catch blocks in the backend.
 I noticed that the frontend WebSocket handler for `tool_result` events in `frontend/js/app.js` was missing explicit checks for `msg.name` before parsing the result payload, meaning tools like `show_code_demo` and `analyze_target_graph` weren't triggering the UI logic correctly. I also found completely empty `catch` blocks in `server/telegram/sender.js` that were silently swallowing Markdown rendering fallback errors.
 **What I built/fixed:**
@@ -389,3 +389,12 @@ I noticed that the frontend WebSocket handler for `tool_result` events in `front
 - Increased `maxResultLen` in `server/ai/llm-client.js` from `15000` to `50000` to prevent early truncation of large tool outputs (such as `webRequest`)
 
 Tests passing.
+
+## [2026-07-12] — Bug Hunt: Fix missing timestamps on conversation history load
+**What I decided to work on:** I decided to perform a Bug Hunt focusing on fixing the missing timestamps when a conversation is loaded from the memory store. Since the `timestamp` property on `msg` is not present when loaded from the SQLite messages table (which uses `created_at`), the timestamps on the messages were missing on load.
+**What I built/fixed:**
+- Updated the message rendering in `frontend/js/chat.js` to fallback to `msg.created_at` when `msg.timestamp` is unavailable, correctly populating the `timeStr` for historical messages.
+**Files changed:**
+- `frontend/js/chat.js`
+**Tests:** 62 passed / 0 added
+**Commits:** Pending
