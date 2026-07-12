@@ -427,7 +427,7 @@ window.Chat = {
         contentEl.textContent = msg.content;
         el.appendChild(contentEl);
 
-        const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const timeStr = (msg.timestamp || msg.created_at) ? new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
         const footerEl = document.createElement('div');
         footerEl.className = 'message-footer user';
         if (timeStr) footerEl.innerHTML = `<span class="message-timestamp">${timeStr}</span>`;
@@ -452,7 +452,7 @@ window.Chat = {
             el.className = 'message assistant';
             el.innerHTML = window.renderMarkdown(displayContent);
 
-            const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            const timeStr = (msg.timestamp || msg.created_at) ? new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
             const footerEl = document.createElement('div');
             footerEl.className = 'message-footer assistant';
 
