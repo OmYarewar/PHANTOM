@@ -389,3 +389,12 @@ I noticed that the frontend WebSocket handler for `tool_result` events in `front
 - Increased `maxResultLen` in `server/ai/llm-client.js` from `15000` to `50000` to prevent early truncation of large tool outputs (such as `webRequest`)
 
 Tests passing.
+
+## [2026-07-13 15:35:29] — Fix 429 error condition to handle ResourceExhausted
+**What I decided to work on:** Based on the issue "LLM Error: ResourceExhausted: Worker local total request limit reached (40/32)", I decided to update the retry condition in the `server/ai/llm-client.js` file to include `ResourceExhausted` in the message string check.
+**What I built/fixed:**
+- Updated the `apiError.message.includes('429')` condition in `server/ai/llm-client.js` to also check for `apiError.message.includes('ResourceExhausted')`. This ensures that limits hit for resources exhaustions trigger the exponential backoff retry mechanism correctly.
+**Files changed:**
+- `server/ai/llm-client.js`
+**Tests:** 62 passed / 0 added
+**Commits:** Pending
