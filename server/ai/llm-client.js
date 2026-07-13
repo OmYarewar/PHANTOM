@@ -168,7 +168,7 @@ export async function processMessage(conversationId, userMessage, sessionContext
           });
           break; // Success, exit retry loop
         } catch (apiError) {
-          if (apiError.status === 429 || apiError.message.includes('429')) {
+          if (apiError.status === 429 || apiError.message.includes('429') || apiError.message.includes('ResourceExhausted')) {
             retries++;
             if (retries >= maxRetries) throw apiError;
             console.log(`[PHANTOM] Rate limit hit (429). Retrying in ${Math.pow(2, retries)}s...`);
