@@ -1,12 +1,12 @@
 import os from 'os';
 import config from '../config.js';
-import { readFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, promises as fsPromises } from 'fs';
 import path, { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function getSystemInfo() {
+async function getSystemInfo() {
   try {
     const info = {
       hostname: os.hostname(),
@@ -21,7 +21,7 @@ function getSystemInfo() {
 
     if (os.platform() === 'linux') {
       try {
-        const releaseContent = readFileSync('/etc/os-release', 'utf8');
+        const releaseContent = await fsPromises.readFile('/etc/os-release', 'utf8');
         const match = releaseContent.match(/^PRETTY_NAME="?(.*?)"?$/m);
         info.distro = match && match[1] ? match[1] : 'Linux';
       } catch (err) {
@@ -58,16 +58,17 @@ function getSystemInfo() {
 /**
  * Load skill manifests from workspace/skills
  */
-function getAvailableSkills() {
+async function getAvailableSkills() {
   try {
     const skillsDir = join(config.workspace, 'skills');
     if (!existsSync(skillsDir)) return [];
-    const entries = readdirSync(skillsDir, { withFileTypes: true });
-    const skills = entries.filter(e => e.isDirectory()).map(e => {
+    const entries = await fsPromises.readdir(skillsDir, { withFileTypes: true });
+    const skillsPromises = entries.filter(e => e.isDirectory()).map(async e => {
       const metaPath = join(skillsDir, e.name, 'skill.json');
       if (existsSync(metaPath)) {
         try {
-          const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
+          const metaContent = await fsPromises.readFile(metaPath, 'utf8');
+          const meta = JSON.parse(metaContent);
           return `- ${meta.name || e.name}: ${meta.description || 'No description'}`;
         } catch (err) {
           console.warn(`[SystemPrompt] Failed to parse skill.json for ${e.name}:`, err.message);
@@ -75,6 +76,7 @@ function getAvailableSkills() {
       }
       return `- ${e.name}`;
     });
+    const skills = await Promise.all(skillsPromises);
     return skills;
   } catch (err) {
     console.warn(`[SystemPrompt] Failed to get available skills:`, err.message);
@@ -85,11 +87,11 @@ function getAvailableSkills() {
 /**
  * Load available agents from server/agents
  */
-function getAvailableAgents() {
+async function getAvailableAgents() {
   try {
     const agentsDir = join(__dirname, '..', 'agents');
     if (!existsSync(agentsDir)) return [];
-    const entries = readdirSync(agentsDir, { withFileTypes: true });
+    const entries = await fsPromises.readdir(agentsDir, { withFileTypes: true });
     return entries.filter(e => e.isFile() && e.name.endsWith('.md')).map(e => {
       const name = e.name.replace('.md', '');
       return `- ${name}: Sub-agent available for delegation`;
@@ -105,30 +107,36 @@ function getAvailableAgents() {
  *//**
  * Load execution trace summaries for meta-optimization
  */
-function getRecentTraces() {
+async function getRecentTraces() {
   try {
     const tracesDir = join(config.workspace, '.traces');
     if (!existsSync(tracesDir)) return '';
-    const files = readdirSync(tracesDir).sort().slice(-5);
-    return files.map(f => {
+    const files = await fsPromises.readdir(tracesDir);
+    const recentFiles = files.sort().slice(-5);
+    const tracePromises = recentFiles.map(async f => {
       try {
-        return readFileSync(join(tracesDir, f), 'utf8').substring(0, 500);
+        const traceContent = await fsPromises.readFile(join(tracesDir, f), 'utf8');
+        return traceContent.substring(0, 500);
       } catch (err) {
         console.warn(`[SystemPrompt] Failed to load trace ${f}:`, err.message);
         return '';
       }
-    }).filter(Boolean).join('\n---\n');
+    });
+    const traceContents = await Promise.all(tracePromises);
+    return traceContents.filter(Boolean).join('\n---\n');
   } catch (err) {
     console.warn(`[SystemPrompt] Failed to load recent traces:`, err.message);
     return '';
   }
 }
 
-export function buildSystemPrompt(sessionContext = "", agentRole = "default") {
-  const sys = getSystemInfo();
-  const skills = getAvailableSkills();
-  const agents = getAvailableAgents();
-  const traces = getRecentTraces();
+export async function buildSystemPrompt(sessionContext = "", agentRole = "default") {
+  const [sys, skills, agents, traces] = await Promise.all([
+    getSystemInfo(),
+    getAvailableSkills(),
+    getAvailableAgents(),
+    getRecentTraces()
+  ]);
 
   let identityContext = '';
 

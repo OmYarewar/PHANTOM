@@ -58,7 +58,7 @@ export async function processMessage(conversationId, userMessage, sessionContext
 
   // Build messages array
   const messages = [
-    { role: 'system', content: buildSystemPrompt(sessionContext, agentRole) },
+    { role: 'system', content: await buildSystemPrompt(sessionContext, agentRole) },
   ];
 
   // Determine which model to use based on agent role
