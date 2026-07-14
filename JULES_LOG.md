@@ -389,3 +389,22 @@ I noticed that the frontend WebSocket handler for `tool_result` events in `front
 - Increased `maxResultLen` in `server/ai/llm-client.js` from `15000` to `50000` to prevent early truncation of large tool outputs (such as `webRequest`)
 
 Tests passing.
+## $(date +"%Y-%m-%d") - Fix sharp native binding and HF CDN 403 test failures
+
+**Decisions:**
+- Added `sharp@^0.35.3` as an explicit top-level dependency in `package.json` to prevent Node.js native binding crashes (`Cannot find module '../build/Release/sharp-linux-x64.node'`) caused by a legacy nested dependency version, while continuing to provide modern `@img/sharp-*` binaries.
+- Avoided mutating `server/memory/embeddings.js` from `all-MiniLM-L6-v2` to another model as it would corrupt SQLite vector embeddings backward-compatibility.
+- Added a `vi.mock` for `@xenova/transformers` inside `tests/tools.test.js` to simulate the Float32Array output, resolving Hugging Face CDN 403 Forbidden redirects (which affects `.onnx` files) and preventing massive initial 90MB downloads on every test run.
+
+**Fixes:**
+- Resolved `npm run dev` startup crash due to sharp binding failures.
+- Resolved `npm run test` failure on `tools.test.js` due to HF LFS CDN redirect auth errors for unauthenticated API requests via `@xenova/transformers`.
+
+**Files Changed:**
+- `package.json`
+- `package-lock.json`
+- `tests/tools.test.js`
+
+**Test Status:** All tests pass successfully.
+
+**Commit:** $(git rev-parse HEAD)
