@@ -41,5 +41,16 @@
     "supertest": "^7.2.2",
     "vite": "^6.4.3",
     "vitest": "^3.2.7"
+  },
+  "overrides": {
+    "sharp": "^0.35.3",
+    "@xenova/transformers": {
+      "sharp": "^0.35.3"
+    },
+    "claude-flow": {
+      "agentic-flow": {
+        "sharp": "^0.35.3"
+      }
+    }
   }
 }
