@@ -1,10 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { executeTool, validateUrlForSSRF } from '../server/tools/executor.js';
 import { initDB, closeDB, saveMemory, searchMemories } from '../server/memory/store.js';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { mkdtemp, rm } from 'fs/promises';
 import config from '../server/config.js';
+
+
+vi.mock('@xenova/transformers', () => {
+  return {
+    pipeline: vi.fn().mockResolvedValue(async () => {
+      return { data: new Float32Array(384).fill(0.1) };
+    }),
+  };
+});
 
 describe('Tools Executor', () => {
   let tempDir;
