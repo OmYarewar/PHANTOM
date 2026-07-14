@@ -415,10 +415,4 @@ Tests passing.
 - `frontend/js/analysis-dashboard.js`
 **Tests:** 62 passed / 0 added
 **Commits:** Pending
-## Session: Refactor \`loadSkills\` for Async I/O
 
-- **Decisions**: Refactored the \`loadSkills()\` function in \`server/telegram/bootstrap.js\` to utilize asynchronous I/O (\`fs.promises\`) combined with \`Promise.all()\`. This prevents blocking the Node.js event loop when reading a large number of skill directories and files, a necessary improvement to sustain performance under heavy concurrent usage.
-- **Fixes**: Converted synchronous filesystem methods like \`fs.readdirSync\`, \`fs.statSync\`, and \`fs.readFileSync\` into their async counterparts (\`fs.promises.readdir\`, \`fs.promises.stat\`, and \`fs.promises.readFile\`). Mapped entries to an array of promises and awaited them simultaneously. Handled error states similarly to the original sync implementation.
-- **Files Changed**:
-  - \`server/telegram/bootstrap.js\`
-- **Test Status**: Ran tests and resolved unrelated test environment issues to ensure the codebase remains stable.
