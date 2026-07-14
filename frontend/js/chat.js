@@ -280,6 +280,7 @@ window.Chat = {
         footerEl.className = 'message-footer assistant';
 
         const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
         copyBtn.className = 'message-copy-btn';
         copyBtn.setAttribute('aria-label', 'Copy message');
         copyBtn.innerHTML = '📋 Copy';
@@ -457,6 +458,7 @@ window.Chat = {
             footerEl.className = 'message-footer assistant';
 
             const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
             copyBtn.className = 'message-copy-btn';
             copyBtn.setAttribute('aria-label', 'Copy message');
             copyBtn.innerHTML = '📋 Copy';

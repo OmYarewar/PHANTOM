@@ -86,7 +86,7 @@ window.Management = {
             <small>${this.esc(s.command || s.url || '')}</small>
             <span class="badge">${s.transport || 'stdio'}</span>
           </div>
-          <button class="btn-icon-sm danger" onclick="Management.deleteMCP('${s.id}')" title="Remove" aria-label="Remove MCP server">🗑️</button>
+          <button type="button" class="btn-icon-sm danger" onclick="Management.deleteMCP('${s.id}')" title="Remove" aria-label="Remove MCP server">🗑️</button>
         </div>
       `).join('');
     } catch (err) {
@@ -159,7 +159,7 @@ window.Management = {
             <strong>🧠 ${this.esc(s.name)}</strong>
             <small>${this.esc(s.description || s.files?.join(', ') || 'No description')}</small>
           </div>
-          <button class="btn-icon-sm danger" onclick="Management.deleteSkill('${this.esc(s.name)}')" title="Remove" aria-label="Remove Skill">🗑️</button>
+          <button type="button" class="btn-icon-sm danger" onclick="Management.deleteSkill('${this.esc(s.name)}')" title="Remove" aria-label="Remove Skill">🗑️</button>
         </div>
       `).join('');
     } catch (err) {

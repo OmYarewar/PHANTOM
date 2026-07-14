@@ -34,61 +34,72 @@ export async function bootstrapSession() {
 async function loadSkills() {
   const skillsDir = path.resolve(process.cwd(), 'skills');
 
-  if (!fs.existsSync(skillsDir)) {
+  try {
+    await fs.promises.access(skillsDir);
+  } catch {
     return [];
   }
 
-  const entries = fs.readdirSync(skillsDir);
-  const skills = [];
-
-  for (const entry of entries) {
+  const entries = await fs.promises.readdir(skillsDir);
+  const skillsPromises = entries.map(async (entry) => {
     const fullPath = path.join(skillsDir, entry);
-    const stat = fs.statSync(fullPath);
 
     try {
+      const stat = await fs.promises.stat(fullPath);
+
       if (stat.isDirectory()) {
-        // Skill folder — look for skill.json or README.md inside
         const metaPath = path.join(fullPath, 'skill.json');
         const readmePath = path.join(fullPath, 'README.md');
 
-        if (fs.existsSync(metaPath)) {
-          const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-          skills.push({
+        try {
+          const content = await fs.promises.readFile(metaPath, 'utf8');
+          const meta = JSON.parse(content);
+          return {
             name: meta.name || entry,
             description: meta.description || 'No description',
             version: meta.version || '1.0.0',
             type: 'folder',
-          });
-        } else if (fs.existsSync(readmePath)) {
-          const lines = fs.readFileSync(readmePath, 'utf8').split('\n');
+          };
+        } catch (err) {
+          if (err.code !== 'ENOENT') throw err;
+        }
+
+        try {
+          const content = await fs.promises.readFile(readmePath, 'utf8');
+          const lines = content.split('\n');
           const name = lines[0].replace(/^#+\s*/, '').trim() || entry;
           const description = lines.find(l => l.trim() && !l.startsWith('#')) || 'No description';
-          skills.push({ name, description: description.trim(), type: 'folder' });
-        } else {
-          skills.push({ name: entry, description: 'Skill folder', type: 'folder' });
+          return { name, description: description.trim(), type: 'folder' };
+        } catch (err) {
+          if (err.code !== 'ENOENT') throw err;
         }
+
+        return { name: entry, description: 'Skill folder', type: 'folder' };
       } else if (entry.endsWith('.json')) {
-        const meta = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-        skills.push({
+        const content = await fs.promises.readFile(fullPath, 'utf8');
+        const meta = JSON.parse(content);
+        return {
           name: meta.name || entry.replace('.json', ''),
           description: meta.description || 'No description',
           version: meta.version || '1.0.0',
           type: 'json',
-        });
+        };
       } else if (entry.endsWith('.zip')) {
-        skills.push({
+        return {
           name: entry.replace('.zip', ''),
           description: 'Packaged skill',
           type: 'zip',
-        });
+        };
       }
     } catch (err) {
-      // Unreadable skill — include with error note
-      skills.push({ name: entry, description: `Could not read: ${err.message}`, type: 'unknown' });
+      return { name: entry, description: `Could not read: ${err.message}`, type: 'unknown' };
     }
-  }
 
-  return skills;
+    return null;
+  });
+
+  const skills = await Promise.all(skillsPromises);
+  return skills.filter(Boolean);
 }
 
 /**

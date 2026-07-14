@@ -33,7 +33,7 @@ export function renderAnalysisDashboard(containerId) {
       </div>
 
       <div style="margin-top: 20px;">
-        <button class="btn btn-primary" id="demo-analysis-btn">Run Demo Analysis</button>
+        <button type="button" class="btn btn-primary" id="demo-analysis-btn">Run Demo Analysis</button>
       </div>
     </div>
   `;

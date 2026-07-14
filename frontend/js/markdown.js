@@ -16,8 +16,8 @@ window.renderMarkdown = function(text) {
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
     const id = 'cb-' + Math.random().toString(36).substr(2, 6);
     const header = lang
-      ? `<div class="code-block-header"><span>${lang}</span><button class="copy-btn" aria-label="Copy code" onclick="copyCode('${id}')">Copy</button></div>`
-      : `<div class="code-block-header"><span>code</span><button class="copy-btn" aria-label="Copy code" onclick="copyCode('${id}')">Copy</button></div>`;
+      ? `<div class="code-block-header"><span>${lang}</span><button type="button" class="copy-btn" aria-label="Copy code" onclick="copyCode('${id}')">Copy</button></div>`
+      : `<div class="code-block-header"><span>code</span><button type="button" class="copy-btn" aria-label="Copy code" onclick="copyCode('${id}')">Copy</button></div>`;
     return `${header}<pre id="${id}"><code>${code.trim()}</code></pre>`;
   });
 

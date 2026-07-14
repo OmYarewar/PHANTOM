@@ -389,9 +389,3 @@ I noticed that the frontend WebSocket handler for `tool_result` events in `front
 - Increased `maxResultLen` in `server/ai/llm-client.js` from `15000` to `50000` to prevent early truncation of large tool outputs (such as `webRequest`)
 
 Tests passing.
-## [2024-07-11] — Fix Think Block Parsing
-**What I decided to work on:** I decided to fix an issue where the thought process block (think tags) wasn't stopping correctly if both <think> and </think> tags appeared in a single chunk.
-**What I built/fixed:** Updated the chunk parsing logic in `server/ai/llm-client.js` to use a `while` loop that iterates over the chunk string and correctly splits text into content vs. thinking blocks based on `isInThinkBlock` status, correctly handling cases where multiple tags or full think blocks appear in a single chunk.
-**Files changed:** `server/ai/llm-client.js`
-**Tests:** 62 passed / 0 added
-**Commits:** Pending
