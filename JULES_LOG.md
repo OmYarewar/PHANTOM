@@ -398,3 +398,20 @@ Tests passing.
 - `server/ai/llm-client.js`
 **Tests:** 62 passed / 0 added
 **Commits:** Pending
+
+## [$(date +%Y-%m-%d)] — Bug Hunt: Fix missing `type="button"` attributes on dynamic `<button>` elements in Javascript.
+**What I decided to work on:** I decided to perform a Bug Hunt focusing on fixing missing `type="button"` attributes on dynamically created `<button>` elements in the frontend Javascript files. According to the directives ("Always explicitly define a `type` attribute (e.g., `type="button"`) on `<button>` elements to prevent unintended form submissions."), this ensures buttons behave correctly across different browsers.
+**What I built/fixed:**
+- Added `type="button"` to the dynamically created image upload button and conversation delete buttons in `frontend/js/app.js`.
+- Added `type="button"` to the dynamically created message copy buttons in `frontend/js/chat.js`.
+- Added `type="button"` to the MCP and Skill deletion buttons in `frontend/js/management.js`.
+- Added `type="button"` to the copy code buttons in `frontend/js/markdown.js`.
+- Added `type="button"` to the demo analysis button in `frontend/js/analysis-dashboard.js`.
+**Files changed:**
+- `frontend/js/app.js`
+- `frontend/js/chat.js`
+- `frontend/js/management.js`
+- `frontend/js/markdown.js`
+- `frontend/js/analysis-dashboard.js`
+**Tests:** 62 passed / 0 added
+**Commits:** Pending

@@ -331,7 +331,7 @@
         <img id="image-preview-thumb" src="" alt="preview" class="image-preview-thumb"/>
         <span id="image-preview-name" class="image-preview-name"></span>
         <span class="image-preview-badge">OSINT Ready</span>
-        <button id="image-preview-remove" class="image-preview-remove" title="Remove image" aria-label="Remove image">✕</button>
+        <button type="button" id="image-preview-remove" class="image-preview-remove" title="Remove image" aria-label="Remove image">✕</button>
       </div>
     `;
     inputArea.insertBefore(previewEl, inputArea.firstChild);
@@ -353,6 +353,7 @@
 
     // ── Image button in input bar ──
     const imageBtn = document.createElement('button');
+    imageBtn.type = 'button';
     imageBtn.id = 'image-upload-btn';
     imageBtn.className = 'image-upload-btn';
     imageBtn.title = 'Attach an image';
@@ -456,7 +457,7 @@
       el.innerHTML = `
         <span class="conv-icon">💬</span>
         <span class="conv-title">${escapeHtml(conv.title)}</span>
-        <button class="conv-delete" title="Delete" aria-label="Delete conversation">✕</button>
+        <button type="button" class="conv-delete" title="Delete" aria-label="Delete conversation">✕</button>
       `;
 
       el.addEventListener('click', (e) => {
