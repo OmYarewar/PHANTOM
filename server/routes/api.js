@@ -13,7 +13,7 @@ import { validateUrlForSSRF } from '../tools/executor.js';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { readdirSync, statSync, rmSync, mkdirSync, existsSync, readFileSync } from 'fs';
+import { statSync, rmSync, mkdirSync, existsSync, promises as fsPromises } from 'fs';
 
 const execAsync = promisify(exec);
 import { join, basename, resolve, sep } from 'path';
@@ -385,31 +385,39 @@ function getSkillsDir() {
   return dir;
 }
 
-router.get('/skills', (req, res) => {
+router.get('/skills', async (req, res) => {
   try {
     const skillsDir = getSkillsDir();
-    const entries = readdirSync(skillsDir, { withFileTypes: true });
-    const skills = entries.filter(e => e.isDirectory()).map(e => {
+    const entries = await fsPromises.readdir(skillsDir, { withFileTypes: true });
+
+    const skillPromises = entries.filter(e => e.isDirectory()).map(async (e) => {
       const skillPath = join(skillsDir, e.name);
       let meta = { name: e.name, description: '', files: [] };
-      // Try reading a manifest/readme
+      // Try reading a manifest
       try {
         const metaPath = join(skillPath, 'skill.json');
-        if (existsSync(metaPath)) {
-          meta = { ...meta, ...JSON.parse(readFileSync(metaPath, 'utf8')) };
+        try {
+          const content = await fsPromises.readFile(metaPath, 'utf8');
+          meta = { ...meta, ...JSON.parse(content) };
+        } catch (err) {
+           if (err.code !== 'ENOENT') throw err;
         }
       } catch (err) {
         console.warn(`[Skills] Failed to read skill.json for ${e.name}:`, err.message);
       }
       try {
-        meta.files = readdirSync(skillPath).slice(0, 20);
+        const files = await fsPromises.readdir(skillPath);
+        meta.files = files.slice(0, 20);
       } catch (err) {
         console.warn(`[Skills] Failed to read files for ${e.name}:`, err.message);
       }
       return meta;
     });
+
+    const skills = await Promise.all(skillPromises);
     res.json(skills);
   } catch (err) {
+    console.error('[Skills] Failed to list skills:', err.message);
     res.json([]);
   }
 });
