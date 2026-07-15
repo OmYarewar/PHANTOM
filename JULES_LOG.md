@@ -420,3 +420,18 @@ Tests passing.
 **Files changed:** `frontend/js/chat.js`
 **Tests:** 62 passed / 0 added
 **Commits:** Pending
+## 2026-07-15 12:23:41 - Dependency Upgrades & Bugfixes
+
+**Decisions & Fixes**:
+- Upgraded `better-sqlite3` to `^12.11.1` and `isolated-vm` to `^7.0.0` in `package.json` to ensure Node 26 compatibility without breaking native modules.
+- Implemented `getArgsPreview(args)` helper in `frontend/js/chat.js` for more robust UI arguments preview extraction from tool results, preventing truncation bugs and handling fallbacks better.
+- Rebuilt packages successfully using `npm install` and `npm rebuild`.
+
+**Files Changed**:
+- `package.json`
+- `package-lock.json`
+- `frontend/js/chat.js`
+
+**Test Status**: All 62 Vitest assertions passed.
+
+**Commit**: bd79305e15d537c087a6abfaf9a0794d77451870

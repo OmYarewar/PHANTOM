@@ -1,3 +1,5 @@
-- UI Settings: When writing e2e tests with Playwright that interact with modals or panels that might be obscured by backdrops (like `.sudo-modal-backdrop`), use `.evaluate()` with native JS click events or `force=True` on `.click()` to reliably trigger elements without encountering timeout errors waiting for stability/visibility.
-- Tool Outputs: When configuring maximum context lengths for AI responses, ensure alignment between the truncation settings in the `executor.js` tools and the AI processing pipeline (`llm-client.js`).
-- Performance & Testing: When refactoring synchronous file system operations to asynchronous operations (e.g. `fs.readFileSync` to `fs.promises.readFile`), benchmark scripts may require careful design to detect event loop blocking effectively. A reliable approach involves using a tightly-polled `setInterval` alongside `process.hrtime.bigint()` to track actual loop delays caused by blocking operations over multiple iterations, as opposed to solely relying on raw execution duration, which could be skewed by OS-level caching.
+Update dependency to fix bugs and support Node 26
+
+1. Upgraded better-sqlite3 and isolated-vm
+2. Fixed argument preview parsing in chat.js
+3. Ran tests which all passed.
