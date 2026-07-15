@@ -344,9 +344,7 @@ window.Chat = {
     card.className = 'tool-card';
     card.id = `tool-${data.id}`;
 
-    const argsPreview = typeof data.args === 'object'
-      ? (data.args.command || data.args.path || data.args.query || data.args.name || data.args.url || JSON.stringify(data.args).substring(0, 80))
-      : '';
+    const argsPreview = this.getArgsPreview(data.args);
 
     card.innerHTML = `
       <div class="tool-card-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
@@ -504,7 +502,7 @@ window.Chat = {
               continue;
             }
 
-            const argsPreview = args.command || args.path || args.query || args.name || '';
+            const argsPreview = this.getArgsPreview(args);
             const card = document.createElement('div');
             card.className = 'tool-card';
             card.innerHTML = `
@@ -550,6 +548,16 @@ window.Chat = {
         });
       });
     }
+  },
+
+    getArgsPreview(args) {
+    if (!args || typeof args !== 'object') return '';
+    const keys = ['command', 'path', 'file_path', 'media_path', 'query', 'goal', 'url', 'task', 'approach', 'title', 'name', 'target_name', 'content', 'code'];
+    for (const key of keys) {
+      if (args[key]) return String(args[key]);
+    }
+    const str = JSON.stringify(args);
+    return str.length > 80 ? str.substring(0, 80) + '...' : str;
   },
 
   escapeHtml(str) {
