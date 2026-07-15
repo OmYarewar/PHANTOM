@@ -435,3 +435,18 @@ Tests passing.
 **Test Status**: All 62 Vitest assertions passed.
 
 **Commit**: bd79305e15d537c087a6abfaf9a0794d77451870
+
+## [$(date +%Y-%m-%d)] — Feature: HTML Conversation Export
+**What I decided to work on:** I decided to build a "New Feature" based on the prompt's suggestion to implement "Export to PDF/HTML". The current application only supported Markdown export. I updated this to optionally format the export as a clean, styled HTML document using the `marked` library, and default the UI export button to HTML format.
+**What I built/fixed:**
+- Modified `server/routes/api.js` `GET /api/conversations/:id/export` to support a `?format=html` query parameter.
+- Integrated `marked` in `server/routes/api.js` to render HTML correctly alongside embedded CSS.
+- Updated the export button in `frontend/js/app.js` to use `?format=html`.
+- Added a new Vitest test in `tests/api.test.js` to verify HTML export functionality.
+**Files changed:**
+- `server/routes/api.js`
+- `frontend/js/app.js`
+- `tests/api.test.js`
+- `package.json` / `package-lock.json`
+**Tests:** 64 passed / 1 added
+**Commits:** Pending

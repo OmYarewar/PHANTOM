@@ -20,6 +20,7 @@ import { join, basename, resolve, sep } from 'path';
 import multer from 'multer';
 import { startBot, stopBot, getBotStatus } from '../telegram/bot.js';
 import AdmZip from 'adm-zip';
+import { marked } from 'marked';
 
 const router = Router();
 
@@ -181,9 +182,42 @@ router.get('/conversations/:id/export', (req, res) => {
       }
     });
 
-    res.setHeader('Content-disposition', `attachment; filename=phantom_export_${conv.id.substring(0, 8)}.md`);
-    res.setHeader('Content-type', 'text/markdown; charset=utf-8');
-    res.send(markdown);
+    if (req.query.format === 'html') {
+      const escapeHtml = (str) => {
+        if (!str) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+        return str.replace(/[&<>"]/g, m => map[m]);
+      };
+
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(conv.title)} - PHANTOM Export</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1 { color: #22c55e; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+    h2 { margin-top: 1.5em; color: #111; }
+    pre { background-color: #f6f8fa; padding: 16px; overflow: auto; border-radius: 6px; }
+    code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 85%; }
+    blockquote { padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; margin: 0; }
+    details { margin-bottom: 1em; padding: 0.5em; border: 1px solid #dfe2e5; border-radius: 6px; }
+    summary { font-weight: bold; cursor: pointer; }
+    .date { color: #6a737d; font-style: italic; }
+  </style>
+</head>
+<body>
+${marked.parse(markdown)}
+</body>
+</html>`;
+      res.setHeader('Content-disposition', `attachment; filename=phantom_export_${conv.id.substring(0, 8)}.html`);
+      res.setHeader('Content-type', 'text/html; charset=utf-8');
+      res.send(htmlContent);
+    } else {
+      res.setHeader('Content-disposition', `attachment; filename=phantom_export_${conv.id.substring(0, 8)}.md`);
+      res.setHeader('Content-type', 'text/markdown; charset=utf-8');
+      res.send(markdown);
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

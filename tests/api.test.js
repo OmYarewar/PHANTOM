@@ -157,6 +157,31 @@ describe('API Routes', () => {
     expect(res.text).toContain('World');
   });
 
+  it('GET /api/conversations/:id/export?format=html should export conversation to html', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+
+    // Create conversation
+    const convRes = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'HTML Export Test' });
+    const convId = convRes.body.id;
+
+    // Add some messages manually to test the export formatting via store.js
+    const { addMessage } = await import('../server/memory/store.js');
+    addMessage(convId, { role: 'user', content: 'HTML Hello' });
+    addMessage(convId, { role: 'assistant', content: 'HTML World' });
+
+    const res = await request(app).get(`/api/conversations/${convId}/export?format=html`).set('X-Forwarded-For', uniqueTestIp);
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/html');
+    expect(res.headers['content-disposition']).toContain('attachment; filename=phantom_export_');
+    expect(res.text).toContain('<!DOCTYPE html>');
+    expect(res.text).toContain('HTML Export Test');
+    expect(res.text).toContain('HTML Hello');
+    expect(res.text).toContain('HTML World');
+  });
+
   it('GET /api/system/info should return 200', async () => {
     const res = await request(app).get('/api/system/info').set('X-Forwarded-For', testIp);
     expect(res.status).toBe(200);

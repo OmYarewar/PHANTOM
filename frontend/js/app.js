@@ -625,7 +625,7 @@
         window.Toast.show('No active conversation to export.', 'warning');
         return;
       }
-      window.open(`/api/conversations/${currentConversationId}/export`, '_blank');
+      window.open(`/api/conversations/${currentConversationId}/export?format=html`, '_blank');
     });
   }
 
