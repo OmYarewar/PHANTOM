@@ -414,3 +414,9 @@ Tests passing.
 - **Decisions**: Added an overrides section to package.json to force all dependencies (specifically @xenova/transformers and claude-flow) to use sharp ^0.35.3, which includes prebuilt binaries and avoids installation issues on newer Node versions.
 - **Files Changed**: package.json, package-lock.json
 - **Test Status**: `npm test` and `npm run build` passed.
+## [2026-07-15] — Fix missing message timestamps
+**What I decided to work on:** I decided to perform a Bug Hunt and observed that the `frontend/js/chat.js` script expected a `timestamp` property on messages. However, historical messages loaded from the SQLite backend use the `created_at` property, causing timestamps to be missing from the UI when looking at older conversations.
+**What I built/fixed:** Updated `renderHistory` in `frontend/js/chat.js` to fallback to `msg.created_at` if `msg.timestamp` is missing, ensuring timestamps always render.
+**Files changed:** `frontend/js/chat.js`
+**Tests:** 62 passed / 0 added
+**Commits:** Pending
