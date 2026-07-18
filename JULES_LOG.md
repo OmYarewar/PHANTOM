@@ -450,3 +450,15 @@ Tests passing.
 - `package.json` / `package-lock.json`
 **Tests:** 64 passed / 1 added
 **Commits:** Pending
+
+## [$(date +%Y-%m-%d)] — Bug Hunt: Fix Tool Result Ordering and Assignment Race Condition
+**What I decided to work on:** I decided to perform a Bug Hunt and observed a race condition involving SQLite message ordering and DOM tool card selection. If an AI agent emitted multiple tool calls simultaneously, the resulting `tool_result` WebSocket events would blindly overwrite the last tool card on the frontend. Additionally, loading these messages from the backend could be out-of-order due to identical millisecond-level timestamps.
+**What I built/fixed:**
+- Added `rowid ASC` to the `ORDER BY created_at ASC` query inside `server/memory/store.js`'s `getMessages()` to guarantee deterministic chronological ordering.
+- Updated `renderHistory` in `frontend/js/chat.js` to assign `id="tool-${tc.id}"` to newly rendered tool cards.
+- Updated the `tool` message handler in `renderHistory` to look up the correct DOM tool card by `msg.tool_call_id` rather than blindly selecting the last one in the DOM.
+**Files changed:**
+- `server/memory/store.js`
+- `frontend/js/chat.js`
+**Tests:** 63 passed / 0 added
+**Commits:** Pending
