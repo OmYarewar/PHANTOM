@@ -211,7 +211,7 @@ export function addMessage(conversationId, { role, content, tool_calls, tool_cal
 }
 
 export function getMessages(conversationId) {
-  const rows = getDB().prepare('SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC').all(conversationId);
+  const rows = getDB().prepare('SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC, rowid ASC').all(conversationId);
   return rows.map(r => ({
     ...r,
     tool_calls: r.tool_calls ? JSON.parse(r.tool_calls) : undefined,

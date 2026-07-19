@@ -490,6 +490,7 @@ window.Chat = {
 
               const card = document.createElement('div');
               card.className = 'tool-card file-mod-card';
+              if (tc.id) card.id = `tool-${tc.id}`;
               card.innerHTML = `
                 <div class="tool-card-header file-mod-header" onclick="this.nextElementSibling.classList.toggle('expanded')" style="background: var(--bg-tertiary); border-left: 3px solid var(--accent);">
                   <span>${icon} <strong>${actionName}</strong></span>
@@ -505,6 +506,7 @@ window.Chat = {
             const argsPreview = this.getArgsPreview(args);
             const card = document.createElement('div');
             card.className = 'tool-card';
+            if (tc.id) card.id = `tool-${tc.id}`;
             card.innerHTML = `
               <div class="tool-card-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
                 <span>⚡ ${tc.function.name}</span>
@@ -517,10 +519,16 @@ window.Chat = {
           }
         }
       } else if (msg.role === 'tool') {
-        const cards = this.messagesEl.querySelectorAll('.tool-card');
-        const lastCard = cards[cards.length - 1];
-        if (lastCard) {
-          const body = lastCard.querySelector('.tool-card-body');
+        let card = null;
+        if (msg.tool_call_id) {
+          card = document.getElementById(`tool-${msg.tool_call_id}`);
+        }
+        if (!card) {
+          const cards = this.messagesEl.querySelectorAll('.tool-card');
+          card = cards[cards.length - 1];
+        }
+        if (card) {
+          const body = card.querySelector('.tool-card-body');
           if (body) body.textContent = msg.content || 'No output';
         }
       }
