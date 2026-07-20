@@ -294,7 +294,7 @@ Update Telegram bot integration: normal text replies, model command, formatted t
   - Added `.jules/bolt.md` reflecting insights on handling modals in Playwright e2e tests.
 - **Tests**: Ran `npm test`, passed 61 assertions successfully. Playwright script visually verified the UI configuration.
 Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' instead of '-s local' to fix the 'Invalid value for --strategy' error. Tested and committed the fix as a88719e4af83ece3102983517579e636359775f3.
-- Date: $(date +%Y-%m-%d)
+- Date: 2026-07-20
 - Task: Fix 400 JSON parsing error in `llm-client.js`.
 - Decisions: Implemented `sanitizeToolCalls` helper function to handle strict LLM JSON parsing constraints (especially for "moonshotai/kimi-k2.6"). If a `tool_call` arguments string is invalid JSON, it is safely re-wrapped into `JSON.stringify({ _raw_invalid: <raw_string> })` before being stored in history.
 - Files Changed: `server/ai/llm-client.js`
@@ -305,7 +305,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - Created `skill.json` manifests for all agents to allow PHANTOM AI to discover and use them.
 - `workspace/` is gitignored so changes will only affect the current local installation environment.
 
-## [$(date +%Y-%m-%d)] — Fix Unhandled Exceptions in UI Fetch Methods
+## [2026-07-20] — Fix Unhandled Exceptions in UI Fetch Methods
 **What I decided to work on:** I decided to review unhandled exceptions in the codebase (Bug Hunt). The previous attempt failed because I attempted to modify `catch` blocks blindly, but the tests failed due to lack of testing and incomplete changes. The memory says: "When handling exceptions in async functions, do not use empty catch {} blocks. Ensure errors are logged (e.g., console.error) and, in the frontend, bubbled up to the user via window.Toast.show(message, 'error') to prevent silent, hard-to-debug failures." I found some empty catch blocks in frontend functions such as `loadMCPServers`, `loadSkills`, and `selectConversation` where errors were only setting text content or calling `addErrorMessage` and silently failing.
 **What I built/fixed:** Added proper error handling via `console.error` and `window.Toast.show` in `frontend/js/management.js` and `frontend/js/app.js` catch blocks. Verified the `window.Toast` usage in UI tests.
 **Files changed:** `frontend/js/management.js`, `frontend/js/app.js`
@@ -324,7 +324,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 **Status**: Success.
 **Commit Hash**: (pending)
 
-## [$(date +%Y-%m-%d)] — Session X
+## [2026-07-20] — Session X
 **What I decided to work on:** I decided to perform a Bug Hunt focusing on unhandled promise rejections and potential errors from missing catch blocks in async functions, and also fixing accessibility issues.
 **What I built/fixed:**
 - Added `aria-label` to the System Prompt reset button in `frontend/index.html` to improve accessibility.
@@ -354,7 +354,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 **Tests:** 61 passed / 0 added
 **Commits:** Pending
 
-## [$(date +%Y-%m-%d)] — Bug Hunt: Unhandled Promise Rejections & Sync Exceptions in Express API
+## [2026-07-20] — Bug Hunt: Unhandled Promise Rejections & Sync Exceptions in Express API
 **What I decided to work on:** I chose to perform a Bug Hunt focusing on unhandled exceptions in the codebase's Express API routes (`server/routes/api.js`). Many synchronous operations (like SQLite queries `.get()`, `.all()`, `.run()`) and database calls inside these routes were not wrapped in `try/catch` blocks. If an error occurred, Express would default to returning an HTML 500 error or crash, breaking the expected JSON response contract with the Vite frontend.
 **What I built/fixed:**
 - Added `try/catch` wrappers around all the previously unprotected route handlers in `server/routes/api.js` (including endpoints for settings, telegram status, conversations, tools, memory, and MCP servers).
@@ -371,7 +371,7 @@ Log: fixed rufloAgentSwarm strategy flag in executor.js. Used '-s balanced' inst
 - Ran `npm test` to ensure all unit tests pass.
 - Changes committed: updated one line in `server/ai/llm-client.js`.
 
-## [$(date +%Y-%m-%d)] — Bug Hunt: Fix empty catch blocks and tool payload parsing
+## [2026-07-20] — Bug Hunt: Fix empty catch blocks and tool payload parsing
 **What I decided to work on:** I decided to perform a Bug Hunt focusing on fixing tool payload parsing in the frontend and addressing empty catch blocks in the backend.
 I noticed that the frontend WebSocket handler for `tool_result` events in `frontend/js/app.js` was missing explicit checks for `msg.name` before parsing the result payload, meaning tools like `show_code_demo` and `analyze_target_graph` weren't triggering the UI logic correctly. I also found completely empty `catch` blocks in `server/telegram/sender.js` that were silently swallowing Markdown rendering fallback errors.
 **What I built/fixed:**
@@ -436,7 +436,7 @@ Tests passing.
 
 **Commit**: bd79305e15d537c087a6abfaf9a0794d77451870
 
-## [$(date +%Y-%m-%d)] — Feature: HTML Conversation Export
+## [2026-07-20] — Feature: HTML Conversation Export
 **What I decided to work on:** I decided to build a "New Feature" based on the prompt's suggestion to implement "Export to PDF/HTML". The current application only supported Markdown export. I updated this to optionally format the export as a clean, styled HTML document using the `marked` library, and default the UI export button to HTML format.
 **What I built/fixed:**
 - Modified `server/routes/api.js` `GET /api/conversations/:id/export` to support a `?format=html` query parameter.
@@ -451,7 +451,7 @@ Tests passing.
 **Tests:** 64 passed / 1 added
 **Commits:** Pending
 
-## [$(date +%Y-%m-%d)] — Bug Hunt: Fix Tool Result Ordering and Assignment Race Condition
+## [2026-07-20] — Bug Hunt: Fix Tool Result Ordering and Assignment Race Condition
 **What I decided to work on:** I decided to perform a Bug Hunt and observed a race condition involving SQLite message ordering and DOM tool card selection. If an AI agent emitted multiple tool calls simultaneously, the resulting `tool_result` WebSocket events would blindly overwrite the last tool card on the frontend. Additionally, loading these messages from the backend could be out-of-order due to identical millisecond-level timestamps.
 **What I built/fixed:**
 - Added `rowid ASC` to the `ORDER BY created_at ASC` query inside `server/memory/store.js`'s `getMessages()` to guarantee deterministic chronological ordering.
@@ -460,5 +460,13 @@ Tests passing.
 **Files changed:**
 - `server/memory/store.js`
 - `frontend/js/chat.js`
+**Tests:** 63 passed / 0 added
+**Commits:** Pending
+
+## [2026-07-20] — Performance: Memoize getSystemInfo
+**What I decided to work on:** I decided to perform a Performance improvement. The `getSystemInfo` function in `server/ai/system-prompt.js` was reading `/etc/os-release` and searching through `process.env.PATH` synchronously on every call, which occurs every time the LLM processes a message. These repeated I/O and event loop blocking operations cause unnecessary performance bottlenecks.
+**What I built/fixed:** Added a module-level `systemInfoCache` variable in `server/ai/system-prompt.js` to memoize the static system state, preventing repeated file reads and synchronous searches during execution.
+**Files changed:**
+- `server/ai/system-prompt.js`
 **Tests:** 63 passed / 0 added
 **Commits:** Pending
