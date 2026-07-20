@@ -6,7 +6,12 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+let systemInfoCache = null;
+
 async function getSystemInfo() {
+  if (systemInfoCache) {
+    return systemInfoCache;
+  }
   try {
     const info = {
       hostname: os.hostname(),
@@ -49,6 +54,7 @@ async function getSystemInfo() {
       }
     }
 
+    systemInfoCache = info;
     return info;
   } catch {
     return { hostname: 'unknown', platform: os.platform(), user: 'unknown' };
