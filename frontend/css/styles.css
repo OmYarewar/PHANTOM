@@ -857,3 +857,20 @@ html, body {
   50% { transform: scale(1.1); opacity: 1; }
   100% { transform: scale(0.95); opacity: 0.8; }
 }
+
+/* Light Theme Overrides */
+:root.theme-light {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f3f5;
+  --bg-surface: #e9ecef;
+  --bg-hover: #dee2e6;
+  --bg-active: #ced4da;
+  --border-color: #dee2e6;
+  --border-light: #e9ecef;
+  --border-focus: #adb5bd;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  --text-accent: #343a40;
+}

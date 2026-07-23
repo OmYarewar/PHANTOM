@@ -462,3 +462,16 @@ Tests passing.
 - `frontend/js/chat.js`
 **Tests:** 63 passed / 0 added
 **Commits:** Pending
+
+## [$(date +%Y-%m-%d)] — Feature: Light/Dark Theme Toggle
+**What I decided to work on:** I decided to build a "UI/UX Improvement" based on the prompt's suggestion to implement a "dark/light theme toggle". The current application only supported a dark theme. I updated this to optionally format the UI with a clean light theme using CSS variable overrides on the root element.
+**What I built/fixed:**
+- Added a `.theme-light` class in `frontend/css/styles.css` that overrides CSS variables to light theme colors.
+- Added a theme toggle button (`id="theme-toggle-btn"`) in the top bar of `frontend/index.html`.
+- Implemented an `initTheme()` function in `frontend/js/app.js` to toggle the `.theme-light` class on the `<html>` root and persist the preference in `localStorage`.
+**Files changed:**
+- `frontend/css/styles.css`
+- `frontend/index.html`
+- `frontend/js/app.js`
+**Tests:** 63 passed / 0 added
+**Commits:** Pending

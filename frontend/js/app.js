@@ -32,7 +32,30 @@
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const sidebar = document.getElementById('sidebar');
 
+  // ─── Theme Initialization ───
+  function initTheme() {
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    const isLight = localStorage.getItem('phantom_theme') === 'light';
+    if (isLight) {
+      document.documentElement.classList.add('theme-light');
+    }
+
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const isCurrentlyLight = document.documentElement.classList.contains('theme-light');
+        if (isCurrentlyLight) {
+          document.documentElement.classList.remove('theme-light');
+          localStorage.setItem('phantom_theme', 'dark');
+        } else {
+          document.documentElement.classList.add('theme-light');
+          localStorage.setItem('phantom_theme', 'light');
+        }
+      });
+    }
+  }
+
   // ─── Initialize ───
+  initTheme();
   Chat.init();
   Settings.init();
   Management.init();
