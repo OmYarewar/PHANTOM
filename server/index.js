@@ -28,8 +28,25 @@ const server = createServer(app);
 // WebSocket server
 const wss = new WebSocketServer({ server, path: '/ws' });
 
+const heartbeatInterval = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+
+wss.on('close', () => {
+  clearInterval(heartbeatInterval);
+});
+
 wss.on('connection', (ws) => {
   console.log('🔌 Client connected');
+  ws.isAlive = true;
+
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
 
   // Track abort controller per connection for stop functionality
   let currentAbortController = null;
@@ -129,6 +146,7 @@ wss.on('connection', (ws) => {
         }
 
         case 'ping':
+          ws.isAlive = true;
           ws.send(JSON.stringify({ type: 'pong' }));
           break;
 

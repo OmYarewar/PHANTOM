@@ -475,3 +475,24 @@ Tests passing.
 - `frontend/js/app.js`
 **Tests:** 63 passed / 0 added
 **Commits:** Pending
+
+## $(date +%Y-%m-%d) - Bug Hunt: Security Hardening & Stability
+**What I decided to work on:**
+I chose to work on security hardening and fixing memory leaks as part of a bug hunt.
+I noticed three key issues:
+1.  **XSS in innerHTML:** Tool names were being injected directly into the DOM (`innerHTML`) without escaping in `frontend/js/chat.js`.
+2.  **Memory Leaks:** The WebSocket server in `server/index.js` lacked a heartbeat mechanism, leading to stale connections remaining open indefinitely and causing memory leaks.
+3.  **Missing Input Validation:** The conversation title creation and update routes in `server/routes/api.js` lacked length bounds and type checking, potentially causing application instability or database errors.
+
+**What I built/fixed:**
+- Added `this.escapeHtml` wrappers to `data.name` and `tc.function.name` inside `chat.js` to mitigate DOM-based XSS attacks.
+- Implemented a 30-second Ping/Pong heartbeat interval in `server/index.js` utilizing `ws.ping()` and a `clearInterval` on shutdown to detect and terminate disconnected clients.
+- Introduced rigorous input validation (type checking, non-empty assertions, and a 200-character maximum length truncation) for `req.body.title` in both `POST /conversations` and `PUT /conversations/:id/title`.
+
+**Files changed:**
+- `frontend/js/chat.js`
+- `server/index.js`
+- `server/routes/api.js`
+
+**Tests:** 63 passed / 0 added
+**Commits:** Pending

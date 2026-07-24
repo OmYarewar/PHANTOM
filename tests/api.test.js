@@ -237,3 +237,49 @@ describe('API Routes Error Handling', () => {
     initDB(':memory:');
   });
 });
+
+  describe('Input Validation on Conversation Titles', () => {
+    it('should reject non-string or empty titles when creating a conversation', async () => {
+      const res = await request(app)
+        .post('/api/conversations')
+        .send({ title: '' });
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toBe('Title must be a non-empty string');
+    });
+
+    it('should truncate titles longer than 200 characters when creating a conversation', async () => {
+      const longTitle = 'a'.repeat(250);
+      const res = await request(app)
+        .post('/api/conversations')
+        .send({ title: longTitle });
+      expect(res.statusCode).toBe(200);
+      expect(res.body.title.length).toBe(200);
+    });
+
+    it('should reject non-string or empty titles when updating a conversation', async () => {
+      const createRes = await request(app).post('/api/conversations').send({ title: 'Test' });
+      const id = createRes.body.id;
+
+      const res = await request(app)
+        .put(`/api/conversations/${id}/title`)
+        .send({ title: '   ' });
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toBe('Title must be a non-empty string');
+    });
+
+    it('should truncate titles longer than 200 characters when updating a conversation', async () => {
+      const createRes = await request(app).post('/api/conversations').send({ title: 'Test' });
+      const id = createRes.body.id;
+
+      const longTitle = 'b'.repeat(250);
+      const res = await request(app)
+        .put(`/api/conversations/${id}/title`)
+        .send({ title: longTitle });
+
+      expect(res.statusCode).toBe(200);
+
+      // Verify truncation by fetching it back
+      const getRes = await request(app).get(`/api/conversations/${id}`);
+      expect(getRes.body.title.length).toBe(200);
+    });
+  });
