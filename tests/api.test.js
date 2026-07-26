@@ -131,6 +131,46 @@ describe('API Routes', () => {
     expect(res.body.title).toBe('Test Conv');
   });
 
+  it('POST /api/conversations should reject empty titles', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+    const res = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: '   ' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Title must be a non-empty string');
+  });
+
+  it('POST /api/conversations should reject titles over 200 characters', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+    const res = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'a'.repeat(201) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Title cannot exceed 200 characters');
+  });
+
+  it('PUT /api/conversations/:id/title should reject empty titles', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+    const res = await request(app).put('/api/conversations/test-id/title').set('X-Forwarded-For', uniqueTestIp).send({ title: '' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Title must be a non-empty string');
+  });
+
+  it('PUT /api/conversations/:id/title should reject titles over 200 characters', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+    const res = await request(app).put('/api/conversations/test-id/title').set('X-Forwarded-For', uniqueTestIp).send({ title: 'b'.repeat(205) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Title cannot exceed 200 characters');
+  });
+
   it('GET /api/conversations/:id/export should export conversation to markdown', async () => {
     const octet3 = Math.floor(globalIpCounter / 256);
     const octet4 = globalIpCounter % 256;
