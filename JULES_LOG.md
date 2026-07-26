@@ -475,3 +475,16 @@ Tests passing.
 - `frontend/js/app.js`
 **Tests:** 63 passed / 0 added
 **Commits:** Pending
+
+## [$(date +%Y-%m-%d)] — Feature: Security Hardening (XSS & API Validation)
+**What I decided to work on:** I decided to focus on Security Hardening. Upon inspecting the frontend chat implementation (`frontend/js/chat.js`), I discovered that tool names (`data.name` and `tc.function.name`) were being interpolated directly into `innerHTML` strings without being escaped, presenting a DOM-based Cross-Site Scripting (XSS) vulnerability. Additionally, analyzing the API routes (`server/routes/api.js`) revealed that the POST and PUT endpoints for conversations were lacking input validation for the conversation title, accepting empty strings and oversized payloads.
+**What I built/fixed:**
+- Added escaping using `this.escapeHtml()` to `data.name` and `tc.function.name` inside `frontend/js/chat.js` before they are assigned via `innerHTML`.
+- Added input validation to `/api/conversations` and `/api/conversations/:id/title` in `server/routes/api.js` to ensure the title is a non-empty string and does not exceed 200 characters.
+- Wrote tests in `tests/api.test.js` to assert the new API validation logic, successfully mocking the rate-limiting functionality to avoid intermittent failures.
+**Files changed:**
+- `frontend/js/chat.js`
+- `server/routes/api.js`
+- `tests/api.test.js`
+**Tests:** 67 passed / 4 added
+**Commits:** Pending
