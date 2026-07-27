@@ -329,7 +329,7 @@ window.Chat = {
 
       card.innerHTML = `
         <div class="tool-card-header file-mod-header" onclick="this.nextElementSibling.classList.toggle('expanded')" style="background: var(--bg-tertiary); border-left: 3px solid var(--accent);">
-          <span>${icon} <strong>${actionName}</strong></span>
+          <span>${icon} <strong>${this.escapeHtml(actionName)}</strong></span>
           <span style="flex:1;margin-left:8px;opacity:0.8;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.escapeHtml(filePath)}</span>
           <span class="tool-status running"><span class="spinner"></span></span>
         </div>
@@ -348,7 +348,7 @@ window.Chat = {
 
     card.innerHTML = `
       <div class="tool-card-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
-        <span>⚡ ${data.name}</span>
+        <span>⚡ ${this.escapeHtml(data.name)}</span>
         <span style="flex:1;margin-left:8px;opacity:0.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.escapeHtml(argsPreview)}</span>
         <span class="tool-status running"><span class="spinner"></span></span>
       </div>
@@ -493,7 +493,7 @@ window.Chat = {
               if (tc.id) card.id = `tool-${tc.id}`;
               card.innerHTML = `
                 <div class="tool-card-header file-mod-header" onclick="this.nextElementSibling.classList.toggle('expanded')" style="background: var(--bg-tertiary); border-left: 3px solid var(--accent);">
-                  <span>${icon} <strong>${actionName}</strong></span>
+                  <span>${icon} <strong>${this.escapeHtml(actionName)}</strong></span>
                   <span style="flex:1;margin-left:8px;opacity:0.8;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.escapeHtml(filePath)}</span>
                   <span class="tool-status done">✓</span>
                 </div>
@@ -509,7 +509,7 @@ window.Chat = {
             if (tc.id) card.id = `tool-${tc.id}`;
             card.innerHTML = `
               <div class="tool-card-header" onclick="this.nextElementSibling.classList.toggle('expanded')">
-                <span>⚡ ${tc.function.name}</span>
+                <span>⚡ ${this.escapeHtml(tc.function.name)}</span>
                 <span style="flex:1;margin-left:8px;opacity:0.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${this.escapeHtml(argsPreview)}</span>
                 <span class="tool-status done">✓</span>
               </div>
