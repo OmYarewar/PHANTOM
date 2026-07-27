@@ -475,3 +475,12 @@ Tests passing.
 - `frontend/js/app.js`
 **Tests:** 63 passed / 0 added
 **Commits:** Pending
+
+## [2026-07-27] — Bug Hunt: Fix missing cross-site scripting (XSS) sanitation in tool card rendering
+**What I decided to work on:** I decided to perform a Bug Hunt focusing on fixing missing XSS sanitation in tool card rendering in the frontend. During the rendering of tool results, `data.name`, `actionName`, and `tc.function.name` were rendered dynamically via `innerHTML` without being sanitized. This allows potential XSS if the tool result contains unsanitized inputs.
+**What I built/fixed:**
+- Applied `this.escapeHtml()` to `data.name`, `actionName`, and `tc.function.name` where they are interpolated in HTML template literals on lines 332, 351, 496, 512 in `frontend/js/chat.js` to ensure proper sanitation and prevent XSS.
+**Files changed:**
+- `frontend/js/chat.js`
+**Tests:** 63 passed / 0 added
+**Commits:** Pending
