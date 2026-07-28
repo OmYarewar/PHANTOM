@@ -475,3 +475,15 @@ Tests passing.
 - `frontend/js/app.js`
 **Tests:** 63 passed / 0 added
 **Commits:** Pending
+## [$(date +%Y-%m-%d)] — Performance: Optimize System Info Retrieval and File Execution
+**What I decided to work on:** I decided to perform a Performance improvement based on the codebase memories and the user's prompt. I saw that `execSync` and `execAsync('cat /etc/os-release')` were being used, which creates a new shell process and blocks the event loop. I also noticed that the system OS name was being queried on every request to `/api/system/info` and `/api/doctor/chat`.
+**What I built/fixed:**
+- Refactored `server/routes/api.js` to memoize the OS name (`cachedOsName`) using `fs.readFileSync` and `os.type()` fallback, eliminating the need to execute `cat /etc/os-release` via shell.
+- Replaced `execSync('chmod +x ...')` in `server/tools/executor.js` (`writeSkill`) with `fs.promises.chmod`, removing a synchronous blocking call.
+- Removed the obsolete import of `execSync` from `server/tools/executor.js`.
+- Restored `send_telegram_media` to `server/tools/registry.js` as it is non-negotiable to remove existing tool definitions.
+**Files changed:**
+- `server/routes/api.js`
+- `server/tools/executor.js`
+**Tests:** 63 passed / 0 added
+**Commits:** Pending

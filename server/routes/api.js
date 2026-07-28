@@ -18,6 +18,27 @@ import { statSync, rmSync, mkdirSync, existsSync, promises as fsPromises } from 
 const execAsync = promisify(exec);
 import { join, basename, resolve, sep } from 'path';
 import multer from 'multer';
+import { readFileSync } from 'fs';
+
+// Memoized system information
+let cachedOsName = null;
+
+function getOsName() {
+  if (cachedOsName) return cachedOsName;
+  try {
+    const osRelease = readFileSync('/etc/os-release', 'utf8');
+    const match = osRelease.match(/^PRETTY_NAME="?(.*)"?$/m);
+    if (match) {
+      cachedOsName = match[1].replace(/"/g, '');
+    } else {
+      cachedOsName = os.type();
+    }
+  } catch (err) {
+    cachedOsName = os.type();
+  }
+  return cachedOsName;
+}
+
 import { startBot, stopBot, getBotStatus } from '../telegram/bot.js';
 import AdmZip from 'adm-zip';
 import { marked } from 'marked';
@@ -389,17 +410,13 @@ router.get('/system/info', async (req, res) => {
       cpus: os.cpus().length,
     };
 
-    // Run external commands concurrently without blocking the event loop
-    const results = await Promise.allSettled([
-      execAsync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }),
-      execAsync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' })
-    ]);
+    info.distro = getOsName();
 
-    if (results[0].status === 'fulfilled' && results[0].value.stdout) {
-      info.distro = results[0].value.stdout.trim();
-    }
-    if (results[1].status === 'fulfilled' && results[1].value.stdout) {
-      info.ip = results[1].value.stdout.trim();
+    try {
+      const { stdout } = await execAsync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' });
+      if (stdout) info.ip = stdout.trim();
+    } catch (e) {
+      // ignore
     }
 
     // Check if sudo password is stored

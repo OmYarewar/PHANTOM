@@ -1,4 +1,4 @@
-import { spawn, execSync } from 'child_process';
+import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
 import { dirname, resolve, join, sep } from 'path';
@@ -115,7 +115,7 @@ async function writeSkill({ name, description, code, entry_point = 'script.py' }
 
     // Make script executable if it's sh or py
     try {
-      execSync(`chmod +x ${escapeShellArg(join(skillsDir, entry_point))}`);
+      await import('fs/promises').then(fs => fs.chmod(join(skillsDir, entry_point), 0o755));
     } catch (err) {
       console.error(`[writeSkill] Error setting permissions for ${name}:`, err.message);
     }
