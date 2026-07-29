@@ -8,7 +8,7 @@
 - `server/routes/api.js`
 - `frontend/js/app.js`
 **Tests:** 11 passed / 0 added
-**Commits:** Pending
+**Commits:** $(git rev-parse HEAD)
 ## YYYY-MM-DD
 **Tasks Completed:**
 - Added Telegram bot integration using `node-telegram-bot-api`.
@@ -474,4 +474,34 @@ Tests passing.
 - `frontend/index.html`
 - `frontend/js/app.js`
 **Tests:** 63 passed / 0 added
+**Commits:** Pending
+
+## [$(date +%Y-%m-%d)] — Bug Hunt: XSS and Input Validation
+**What I decided to work on:** I chose to fix missing input validations in Express endpoints and XSS in the frontend.
+The `server/routes/api.js` endpoints for creating and updating conversations lacked validation on the `title` field, which should be a non-empty string with a maximum length of 200 characters.
+In `frontend/js/chat.js`, the tool result cards blindly injected `data.name` and `tc.function.name` directly into template literals, leading to potential XSS vulnerabilities.
+**What I built/fixed:**
+- Escaped `data.name` and `tc.function.name` in `frontend/js/chat.js` using `this.escapeHtml()`.
+- Added strict title validation (type checking, non-empty, and <= 200 characters length limit) to `POST /conversations` and `PUT /conversations/:id/title` in `server/routes/api.js`.
+- Added unit tests in `tests/api.test.js` to ensure the new validation correctly rejects invalid conversation titles with a 400 error status.
+**Files changed:**
+- `frontend/js/chat.js`
+- `server/routes/api.js`
+- `tests/api.test.js`
+**Tests:** 65 passed / 4 added
+**Commits:** Pending
+
+## [$(date +%Y-%m-%d)] — Bug Hunt: XSS and Input Validation
+**What I decided to work on:** I chose to fix missing input validations in Express endpoints and XSS in the frontend.
+The `server/routes/api.js` endpoints for creating and updating conversations lacked validation on the `title` field, which should be a non-empty string with a maximum length of 200 characters.
+In `frontend/js/chat.js`, the tool result cards blindly injected `data.name` and `tc.function.name` directly into template literals, leading to potential XSS vulnerabilities.
+**What I built/fixed:**
+- Escaped `data.name` and `tc.function.name` in `frontend/js/chat.js` using `this.escapeHtml()`.
+- Added strict title validation (type checking, non-empty, and <= 200 characters length limit) to `POST /conversations` and `PUT /conversations/:id/title` in `server/routes/api.js`.
+- Added unit tests in `tests/api.test.js` to ensure the new validation correctly rejects invalid conversation titles with a 400 error status.
+**Files changed:**
+- `frontend/js/chat.js`
+- `server/routes/api.js`
+- `tests/api.test.js`
+**Tests:** 65 passed / 4 added
 **Commits:** Pending

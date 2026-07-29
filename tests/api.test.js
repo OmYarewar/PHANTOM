@@ -217,6 +217,41 @@ describe('API Routes', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.name).toBe('safe');
   });
+
+  it('POST /api/conversations should reject empty or invalid title', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+
+    const res1 = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: '' });
+    expect(res1.status).toBe(400);
+
+    const res2 = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 123 });
+    expect(res2.status).toBe(400);
+
+    const res3 = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'A'.repeat(201) });
+    expect(res3.status).toBe(400);
+  });
+
+  it('PUT /api/conversations/:id/title should reject empty or invalid title', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+
+    const convRes = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'Valid Title' });
+    const convId = convRes.body.id;
+
+    const res1 = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: '' });
+    expect(res1.status).toBe(400);
+
+    const res2 = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: 123 });
+    expect(res2.status).toBe(400);
+
+    const res3 = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: 'A'.repeat(201) });
+    expect(res3.status).toBe(400);
+  });
 });
 describe('API Routes Error Handling', () => {
   let testIp;
