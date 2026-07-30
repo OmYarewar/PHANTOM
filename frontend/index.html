@@ -298,6 +298,31 @@
             </div>
           </section>
 
+
+          <!-- Caspian Gateway -->
+          <section class="settings-section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3>🌐 Caspian Gateway</h3>
+              <div id="caspian-status" class="bot-status"></div>
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+              <label for="setting-caspian-enable" style="margin-bottom: 0;">Enable Caspian Bot</label>
+              <input type="checkbox" id="setting-caspian-enable">
+            </div>
+
+            <div id="caspian-fields" style="opacity: 0.5; pointer-events: none; transition: opacity 0.2s;">
+              <div class="form-group">
+                <label for="setting-caspian-api-key">Caspian API Key</label>
+                <div class="input-with-toggle">
+                  <input type="password" id="setting-caspian-api-key" placeholder="cs_..." />
+                  <button type="button" id="toggle-caspian-api-key" class="btn-icon-sm" title="Show/Hide">👁️</button>
+                </div>
+                <small>Connects across Email, WhatsApp, Slack, etc.</small>
+              </div>
+              <button type="button" id="save-caspian-btn" class="btn btn-secondary btn-sm">Restart Caspian Bot</button>
+            </div>
+          </section>
+
           <!-- System Access -->
           <section class="settings-section">
             <h3>🔑 System Access</h3>

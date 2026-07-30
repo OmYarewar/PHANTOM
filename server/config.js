@@ -26,6 +26,9 @@ const config = {
     maxTokens: parseInt(process.env.MAX_TOKENS || '4096', 10),
   },
   workspace: join(ROOT, 'workspace'),
+  caspian: {
+    apiKey: process.env.CASPIAN_API_KEY || '',
+  },
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || '',
     userId: process.env.TELEGRAM_USER_ID ? parseInt(process.env.TELEGRAM_USER_ID, 10) : null,
@@ -63,6 +66,7 @@ export function updateConfig(updates) {
   if (updates.workspace !== undefined) config.workspace = updates.workspace;
   if (updates.telegramBotToken !== undefined) config.telegram.botToken = updates.telegramBotToken;
   if (updates.telegramUserId !== undefined) config.telegram.userId = updates.telegramUserId ? parseInt(updates.telegramUserId, 10) : null;
+  if (updates.caspianApiKey !== undefined) config.caspian.apiKey = updates.caspianApiKey;
   if (updates.agentsEnabled !== undefined) config.agents.enabled = updates.agentsEnabled;
   if (updates.agentsPlannerModel !== undefined) config.agents.plannerModel = updates.agentsPlannerModel;
   if (updates.agentsExecutorModel !== undefined) config.agents.executorModel = updates.agentsExecutorModel;
@@ -84,6 +88,7 @@ export function loadPersistedSettings(getSetting) {
   const workspace = getSetting('workspace', null);
   const telegramBotToken = getSetting('telegram_bot_token', null);
   const telegramUserId = getSetting('telegram_user_id', null);
+  const caspianApiKey = getSetting('caspian_api_key', null);
   const agentsEnabled = getSetting('agents_enabled', null);
   const agentsPlannerModel = getSetting('agents_planner_model', null);
   const agentsExecutorModel = getSetting('agents_executor_model', null);
@@ -100,6 +105,7 @@ export function loadPersistedSettings(getSetting) {
   if (workspace) config.workspace = workspace;
   if (telegramBotToken) config.telegram.botToken = telegramBotToken;
   if (telegramUserId) config.telegram.userId = parseInt(telegramUserId, 10);
+  if (caspianApiKey) config.caspian.apiKey = caspianApiKey;
   if (agentsEnabled !== null) config.agents.enabled = agentsEnabled === 'true';
   if (agentsPlannerModel) config.agents.plannerModel = agentsPlannerModel;
   if (agentsExecutorModel) config.agents.executorModel = agentsExecutorModel;

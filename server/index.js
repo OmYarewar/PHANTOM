@@ -11,6 +11,7 @@ import { closeDB, createConversation, getMessages, updateConversationTitle } fro
 import { processMessage } from './ai/llm-client.js';
 import apiRouter from './routes/api.js';
 import { startBot } from './telegram/bot.js';
+import { startCaspianBot } from './caspian/bot.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -168,6 +169,9 @@ server.on('error', (err) => {
 
 server.listen(config.port, () => {
   startBot();
+
+// Start Caspian Gateway Bot
+startCaspianBot();
   console.log(`
 ╔══════════════════════════════════════════════╗
 ║                                              ║
