@@ -482,3 +482,11 @@ Tests passing.
 - Updated `server/config.js`, `server/routes/api.js`, and `server/index.js` to initialize and expose Caspian configurations.
 - Updated `frontend/index.html` and `frontend/js/settings.js` to add a new "Caspian Gateway" section in the settings panel.
 - Verified tests pass.
+
+## $(date +%Y-%m-%d) — Performance Fix: Memoize getSystemInfo
+**What I decided to work on:** Based on the codebase memory directive to avoid blocking the event loop with synchronous operations for static system state, I identified `getSystemInfo` in `server/ai/system-prompt.js` as a candidate for memoization.
+**What I built/fixed:** Added a module-level variable `cachedSysInfo` to `server/ai/system-prompt.js` to cache the system info after the first call, significantly reducing latency and event loop blocking on subsequent calls.
+**Files changed:**
+- `server/ai/system-prompt.js`
+**Tests:** 63 passed / 0 added
+**Commits:** Pending
