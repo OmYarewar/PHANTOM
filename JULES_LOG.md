@@ -482,3 +482,16 @@ Tests passing.
 - Updated `server/config.js`, `server/routes/api.js`, and `server/index.js` to initialize and expose Caspian configurations.
 - Updated `frontend/index.html` and `frontend/js/settings.js` to add a new "Caspian Gateway" section in the settings panel.
 - Verified tests pass.
+
+## [$(date +%Y-%m-%d)] — Session X
+**What I decided to work on:** I noticed that the frontend chat UI lacked common keyboard shortcuts for productivity (Cmd/Ctrl + N for new chat, Cmd/Ctrl + K for searching conversations, Cmd/Ctrl + Shift + S for toggling the sidebar), and the conversation search input was firing the render function on every keystroke without debouncing, leading to potential lag on large histories. I decided to improve UI/UX by adding these shortcuts and improve performance by debouncing the search input.
+**What I built/fixed:**
+- Added a global `keydown` event listener in `frontend/js/app.js` to handle shortcuts (`Cmd/Ctrl + K`, `Cmd/Ctrl + N`, `Cmd/Ctrl + Shift + S`).
+- Implemented a 300ms debounce on the `search-conversations` input event in `frontend/js/app.js`.
+- Updated `title` attributes in `frontend/index.html` for the new chat, search, and sidebar toggle buttons to display their corresponding keyboard shortcuts.
+- Verified changes visually through Playwright and ensured all backend test suites still passed. Note: E2E Playwright tests are run via script during development.
+**Files changed:**
+- `frontend/js/app.js`
+- `frontend/index.html`
+**Tests:** 63 passed / 0 added
+**Commits:** Pending
