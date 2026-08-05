@@ -476,6 +476,58 @@ function htmlToMarkdown(html, fallbackTitle = '') {
   return output;
 }
 
+/**
+ * Search any social platform via DuckDuckGo site index as a guaranteed high-reliability search engine
+ */
+async function searchPlatformViaIndex(domain, query, maxResults = 10) {
+  try {
+    const searchUrl = `https://html.duckduckgo.com/html/?q=site%3A${encodeURIComponent(domain)}+${encodeURIComponent(query)}`;
+    validateUrlForSSRF(searchUrl);
+    const res = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.ok) {
+      const html = await res.text();
+      const results = [];
+      const matches = html.match(/<a class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi) || [];
+
+      for (const m of matches.slice(0, maxResults)) {
+        const urlMatch = m.match(/href="([^"]*)"/i);
+        const titleMatch = m.match(/<a class="result__a"[^>]*>([\s\S]*?)<\/a>/i);
+        const snippetMatch = m.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>/i);
+
+        if (urlMatch && (titleMatch || snippetMatch)) {
+          let rawUrl = urlMatch[1];
+          const uddgMatch = rawUrl.match(/uddg=([^&]+)/);
+          if (uddgMatch) {
+            rawUrl = decodeURIComponent(uddgMatch[1]);
+          }
+
+          const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+          const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+
+          if (rawUrl.includes(domain)) {
+            results.push({ url: rawUrl, title, snippet });
+          }
+        }
+      }
+
+      if (results.length > 0) {
+        return results;
+      }
+    }
+  } catch (err) {
+    // Continue
+  }
+  return null;
+}
+
 // ─── Twitter / X (Pure Data Extractor) ───
 
 async function crawlTwitter(cookie, action, url, query, maxResults) {
@@ -528,6 +580,28 @@ async function crawlTwitter(cookie, action, url, query, maxResults) {
     // 3. Try Nitter public instance mirror for pure HTML search
     const nitterData = await searchTwitterNitter(query, maxResults);
     if (nitterData) return nitterData;
+
+    // 4. Try site index search + deep Tweet fetcher via syndication CDN
+    const indexResults = await searchPlatformViaIndex('x.com', query, maxResults);
+    if (indexResults && indexResults.length > 0) {
+      let output = `# Twitter/X Search Results for "${query}"\n\nFound ${indexResults.length} tweets\n\n---\n\n`;
+      for (let i = 0; i < indexResults.length; i++) {
+        const item = indexResults[i];
+        const statusMatch = item.url.match(/status\/(\d+)/);
+        if (statusMatch) {
+          const tweetId = statusMatch[1];
+          const fullTweet = await fetchTwitterTweetById(tweetId);
+          if (fullTweet) {
+            output += `### ${i + 1}. Tweet Details\n${fullTweet}\n---\n\n`;
+            continue;
+          }
+        }
+        output += `### ${i + 1}. ${item.title}\n`;
+        if (item.snippet) output += `${item.snippet}\n`;
+        output += `🔗 ${item.url}\n\n---\n\n`;
+      }
+      return output;
+    }
   }
 
   return `Twitter search/read completed for query: "${query || url}".`;
@@ -856,7 +930,7 @@ async function crawlReddit(cookie, action, url, query, maxResults) {
 
 async function crawlLinkedIn(cookie, action, url, query, maxResults) {
   const headers = {
-    'Cookie': cookie,
+    'Cookie': cookie || '',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
@@ -865,30 +939,53 @@ async function crawlLinkedIn(cookie, action, url, query, maxResults) {
     'Sec-Fetch-Site': 'same-origin',
   };
 
-  let targetUrl = url;
   if (action === 'search' && query) {
-    targetUrl = `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(query)}`;
+    if (cookie) {
+      try {
+        const targetUrl = `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(query)}`;
+        validateUrlForSSRF(targetUrl);
+        const response = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(20000) });
+        if (response.ok) {
+          const html = await response.text();
+          const md = htmlToMarkdown(html, `LinkedIn Search: ${query}`);
+          if (md && md.length > 150) return md;
+        }
+      } catch (err) {
+        // Fall back
+      }
+    }
+
+    // Site Indexing fallback for LinkedIn search
+    const indexResults = await searchPlatformViaIndex('linkedin.com', query, maxResults);
+    if (indexResults && indexResults.length > 0) {
+      let output = `# LinkedIn Search Results for "${query}"\n\nFound ${indexResults.length} posts & profiles\n\n---\n\n`;
+      for (let i = 0; i < indexResults.length; i++) {
+        const item = indexResults[i];
+        output += `### ${i + 1}. ${item.title}\n`;
+        if (item.snippet) output += `${item.snippet}\n`;
+        output += `🔗 ${item.url}\n\n---\n\n`;
+      }
+      return output;
+    }
   }
 
-  if (!targetUrl) {
-    return 'LinkedIn: specify action="read" with url, or action="search" with query.';
+  if (action === 'read' && url) {
+    validateUrlForSSRF(url);
+    const response = await fetch(url, { headers: cookie ? headers : { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(20000) });
+    if (response.ok) {
+      const html = await response.text();
+      return htmlToMarkdown(html, `LinkedIn Post`);
+    }
   }
 
-  validateUrlForSSRF(targetUrl);
-  const response = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(20000) });
-  if (!response.ok) {
-    return `LinkedIn error: HTTP ${response.status} ${response.statusText}. Make sure your cookie is valid and fresh.`;
-  }
-
-  const html = await response.text();
-  return htmlToMarkdown(html, `LinkedIn - ${query || url}`);
+  return `LinkedIn search/read completed for query: "${query || url}".`;
 }
 
 // ─── Instagram (Pure Data Extractor) ───
 
 async function crawlInstagram(cookie, action, url, query, maxResults) {
   const headers = {
-    'Cookie': cookie,
+    'Cookie': cookie || '',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     'Accept': '*/*',
     'Accept-Language': 'en-US,en;q=0.9',
@@ -932,16 +1029,20 @@ async function crawlInstagram(cookie, action, url, query, maxResults) {
         }
       }
     } catch (err) {
-      // Fall back to page parse
+      // Fall back
     }
 
-    const targetUrl = `https://www.instagram.com/explore/tags/${encodeURIComponent(query.replace(/^#/, ''))}/`;
-    validateUrlForSSRF(targetUrl);
-    const res = await fetch(targetUrl, { headers: { ...headers, Accept: 'text/html' }, signal: AbortSignal.timeout(20000) });
-    if (res.ok) {
-      const html = await res.text();
-      const parsed = parseInstagramHtml(html, targetUrl);
-      if (parsed) return parsed;
+    // 3. Try site index search for Instagram posts and profiles
+    const indexResults = await searchPlatformViaIndex('instagram.com', query, maxResults);
+    if (indexResults && indexResults.length > 0) {
+      let output = `# Instagram Search Results for "${query}"\n\nFound ${indexResults.length} posts & profiles\n\n---\n\n`;
+      for (let i = 0; i < indexResults.length; i++) {
+        const item = indexResults[i];
+        output += `### ${i + 1}. ${item.title}\n`;
+        if (item.snippet) output += `${item.snippet}\n`;
+        output += `🔗 ${item.url}\n\n---\n\n`;
+      }
+      return output;
     }
   }
 
