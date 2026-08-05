@@ -1,19 +1,18 @@
 import dotenv from 'dotenv';
-import { existsSync, copyFileSync, mkdirSync } from 'fs';
+import { existsSync, copyFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
-// Load .env if it exists, otherwise copy from example
 const envPath = join(ROOT, '.env');
-if (!existsSync(envPath)) {
-  const examplePath = join(ROOT, '.env.example');
-  if (existsSync(examplePath)) {
-    copyFileSync(examplePath, envPath);
-  }
+const envExamplePath = join(ROOT, '.env.example');
+
+if (!existsSync(envPath) && existsSync(envExamplePath)) {
+  copyFileSync(envExamplePath, envPath);
 }
+
 dotenv.config({ path: envPath });
 
 const config = {
@@ -21,37 +20,12 @@ const config = {
   api: {
     baseUrl: process.env.API_BASE_URL || 'https://api.openai.com/v1',
     apiKey: process.env.API_KEY || '',
-    model: process.env.MODEL_ID || 'gpt-4o',
-    temperature: parseFloat(process.env.TEMPERATURE || '0.7'),
-    maxTokens: parseInt(process.env.MAX_TOKENS || '4096', 10),
+    model: process.env.API_MODEL || 'gpt-4o',
+    provider: process.env.API_PROVIDER || 'openai'
   },
-  workspace: join(ROOT, 'workspace'),
-  caspian: {
-    apiKey: process.env.CASPIAN_API_KEY || '',
-  },
-  telegram: {
-    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
-    userId: process.env.TELEGRAM_USER_ID ? parseInt(process.env.TELEGRAM_USER_ID, 10) : null,
-  },
-  db: {
-    path: join(ROOT, 'phantom.db'),
-  },
-  agents: {
-    enabled: process.env.AGENTS_ENABLED === 'true' || false,
-    plannerModel: process.env.AGENTS_PLANNER_MODEL || 'gpt-4o',
-    executorModel: process.env.AGENTS_EXECUTOR_MODEL || 'gpt-4o',
-  },
-  skills: {
-    trustTierDefault: parseInt(process.env.SKILLS_TRUST_TIER_DEFAULT || '3', 10),
-  },
-  memory: {
-    vectorSearch: {
-      enabled: process.env.VECTOR_SEARCH_ENABLED !== 'false',
-      dimensions: parseInt(process.env.VECTOR_SEARCH_DIMENSIONS || '384', 10),
-    }
-  },
-  systemPrompt: null,
-  root: ROOT,
+  server: {
+    port: parseInt(process.env.PORT || '1337', 10)
+  }
 };
 
 /**
@@ -61,75 +35,27 @@ export function updateConfig(updates) {
   if (updates.baseUrl !== undefined) config.api.baseUrl = updates.baseUrl;
   if (updates.apiKey !== undefined) config.api.apiKey = updates.apiKey;
   if (updates.model !== undefined) config.api.model = updates.model;
-  if (updates.temperature !== undefined) config.api.temperature = parseFloat(updates.temperature);
-  if (updates.maxTokens !== undefined) config.api.maxTokens = parseInt(updates.maxTokens, 10);
-  if (updates.workspace !== undefined) config.workspace = updates.workspace;
-  if (updates.telegramBotToken !== undefined) config.telegram.botToken = updates.telegramBotToken;
-  if (updates.telegramUserId !== undefined) config.telegram.userId = updates.telegramUserId ? parseInt(updates.telegramUserId, 10) : null;
-  if (updates.caspianApiKey !== undefined) config.caspian.apiKey = updates.caspianApiKey;
-  if (updates.agentsEnabled !== undefined) config.agents.enabled = updates.agentsEnabled;
-  if (updates.agentsPlannerModel !== undefined) config.agents.plannerModel = updates.agentsPlannerModel;
-  if (updates.agentsExecutorModel !== undefined) config.agents.executorModel = updates.agentsExecutorModel;
-  if (updates.skillsTrustTierDefault !== undefined) config.skills.trustTierDefault = parseInt(updates.skillsTrustTierDefault, 10);
-  if (updates.vectorSearchEnabled !== undefined) config.memory.vectorSearch.enabled = updates.vectorSearchEnabled;
-  if (updates.vectorSearchDimensions !== undefined) config.memory.vectorSearch.dimensions = parseInt(updates.vectorSearchDimensions, 10);
-  if (updates.systemPrompt !== undefined) config.systemPrompt = updates.systemPrompt || null;
+  if (updates.provider !== undefined) config.api.provider = updates.provider;
 }
 
 /**
  * Load persisted settings from DB into config (called after DB init)
  */
 export function loadPersistedSettings(getSetting) {
+  if (typeof getSetting !== 'function') {
+    console.warn('[Config] loadPersistedSettings called without a function — skipping persisted settings load.');
+    return;
+  }
+
   const baseUrl = getSetting('api_base_url', null);
   const apiKey = getSetting('api_key', null);
   const model = getSetting('api_model', null);
-  const temperature = getSetting('api_temperature', null);
-  const maxTokens = getSetting('api_max_tokens', null);
-  const workspace = getSetting('workspace', null);
-  const telegramBotToken = getSetting('telegram_bot_token', null);
-  const telegramUserId = getSetting('telegram_user_id', null);
-  const caspianApiKey = getSetting('caspian_api_key', null);
-  const agentsEnabled = getSetting('agents_enabled', null);
-  const agentsPlannerModel = getSetting('agents_planner_model', null);
-  const agentsExecutorModel = getSetting('agents_executor_model', null);
-  const skillsTrustTierDefault = getSetting('skills_trust_tier_default', null);
-  const vectorSearchEnabled = getSetting('vector_search_enabled', null);
-  const vectorSearchDimensions = getSetting('vector_search_dimensions', null);
-  const systemPrompt = getSetting('system_prompt', null);
+  const provider = getSetting('api_provider', null);
 
   if (baseUrl) config.api.baseUrl = baseUrl;
   if (apiKey) config.api.apiKey = apiKey;
   if (model) config.api.model = model;
-  if (temperature) config.api.temperature = parseFloat(temperature);
-  if (maxTokens) config.api.maxTokens = parseInt(maxTokens, 10);
-  if (workspace) config.workspace = workspace;
-  if (telegramBotToken) config.telegram.botToken = telegramBotToken;
-  if (telegramUserId) config.telegram.userId = parseInt(telegramUserId, 10);
-  if (caspianApiKey) config.caspian.apiKey = caspianApiKey;
-  if (agentsEnabled !== null) config.agents.enabled = agentsEnabled === 'true';
-  if (agentsPlannerModel) config.agents.plannerModel = agentsPlannerModel;
-  if (agentsExecutorModel) config.agents.executorModel = agentsExecutorModel;
-  if (skillsTrustTierDefault !== null) config.skills.trustTierDefault = parseInt(skillsTrustTierDefault, 10);
-  if (vectorSearchEnabled !== null) config.memory.vectorSearch.enabled = vectorSearchEnabled === 'true';
-  if (vectorSearchDimensions !== null) config.memory.vectorSearch.dimensions = parseInt(vectorSearchDimensions, 10);
-  if (systemPrompt !== null) config.systemPrompt = systemPrompt;
-
-  // Ensure workspace directory exists
-  try {
-    if (!existsSync(config.workspace)) {
-      mkdirSync(config.workspace, { recursive: true });
-    }
-  } catch (err) {
-    console.warn(`[Config] Failed to create workspace directory:`, err.message);
-  }
-
-  console.log(`📁 Workspace: ${config.workspace}`);
-  console.log(`🤖 Model: ${config.api.model}`);
-  const hasValidKey = config.api.apiKey && config.api.apiKey !== 'sk-your-api-key-here';
-  console.log(`🔑 API Key: ${hasValidKey ? '••••' + config.api.apiKey.slice(-4) : '⚠️ Not configured (Set API_KEY in .env or via Web UI)'}`);
-  if (!hasValidKey) {
-    console.log(`💡 Setup Tip: Configure your LLM API Key in .env or in the Web UI Settings panel to enable AI execution.`);
-  }
+  if (provider) config.api.provider = provider;
 }
 
 export default config;

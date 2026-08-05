@@ -5,12 +5,14 @@ import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 
 import { loadPersistedSettings } from './config.js';
+import { getSetting } from './memory/store.js';
 import apiRouter from './routes/api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-loadPersistedSettings();
+// Pass getSetting to loadPersistedSettings
+loadPersistedSettings(getSetting);
 
 const app = express();
 
