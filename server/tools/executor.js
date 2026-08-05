@@ -7,6 +7,7 @@ import { saveMemory, searchMemories, searchConversations, createConversation } f
 import { getSetting } from '../memory/store.js';
 import config from '../config.js';
 import { getSystemCapabilities } from './self_awareness.js';
+import { jinaReadUrl, youtubeSearch, youtubeGetSubtitles, rssReadFeed, v2exBrowse } from './internet.js';
 
 /**
  * Helper to securely escape arguments for bash shell
@@ -97,6 +98,12 @@ export async function executeTool(name, args, onProgress) {
     case 'send_file_to_telegram': return await sendFileToTelegramTool(args);
     case 'get_system_capabilities': return await getSystemCapabilitiesTool();
     case 'ruflo_agent_swarm': return await rufloAgentSwarm(args, onProgress);
+    // Internet Crawling Tools (Agent Reach Zero-Config)
+    case 'jina_read_url': return await jinaReadUrl(args);
+    case 'youtube_search': return await youtubeSearch(args);
+    case 'youtube_get_subtitles': return await youtubeGetSubtitles(args);
+    case 'rss_read_feed': return await rssReadFeed(args);
+    case 'v2ex_browse': return await v2exBrowse(args);
     default:
       return `Unknown tool: ${name}`;
   }

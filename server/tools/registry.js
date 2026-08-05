@@ -597,5 +597,123 @@ export function getToolDefinitions() {
         },
       },
     },
+
+    // ─── Internet Crawling Tools (Agent Reach Zero-Config) ───
+
+    {
+      type: 'function',
+      function: {
+        name: 'jina_read_url',
+        description: 'Read any URL on the internet and get clean, readable Markdown content. Uses Jina Reader — zero config, free, no API key needed. Great for reading articles, docs, blog posts, and any webpage. Returns structured Markdown instead of raw HTML.',
+        parameters: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'The URL to read (e.g., "https://example.com/article").',
+            },
+            max_length: {
+              type: 'integer',
+              description: 'Maximum content length in characters (default: 50000).',
+              default: 50000,
+            },
+          },
+          required: ['url'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'youtube_search',
+        description: 'Search YouTube for videos matching a query. Returns video titles, channels, durations, view counts, and URLs. Zero config — uses yt-dlp.',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'The search query (e.g., "python tutorial for beginners").',
+            },
+            max_results: {
+              type: 'integer',
+              description: 'Maximum number of results (default: 10, max: 25).',
+              default: 10,
+            },
+          },
+          required: ['query'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'youtube_get_subtitles',
+        description: 'Extract subtitles/captions from a YouTube video. Returns the full transcript text. Great for summarizing videos, finding specific information in video content. Zero config — uses yt-dlp.',
+        parameters: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'The YouTube video URL (e.g., "https://www.youtube.com/watch?v=dQw4w9WgXcQ").',
+            },
+            language: {
+              type: 'string',
+              description: 'Subtitle language code (default: "en"). Use "zh" for Chinese, "ja" for Japanese, etc.',
+              default: 'en',
+            },
+          },
+          required: ['url'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'rss_read_feed',
+        description: 'Read and parse an RSS or Atom feed. Returns structured entries with titles, links, dates, and summaries. Zero config, works with any RSS/Atom URL.',
+        parameters: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'The RSS/Atom feed URL to read.',
+            },
+            max_items: {
+              type: 'integer',
+              description: 'Maximum number of items to return (default: 20).',
+              default: 20,
+            },
+          },
+          required: ['url'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'v2ex_browse',
+        description: 'Browse V2EX tech community. Read hot topics, latest posts, specific topics with replies, or browse by node (category). Zero config, public API, no auth needed.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: ['hot', 'latest', 'topic', 'node'],
+              description: 'What to browse: "hot" (trending), "latest" (newest), "topic" (specific topic by ID), "node" (topics in a category).',
+              default: 'hot',
+            },
+            topic_id: {
+              type: 'integer',
+              description: 'Topic ID — required when action is "topic".',
+            },
+            node_name: {
+              type: 'string',
+              description: 'Node/category name — required when action is "node" (e.g., "python", "linux", "jobs", "apple").',
+            },
+          },
+          required: [],
+        },
+      },
+    },
   ];
 }

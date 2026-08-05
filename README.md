@@ -46,6 +46,7 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 | 💾 **Semantic Memory** | Local Vector Search (`@xenova/transformers`) paired with standard FTS |
 | 🛑 **Emergency Stop** | Instant abort button to halt any running operation |
 | 🎨 **Premium Dark UI** | Includes live animated Canvas graph of multi-agent communication |
+| 🌐 **Internet Crawling** | Zero-config web reading, YouTube subtitles, RSS feeds, V2EX via [Agent Reach](https://github.com/Panniantong/agent-reach) integration |
 
 ## 🚀 Quick Start
 
@@ -149,7 +150,7 @@ PHANTOM/
 
 ## 🛠️ Available Tools
 
-PHANTOM has **15 built-in tools** that the AI uses autonomously:
+PHANTOM has **20 built-in tools** that the AI uses autonomously:
 
 | Tool | Purpose |
 |------|---------|
@@ -167,6 +168,27 @@ PHANTOM has **15 built-in tools** that the AI uses autonomously:
 | `recall_memory` | Search persistent memory |
 | `edit_source_code` | Self-modify PHANTOM's own code |
 | `save_trace` | Log execution traces for self-optimization |
+| `jina_read_url` | 🌐 Read any URL as clean Markdown via [Jina Reader](https://github.com/jina-ai/reader) — zero config |
+| `youtube_search` | 📺 Search YouTube videos — zero config |
+| `youtube_get_subtitles` | 📺 Extract YouTube video subtitles/transcripts — zero config |
+| `rss_read_feed` | 📡 Read any RSS/Atom feed — zero config |
+| `v2ex_browse` | 💻 Browse V2EX tech community (hot, latest, topics, nodes) — zero config |
+
+## 🌐 Internet Crawling (Agent Reach)
+
+PHANTOM integrates zero-config internet crawling capabilities inspired by [Agent Reach](https://github.com/Panniantong/agent-reach), giving the AI agent eyes to see the entire internet. **No API keys, no cookies, no configuration needed** — these tools work out of the box:
+
+| Tool | What it does | Example |
+|------|--------------|---------|
+| **Jina Reader** | Read any webpage as clean Markdown | "Read this article for me" |
+| **YouTube Search** | Find videos by keyword | "Search YouTube for Python tutorials" |
+| **YouTube Subtitles** | Extract video transcripts | "What does this YouTube video talk about?" |
+| **RSS Reader** | Parse any RSS/Atom feed | "Show me the latest posts from this RSS feed" |
+| **V2EX Browser** | Browse tech community topics | "What's trending on V2EX?" |
+
+> 💡 These tools require no setup. The AI will automatically choose the best tool for the task.
+>
+> For YouTube features, `yt-dlp` must be installed: `pip install yt-dlp`
 
 ## 🔒 Security Notes
 
