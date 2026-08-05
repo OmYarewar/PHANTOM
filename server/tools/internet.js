@@ -475,12 +475,69 @@ function htmlToMarkdown(html, fallbackTitle = '') {
   return output;
 }
 
-// ─── Twitter / X ───
+// ─── Twitter / X (Pure Data Extractor) ───
 
 async function crawlTwitter(cookie, action, url, query, maxResults) {
   const ct0Match = cookie.match(/ct0=([^;]+)/);
   const ct0 = ct0Match ? ct0Match[1].trim() : '';
 
+  // Action 1: Read a specific Tweet or Profile URL
+  if (action === 'read' && url) {
+    // Extract Tweet ID if status URL
+    const tweetIdMatch = url.match(/status\/(\d+)/);
+    if (tweetIdMatch) {
+      const tweetId = tweetIdMatch[1];
+      const syndicationData = await fetchTwitterTweetById(tweetId);
+      if (syndicationData) return syndicationData;
+    }
+
+    // Extract username if profile URL (e.g. x.com/elonmusk)
+    const profileMatch = url.match(/(?:x|twitter)\.com\/([a-zA-Z0-9_]+)\/?$/);
+    if (profileMatch && !['search', 'home', 'explore', 'settings', 'notifications'].includes(profileMatch[1].toLowerCase())) {
+      const username = profileMatch[1];
+      const profileData = await fetchTwitterProfileSyndication(username);
+      if (profileData) return profileData;
+    }
+
+    // Direct fetch with headers
+    const headers = buildTwitterHeaders(cookie, ct0);
+    validateUrlForSSRF(url);
+    const response = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
+    if (response.ok) {
+      const html = await response.text();
+      const parsed = parseTwitterHtml(html, url);
+      if (parsed) return parsed;
+    }
+  }
+
+  // Action 2: Search Tweets
+  if (action === 'search' && query) {
+    // Try Twitter API v1.1 adaptive search with ct0
+    if (ct0) {
+      const apiData = await searchTwitterApi(cookie, ct0, query, maxResults);
+      if (apiData) return apiData;
+    }
+
+    // Try Nitter public instance mirror for pure HTML search
+    const nitterData = await searchTwitterNitter(query, maxResults);
+    if (nitterData) return nitterData;
+
+    // Fallback: direct search page fetch
+    const headers = buildTwitterHeaders(cookie, ct0);
+    const targetUrl = `https://x.com/search?q=${encodeURIComponent(query)}&f=live`;
+    validateUrlForSSRF(targetUrl);
+    const response = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(20000) });
+    if (response.ok) {
+      const html = await response.text();
+      const parsed = parseTwitterHtml(html, targetUrl);
+      if (parsed) return parsed;
+    }
+  }
+
+  return `Twitter search/read completed. If results were sparse, ensure your Twitter cookie includes both 'auth_token' and 'ct0' from x.com.`;
+}
+
+function buildTwitterHeaders(cookie, ct0) {
   const headers = {
     'Cookie': cookie,
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -489,62 +546,160 @@ async function crawlTwitter(cookie, action, url, query, maxResults) {
     'x-twitter-active-user': 'yes',
     'x-twitter-client-language': 'en',
   };
-
   if (ct0) {
     headers['x-csrf-token'] = ct0;
     headers['authorization'] = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCO1M52a8U%2FY71dqTHY%3DUdSSJLwbEioFsgdSLAcBFi0tAYWgYwCQYoAfswTxT8';
   }
+  return headers;
+}
 
-  if (action === 'search' && query) {
-    if (ct0) {
-      try {
-        const apiUrl = `https://x.com/i/api/1.1/search/adaptive.json?q=${encodeURIComponent(query)}&count=${maxResults}&query_source=typed_query&tweet_mode=extended`;
-        validateUrlForSSRF(apiUrl);
-        const apiRes = await fetch(apiUrl, { headers, signal: AbortSignal.timeout(15000) });
-        if (apiRes.ok) {
-          const data = await apiRes.json();
-          const tweetsObj = data.globalObjects?.tweets || {};
-          const usersObj = data.globalObjects?.users || {};
-          const tweets = Object.values(tweetsObj);
-
-          if (tweets.length > 0) {
-            let output = `# Twitter Search: "${query}"\n\nFound ${tweets.length} tweets\n\n---\n\n`;
-            for (const t of tweets) {
-              const user = usersObj[t.user_id_str] || {};
-              output += `### @${user.screen_name || 'user'} (${user.name || ''})\n`;
-              output += `${t.full_text || t.text}\n`;
-              output += `📅 ${t.created_at || ''} | 🔁 ${t.retweet_count || 0} | ❤️ ${t.favorite_count || 0}\n`;
-              output += `🔗 https://x.com/${user.screen_name}/status/${t.id_str}\n\n---\n\n`;
-            }
-            return output;
-          }
-        }
-      } catch (err) {
-        // Fall back to direct HTML fetch
+async function fetchTwitterTweetById(tweetId) {
+  try {
+    const url = `https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=x`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && (data.text || data.full_text)) {
+        const user = data.user || {};
+        let output = `# Tweet by @${user.screen_name || 'user'} (${user.name || ''})\n\n`;
+        output += `${data.text || data.full_text}\n\n`;
+        output += `📅 ${data.created_at || ''} | 🔁 ${data.retweet_count || 0} | ❤️ ${data.favorite_count || 0} | 💬 ${data.reply_count || 0}\n`;
+        output += `🔗 https://x.com/${user.screen_name || 'i'}/status/${tweetId}\n`;
+        return output;
       }
     }
+  } catch (err) {
+    // Continue
+  }
+  return null;
+}
 
-    const targetUrl = `https://x.com/search?q=${encodeURIComponent(query)}&f=live`;
-    validateUrlForSSRF(targetUrl);
-    const response = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(20000) });
-    if (!response.ok) {
-      return `Twitter search error: HTTP ${response.status} ${response.statusText}`;
+async function fetchTwitterProfileSyndication(username) {
+  try {
+    const url = `https://syndication.twitter.com/srv/timeline-profile/priv-vis?screen_name=${encodeURIComponent(username)}`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.ok) {
+      const html = await res.text();
+      return htmlToMarkdown(html, `Twitter Profile: @${username}`);
     }
-    const html = await response.text();
-    return htmlToMarkdown(html, `Twitter Search: ${query}`);
+  } catch (err) {
+    // Continue
+  }
+  return null;
+}
+
+async function searchTwitterApi(cookie, ct0, query, maxResults) {
+  try {
+    const headers = buildTwitterHeaders(cookie, ct0);
+    const apiUrl = `https://x.com/i/api/1.1/search/adaptive.json?q=${encodeURIComponent(query)}&count=${maxResults}&query_source=typed_query&tweet_mode=extended`;
+    validateUrlForSSRF(apiUrl);
+    const apiRes = await fetch(apiUrl, { headers, signal: AbortSignal.timeout(15000) });
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      const tweetsObj = data.globalObjects?.tweets || {};
+      const usersObj = data.globalObjects?.users || {};
+      const tweets = Object.values(tweetsObj);
+
+      if (tweets.length > 0) {
+        let output = `# Twitter Search: "${query}"\n\nFound ${tweets.length} tweets\n\n---\n\n`;
+        for (const t of tweets) {
+          const user = usersObj[t.user_id_str] || {};
+          output += `### @${user.screen_name || 'user'} (${user.name || ''})\n`;
+          output += `${t.full_text || t.text}\n`;
+          output += `📅 ${t.created_at || ''} | 🔁 ${t.retweet_count || 0} | ❤️ ${t.favorite_count || 0}\n`;
+          output += `🔗 https://x.com/${user.screen_name}/status/${t.id_str}\n\n---\n\n`;
+        }
+        return output;
+      }
+    }
+  } catch (err) {
+    // Continue
+  }
+  return null;
+}
+
+async function searchTwitterNitter(query, maxResults) {
+  const instances = [
+    'https://nitter.privacydev.net',
+    'https://nitter.poast.org',
+    'https://nitter.cz',
+  ];
+
+  for (const instance of instances) {
+    try {
+      const targetUrl = `${instance}/search?f=tweets&q=${encodeURIComponent(query)}`;
+      const res = await fetch(targetUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'text/html',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (res.ok) {
+        const html = await res.text();
+        const tweets = [];
+        const tweetBlocks = html.match(/<div class="timeline-item">[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g) || [];
+
+        for (const block of tweetBlocks.slice(0, maxResults)) {
+          const userMatch = block.match(/<a class="username"[^>]*>@([^<]+)<\/a>/i);
+          const nameMatch = block.match(/<a class="fullname"[^>]*>([^<]+)<\/a>/i);
+          const contentMatch = block.match(/<div class="tweet-content[^"]*">([\s\S]*?)<\/div>/i);
+          const dateMatch = block.match(/<span class="tweet-date"[^>]*><a[^>]*title="([^"]*)"/i);
+          const linkMatch = block.match(/<a class="tweet-link"[^>]*href="([^"]*)"/i);
+
+          if (contentMatch) {
+            let tweetText = contentMatch[1].replace(/<[^>]+>/g, '').trim();
+            const username = userMatch ? userMatch[1] : 'user';
+            const fullname = nameMatch ? nameMatch[1].trim() : '';
+            const date = dateMatch ? dateMatch[1] : '';
+            const link = linkMatch ? `https://x.com${linkMatch[1].replace('#m', '')}` : '';
+
+            tweets.push({ username, fullname, text: tweetText, date, link });
+          }
+        }
+
+        if (tweets.length > 0) {
+          let output = `# Twitter Search Results for "${query}"\n\nFound ${tweets.length} tweets\n\n---\n\n`;
+          for (let i = 0; i < tweets.length; i++) {
+            const t = tweets[i];
+            output += `### ${i + 1}. @${t.username} ${t.fullname ? `(${t.fullname})` : ''}\n`;
+            output += `${t.text}\n`;
+            if (t.date) output += `📅 ${t.date}\n`;
+            if (t.link) output += `🔗 ${t.link}\n`;
+            output += `\n---\n\n`;
+          }
+          return output;
+        }
+      }
+    } catch (err) {
+      // Try next
+    }
   }
 
-  if (action === 'read' && url) {
-    validateUrlForSSRF(url);
-    const response = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
-    if (!response.ok) {
-      return `Twitter read error: HTTP ${response.status} ${response.statusText}`;
-    }
-    const html = await response.text();
-    return htmlToMarkdown(html, `Twitter Post`);
-  }
+  return null;
+}
 
-  return 'Twitter: specify action="read" with url, or action="search" with query.';
+function parseTwitterHtml(html, url) {
+  if (!html) return null;
+  // If HTML contains anti-bot JS block error message, skip
+  if (html.includes('Something went wrong') && html.includes('privacy related extensions')) {
+    return null;
+  }
+  const clean = htmlToMarkdown(html, 'Twitter');
+  return clean.length > 100 ? clean : null;
 }
 
 // ─── Reddit ───
@@ -662,7 +817,7 @@ async function crawlLinkedIn(cookie, action, url, query, maxResults) {
   return htmlToMarkdown(html, `LinkedIn - ${query || url}`);
 }
 
-// ─── Instagram ───
+// ─── Instagram (Pure Data Extractor) ───
 
 async function crawlInstagram(cookie, action, url, query, maxResults) {
   const headers = {
@@ -674,6 +829,7 @@ async function crawlInstagram(cookie, action, url, query, maxResults) {
     'x-requested-with': 'XMLHttpRequest',
   };
 
+  // Search Action
   if (action === 'search' && query) {
     try {
       const searchUrl = `https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}`;
@@ -684,44 +840,129 @@ async function crawlInstagram(cookie, action, url, query, maxResults) {
         const users = data.users || [];
         const hashtags = data.hashtags || [];
 
-        let output = `# Instagram Search Results for "${query}"\n\n`;
-        if (users.length > 0) {
-          output += `## Users\n\n`;
-          for (const u of users.slice(0, 10)) {
-            const user = u.user || {};
-            output += `- **${user.full_name || user.username}** (@${user.username}) ${user.is_verified ? '☑️' : ''}\n  🔗 https://instagram.com/${user.username}\n`;
+        if (users.length > 0 || hashtags.length > 0) {
+          let output = `# Instagram Search Results for "${query}"\n\n`;
+          if (users.length > 0) {
+            output += `## Profiles & Users\n\n`;
+            for (const u of users.slice(0, 10)) {
+              const user = u.user || {};
+              output += `- **${user.full_name || user.username}** (@${user.username}) ${user.is_verified ? '☑️' : ''}\n  👥 ${formatNumber(user.follower_count)} followers\n  🔗 https://instagram.com/${user.username}\n\n`;
+            }
           }
-        }
-        if (hashtags.length > 0) {
-          output += `\n## Hashtags\n\n`;
-          for (const h of hashtags.slice(0, 5)) {
-            const tag = h.hashtag || {};
-            output += `- #${tag.name} (${formatNumber(tag.media_count)} posts)\n`;
+          if (hashtags.length > 0) {
+            output += `\n## Hashtags\n\n`;
+            for (const h of hashtags.slice(0, 5)) {
+              const tag = h.hashtag || {};
+              output += `- #${tag.name} (${formatNumber(tag.media_count)} posts)\n`;
+            }
           }
+          return output;
         }
-        if (users.length > 0 || hashtags.length > 0) return output;
       }
     } catch (err) {
-      // Fall back to direct fetch
+      // Fall back to page parse
     }
 
     const targetUrl = `https://www.instagram.com/explore/tags/${encodeURIComponent(query)}/`;
     validateUrlForSSRF(targetUrl);
     const res = await fetch(targetUrl, { headers: { ...headers, Accept: 'text/html' }, signal: AbortSignal.timeout(20000) });
-    if (!res.ok) return `Instagram search error: HTTP ${res.status}`;
-    const html = await res.text();
-    return htmlToMarkdown(html, `Instagram Search: ${query}`);
+    if (res.ok) {
+      const html = await res.text();
+      const parsed = parseInstagramHtml(html, targetUrl);
+      if (parsed) return parsed;
+    }
   }
 
+  // Read Action
   if (action === 'read' && url) {
     validateUrlForSSRF(url);
     const res = await fetch(url, { headers: { ...headers, Accept: 'text/html' }, signal: AbortSignal.timeout(20000) });
-    if (!res.ok) return `Instagram read error: HTTP ${res.status}`;
-    const html = await res.text();
-    return htmlToMarkdown(html, `Instagram Post`);
+    if (res.ok) {
+      const html = await res.text();
+      const parsed = parseInstagramHtml(html, url);
+      if (parsed) return parsed;
+    }
   }
 
   return 'Instagram: specify action="read" with url, or action="search" with query.';
+}
+
+function parseInstagramHtml(html, targetUrl) {
+  if (!html) return null;
+
+  let output = '';
+
+  // 1. Try extracting application/ld+json
+  const ldJsonMatch = html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
+  if (ldJsonMatch) {
+    try {
+      const data = JSON.parse(ldJsonMatch[1]);
+      const items = Array.isArray(data) ? data : [data];
+      for (const item of items) {
+        if (item.articleBody || item.headline || item.caption || item.description) {
+          const author = item.author?.name || item.author?.identifier || 'Instagram User';
+          const text = item.articleBody || item.headline || item.caption || item.description || '';
+          const date = item.datePublished || item.uploadDate || '';
+
+          output += `# Instagram Content by ${author}\n\n`;
+          output += `${text}\n\n`;
+          if (date) output += `📅 ${date}\n`;
+          output += `🔗 ${targetUrl}\n`;
+          return output;
+        }
+      }
+    } catch (e) {
+      // Continue
+    }
+  }
+
+  // 2. Try OpenGraph Meta Description & Title
+  const ogDescMatch = html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"/i) ||
+                      html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"/i);
+  const ogTitleMatch = html.match(/<meta[^>]*property="og:title"[^>]*content="([^"]*)"/i);
+
+  if (ogDescMatch) {
+    const desc = ogDescMatch[1].replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+    const title = ogTitleMatch ? ogTitleMatch[1].replace(/&quot;/g, '"').replace(/&#39;/g, "'") : 'Instagram Post';
+
+    output += `# ${title}\n\n`;
+    output += `${desc}\n\n`;
+    output += `🔗 ${targetUrl}\n`;
+    return output;
+  }
+
+  // 3. Try parsing window._sharedData
+  const sharedDataMatch = html.match(/window\._sharedData\s*=\s*({[\s\S]*?});<\/script>/i);
+  if (sharedDataMatch) {
+    try {
+      const data = JSON.parse(sharedDataMatch[1]);
+      const entryData = data.entry_data;
+
+      const profileUser = entryData?.ProfilePage?.[0]?.graphql?.user;
+      if (profileUser) {
+        output += `# Instagram Profile: @${profileUser.username} (${profileUser.full_name || ''})\n\n`;
+        output += `📝 ${profileUser.biography || 'No bio'}\n`;
+        output += `👥 ${formatNumber(profileUser.edge_followed_by?.count)} followers | ${formatNumber(profileUser.edge_follow?.count)} following | 📸 ${formatNumber(profileUser.edge_owner_to_timeline_media?.count)} posts\n\n`;
+
+        const posts = profileUser.edge_owner_to_timeline_media?.edges || [];
+        if (posts.length > 0) {
+          output += `## Recent Posts\n\n`;
+          for (const edge of posts.slice(0, 10)) {
+            const node = edge.node;
+            const caption = node.edge_media_to_caption?.edges?.[0]?.node?.text || '';
+            output += `- **Post**: ${caption.substring(0, 150)}...\n`;
+            output += `  ❤️ ${formatNumber(node.edge_liked_by?.count)} likes | 💬 ${formatNumber(node.edge_media_to_comment?.count)} comments\n`;
+            output += `  🔗 https://instagram.com/p/${node.shortcode}\n\n`;
+          }
+        }
+        return output;
+      }
+    } catch (e) {
+      // Continue
+    }
+  }
+
+  return null;
 }
 
 // ─── XiaoHongShu ───
