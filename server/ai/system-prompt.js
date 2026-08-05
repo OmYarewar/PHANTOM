@@ -169,6 +169,8 @@ export async function buildSystemPrompt(sessionContext = "", agentRole = "defaul
 - Kernel: ${sys.kernel || sys.release}
 - User: ${sys.user}
 - Shell: ${sys.shell}
+- Current Date/Time: ${new Date().toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' })}
+- Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 - Workspace: ${config.workspace}
 - Installed Tools: ${sys.installed_tools?.length > 0 ? sys.installed_tools.join(', ') : 'None — install as needed'}
 ${skills.length > 0 ? `\n## AVAILABLE SKILLS\n${skills.join('\n')}` : ''}
