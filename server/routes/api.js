@@ -125,7 +125,8 @@ router.post('/telegram/restart', (req, res) => {
 // ─── Conversations ───
 router.get('/conversations', (req, res) => {
   try {
-    res.json(getConversations());
+    const convs = getConversations().filter(c => !c.title || !c.title.toLowerCase().includes('telegram'));
+    res.json(convs);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

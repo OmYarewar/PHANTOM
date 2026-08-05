@@ -470,9 +470,10 @@
 
   function renderConversationList(filter = '') {
     convList.innerHTML = '';
+    const nonTelegram = conversations.filter(c => !c.title || !c.title.toLowerCase().includes('telegram'));
     const filtered = filter
-      ? conversations.filter(c => c.title.toLowerCase().includes(filter.toLowerCase()))
-      : conversations;
+      ? nonTelegram.filter(c => c.title.toLowerCase().includes(filter.toLowerCase()))
+      : nonTelegram;
 
     for (const conv of filtered) {
       const el = document.createElement('div');
