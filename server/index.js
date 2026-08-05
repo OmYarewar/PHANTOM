@@ -1,20 +1,11 @@
-import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
-import cors from 'cors';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
 
 import config from './config.js';
 import { closeDB, createConversation, getMessages, updateConversationTitle } from './memory/store.js';
 import { processMessage } from './ai/llm-client.js';
-import apiRouter from './routes/api.js';
 import { startBot } from './telegram/bot.js';
 import { startCaspianBot } from './caspian/bot.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
 
 // Create Express app
 import app from "./app.js";

@@ -125,7 +125,11 @@ export function loadPersistedSettings(getSetting) {
 
   console.log(`📁 Workspace: ${config.workspace}`);
   console.log(`🤖 Model: ${config.api.model}`);
-  console.log(`🔑 API Key: ${config.api.apiKey ? '••••' + config.api.apiKey.slice(-4) : 'Not set'}`);
+  const hasValidKey = config.api.apiKey && config.api.apiKey !== 'sk-your-api-key-here';
+  console.log(`🔑 API Key: ${hasValidKey ? '••••' + config.api.apiKey.slice(-4) : '⚠️ Not configured (Set API_KEY in .env or via Web UI)'}`);
+  if (!hasValidKey) {
+    console.log(`💡 Setup Tip: Configure your LLM API Key in .env or in the Web UI Settings panel to enable AI execution.`);
+  }
 }
 
 export default config;
