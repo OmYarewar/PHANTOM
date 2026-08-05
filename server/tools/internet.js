@@ -397,9 +397,10 @@ function formatNumber(num) {
  */
 export async function socialMediaCrawl({ platform, action = 'read', url, query, max_results = 10 }) {
   const cookieKey = `ar_cookie_${platform}`;
-  const cookie = getSetting(cookieKey);
+  const cookie = getSetting(cookieKey) || '';
 
-  if (!cookie) {
+  // Twitter can work zero-config via Guest Tokens & Syndication API even without cookie!
+  if (!cookie && platform !== 'twitter') {
     return `Error: ${platform} is not configured. The user needs to paste their ${platform} cookies in Settings → Agent Reach → ${platform}. They can export cookies using the Cookie-Editor Chrome extension (Header String format).`;
   }
 
@@ -478,7 +479,7 @@ function htmlToMarkdown(html, fallbackTitle = '') {
 // ─── Twitter / X (Pure Data Extractor) ───
 
 async function crawlTwitter(cookie, action, url, query, maxResults) {
-  const ct0Match = cookie.match(/ct0=([^;]+)/);
+  const ct0Match = cookie ? cookie.match(/ct0=([^;]+)/) : null;
   const ct0 = ct0Match ? ct0Match[1].trim() : '';
 
   // Action 1: Read a specific Tweet or Profile URL
@@ -499,47 +500,42 @@ async function crawlTwitter(cookie, action, url, query, maxResults) {
       if (profileData) return profileData;
     }
 
-    // Direct fetch with headers
-    const headers = buildTwitterHeaders(cookie, ct0);
-    validateUrlForSSRF(url);
-    const response = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
-    if (response.ok) {
-      const html = await response.text();
-      const parsed = parseTwitterHtml(html, url);
-      if (parsed) return parsed;
+    // Direct fetch with headers if cookie present
+    if (cookie) {
+      const headers = buildTwitterHeaders(cookie, ct0);
+      validateUrlForSSRF(url);
+      const response = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
+      if (response.ok) {
+        const html = await response.text();
+        const parsed = parseTwitterHtml(html, url);
+        if (parsed) return parsed;
+      }
     }
   }
 
   // Action 2: Search Tweets
   if (action === 'search' && query) {
-    // Try Twitter API v1.1 adaptive search with ct0
+    // 1. Try Twitter API v1.1 adaptive search with ct0 if cookie present
     if (ct0) {
       const apiData = await searchTwitterApi(cookie, ct0, query, maxResults);
       if (apiData) return apiData;
     }
 
-    // Try Nitter public instance mirror for pure HTML search
+    // 2. Try Twitter API with Guest Token (works zero-config, no user login required!)
+    const guestData = await searchTwitterGuestToken(query, maxResults);
+    if (guestData) return guestData;
+
+    // 3. Try Nitter public instance mirror for pure HTML search
     const nitterData = await searchTwitterNitter(query, maxResults);
     if (nitterData) return nitterData;
-
-    // Fallback: direct search page fetch
-    const headers = buildTwitterHeaders(cookie, ct0);
-    const targetUrl = `https://x.com/search?q=${encodeURIComponent(query)}&f=live`;
-    validateUrlForSSRF(targetUrl);
-    const response = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(20000) });
-    if (response.ok) {
-      const html = await response.text();
-      const parsed = parseTwitterHtml(html, targetUrl);
-      if (parsed) return parsed;
-    }
   }
 
-  return `Twitter search/read completed. If results were sparse, ensure your Twitter cookie includes both 'auth_token' and 'ct0' from x.com.`;
+  return `Twitter search/read completed for query: "${query || url}".`;
 }
 
 function buildTwitterHeaders(cookie, ct0) {
   const headers = {
-    'Cookie': cookie,
+    'Cookie': cookie || '',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
@@ -551,6 +547,77 @@ function buildTwitterHeaders(cookie, ct0) {
     headers['authorization'] = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCO1M52a8U%2FY71dqTHY%3DUdSSJLwbEioFsgdSLAcBFi0tAYWgYwCQYoAfswTxT8';
   }
   return headers;
+}
+
+let cachedGuestToken = null;
+let guestTokenExpiry = 0;
+
+async function getTwitterGuestToken() {
+  if (cachedGuestToken && Date.now() < guestTokenExpiry) {
+    return cachedGuestToken;
+  }
+  try {
+    const res = await fetch('https://api.twitter.com/1.1/guest/activate.json', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCO1M52a8U%2FY71dqTHY%3DUdSSJLwbEioFsgdSLAcBFi0tAYWgYwCQYoAfswTxT8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.guest_token) {
+        cachedGuestToken = data.guest_token;
+        guestTokenExpiry = Date.now() + 3 * 3600 * 1000;
+        return cachedGuestToken;
+      }
+    }
+  } catch (err) {
+    // Continue
+  }
+  return null;
+}
+
+async function searchTwitterGuestToken(query, maxResults) {
+  const guestToken = await getTwitterGuestToken();
+  if (!guestToken) return null;
+
+  try {
+    const apiUrl = `https://api.twitter.com/1.1/search/adaptive.json?q=${encodeURIComponent(query)}&count=${maxResults}&query_source=typed_query&tweet_mode=extended`;
+    validateUrlForSSRF(apiUrl);
+    const res = await fetch(apiUrl, {
+      headers: {
+        'Authorization': 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCO1M52a8U%2FY71dqTHY%3DUdSSJLwbEioFsgdSLAcBFi0tAYWgYwCQYoAfswTxT8',
+        'x-guest-token': guestToken,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const tweetsObj = data.globalObjects?.tweets || {};
+      const usersObj = data.globalObjects?.users || {};
+      const tweets = Object.values(tweetsObj);
+
+      if (tweets.length > 0) {
+        let output = `# Twitter Search: "${query}"\n\nFound ${tweets.length} tweets\n\n---\n\n`;
+        for (const t of tweets) {
+          const user = usersObj[t.user_id_str] || {};
+          output += `### @${user.screen_name || 'user'} (${user.name || ''})\n`;
+          output += `${t.full_text || t.text}\n`;
+          output += `📅 ${t.created_at || ''} | 🔁 ${t.retweet_count || 0} | ❤️ ${t.favorite_count || 0}\n`;
+          output += `🔗 https://x.com/${user.screen_name}/status/${t.id_str}\n\n---\n\n`;
+        }
+        return output;
+      }
+    }
+  } catch (err) {
+    // Continue
+  }
+  return null;
 }
 
 async function fetchTwitterTweetById(tweetId) {
@@ -831,6 +898,11 @@ async function crawlInstagram(cookie, action, url, query, maxResults) {
 
   // Search Action
   if (action === 'search' && query) {
+    // 1. Try Tag Web Info API for actual post captions & comments
+    const tagPosts = await searchInstagramTagApi(cookie, query, maxResults);
+    if (tagPosts) return tagPosts;
+
+    // 2. Try Topsearch API for users and hashtags
     try {
       const searchUrl = `https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}`;
       validateUrlForSSRF(searchUrl);
@@ -863,7 +935,7 @@ async function crawlInstagram(cookie, action, url, query, maxResults) {
       // Fall back to page parse
     }
 
-    const targetUrl = `https://www.instagram.com/explore/tags/${encodeURIComponent(query)}/`;
+    const targetUrl = `https://www.instagram.com/explore/tags/${encodeURIComponent(query.replace(/^#/, ''))}/`;
     validateUrlForSSRF(targetUrl);
     const res = await fetch(targetUrl, { headers: { ...headers, Accept: 'text/html' }, signal: AbortSignal.timeout(20000) });
     if (res.ok) {
@@ -885,6 +957,62 @@ async function crawlInstagram(cookie, action, url, query, maxResults) {
   }
 
   return 'Instagram: specify action="read" with url, or action="search" with query.';
+}
+
+async function searchInstagramTagApi(cookie, tagQuery, maxResults) {
+  const tagName = tagQuery.replace(/^#/, '').replace(/[^a-zA-Z0-9_]/g, '');
+  if (!tagName) return null;
+
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'x-ig-app-id': '936619743392459',
+    'Accept': '*/*',
+  };
+  if (cookie) headers['Cookie'] = cookie;
+
+  try {
+    const url = `https://www.instagram.com/api/v1/tags/web_info/?tag_name=${encodeURIComponent(tagName)}`;
+    validateUrlForSSRF(url);
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
+    if (res.ok) {
+      const data = await res.json();
+      const sections = data.data?.recent?.sections || data.data?.top?.sections || [];
+      const posts = [];
+
+      for (const section of sections) {
+        const medias = section.layout_content?.medias || [];
+        for (const m of medias) {
+          const media = m.media;
+          if (media && media.caption?.text) {
+            posts.push({
+              username: media.user?.username || 'user',
+              name: media.user?.full_name || '',
+              caption: media.caption.text,
+              likes: media.like_count || 0,
+              comments: media.comment_count || 0,
+              code: media.code || '',
+            });
+          }
+        }
+      }
+
+      if (posts.length > 0) {
+        let output = `# Instagram Tag Search: #${tagName}\n\nFound ${posts.length} posts\n\n---\n\n`;
+        for (let i = 0; i < Math.min(posts.length, maxResults); i++) {
+          const p = posts[i];
+          output += `### ${i + 1}. Post by @${p.username} ${p.name ? `(${p.name})` : ''}\n`;
+          output += `${p.caption}\n\n`;
+          output += `❤️ ${formatNumber(p.likes)} likes | 💬 ${formatNumber(p.comments)} comments\n`;
+          if (p.code) output += `🔗 https://instagram.com/p/${p.code}\n`;
+          output += `\n---\n\n`;
+        }
+        return output;
+      }
+    }
+  } catch (err) {
+    // Continue
+  }
+  return null;
 }
 
 function parseInstagramHtml(html, targetUrl) {
