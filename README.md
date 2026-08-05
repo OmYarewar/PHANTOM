@@ -150,7 +150,7 @@ PHANTOM/
 
 ## 🛠️ Available Tools
 
-PHANTOM has **20 built-in tools** that the AI uses autonomously:
+PHANTOM has **24 built-in tools** that the AI uses autonomously:
 
 | Tool | Purpose |
 |------|---------|
@@ -173,6 +173,10 @@ PHANTOM has **20 built-in tools** that the AI uses autonomously:
 | `youtube_get_subtitles` | 📺 Extract YouTube video subtitles/transcripts — zero config |
 | `rss_read_feed` | 📡 Read any RSS/Atom feed — zero config |
 | `v2ex_browse` | 💻 Browse V2EX tech community (hot, latest, topics, nodes) — zero config |
+| `twitter_crawl` | 🐦 Dedicated Twitter/X tool (search tweets, read status/profiles) — zero config |
+| `reddit_crawl` | 📖 Dedicated Reddit tool (search subreddits, read threads & comments) — zero config |
+| `linkedin_crawl` | 💼 Dedicated LinkedIn tool (search posts, jobs, articles & profiles) |
+| `instagram_crawl` | 📷 Dedicated Instagram tool (search tags/users, read post captions & comments) |
 
 ## 🌐 Internet Crawling (Agent Reach)
 

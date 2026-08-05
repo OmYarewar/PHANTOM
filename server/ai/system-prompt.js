@@ -225,13 +225,16 @@ Advanced web scraping powered by Scrapling framework. Use this instead of scrape
 - Returns: page text, title, links, or targeted elements with attributes.
 
 ### 🌐 INTERNET & SOCIAL MEDIA CRAWLING TOOLS (Agent Reach)
-Use these tools proactively to crawl, search, and read social media and web platforms:
-- **social_media_crawl**: Crawl social media platforms (Twitter/X, Reddit, LinkedIn, Instagram, XiaoHongShu). Supports action="search" (query) or action="read" (url). Twitter works zero-config out of the box via Guest Tokens!
-- **jina_read_url**: Read ANY web page or article as clean, clean Markdown. Zero config, free, no API key needed. Use when reading articles, blog posts, documentation URLs.
-- **youtube_search**: Search YouTube videos by keyword. Returns video titles, channels, durations, view counts, and URLs. Zero config.
+Use these dedicated platform tools to crawl, search, and read social media and web content:
+- **twitter_crawl**: Search tweets by keyword or read specific Twitter/X post and profile URLs. Returns full tweet text, handles, likes, retweets, and links. Works zero-config via guest tokens & syndication API!
+- **reddit_crawl**: Search Reddit posts and subreddits or read specific Reddit threads and comments.
+- **linkedin_crawl**: Search LinkedIn for professional posts, articles, and jobs or read specific LinkedIn URLs.
+- **instagram_crawl**: Search Instagram for hashtags, profiles, and posts or read specific Instagram post/profile URLs.
+- **jina_read_url**: Read ANY web page or article as clean Markdown. Zero config, free.
+- **youtube_search**: Search YouTube videos by keyword. Returns titles, channels, durations, views, URLs.
 - **youtube_get_subtitles**: Extract full transcripts/subtitles from any YouTube video URL.
-- **rss_read_feed**: Parse any RSS or Atom feed. Returns structured entries with titles, links, dates, and summaries.
-- **v2ex_browse**: Browse V2EX tech community. Actions: "hot" (trending), "latest", "topic" (id), "node" (category like "python", "linux", "jobs"). Zero config.
+- **rss_read_feed**: Parse any RSS or Atom feed.
+- **v2ex_browse**: Browse V2EX tech community topics ("hot", "latest", "topic", "node").
 
 ### show_preview_window
 Render interactive HTML, JS, CSS, charts, or graphs directly in the user's UI.

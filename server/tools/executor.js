@@ -105,6 +105,10 @@ export async function executeTool(name, args, onProgress) {
     case 'rss_read_feed': return await rssReadFeed(args);
     case 'v2ex_browse': return await v2exBrowse(args);
     case 'social_media_crawl': return await socialMediaCrawl(args);
+    case 'twitter_crawl': return await socialMediaCrawl({ platform: 'twitter', ...args });
+    case 'reddit_crawl': return await socialMediaCrawl({ platform: 'reddit', ...args });
+    case 'linkedin_crawl': return await socialMediaCrawl({ platform: 'linkedin', ...args });
+    case 'instagram_crawl': return await socialMediaCrawl({ platform: 'instagram', ...args });
     default:
       return `Unknown tool: ${name}`;
   }
