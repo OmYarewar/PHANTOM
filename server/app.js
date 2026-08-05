@@ -5,77 +5,43 @@ import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 
 import { loadPersistedSettings } from './config.js';
-import { initDB, getSetting } from './memory/store.js';
 import apiRouter from './routes/api.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-// Initialize database
-initDB();
+loadPersistedSettings();
 
-// Load persisted settings from DB (API keys, workspace, etc.)
-loadPersistedSettings(getSetting);
-
-// Create Express app
 const app = express();
 
-// Trust proxy to ensure IP-based rate limiting works correctly behind proxies (and in tests)
-app.set('trust proxy', 1);
+// Security and proxy configuration
+if (process.env.NODE_ENV === 'production' && process.env.TRUST_PROXY) {
+  app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? true : parseInt(process.env.TRUST_PROXY, 10));
+} else {
+  app.set('trust proxy', 1);
+}
 
-// Security Hardening: Apply Helmet middleware
-import helmet from 'helmet';
-app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP for now as it might block inline scripts or styles used in development/frontend
-}));
+app.use(cors());
+app.use(express.json({ limit: '5mb' }));
 
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:1337',
-    'http://127.0.0.1:1337'
-  ]
-}));
-app.use(express.json({ limit: '50mb' }));
+// Static frontend serving
+const frontendPath = join(__dirname, '../frontend');
+if (existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+}
 
-import rateLimit from 'express-rate-limit';
-
-// Security Hardening: Apply Rate Limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: { error: 'Too many requests, please try again later.' }
-});
-
-app.use('/api', apiLimiter);
-
-// Optional API authentication middleware
-app.use('/api', (req, res, next) => {
-  const token = process.env.API_TOKEN || process.env.AUTH_TOKEN;
-  if (token) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${token}`) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-  }
-  next();
-});
-
-// API routes
+// API Routes
 app.use('/api', apiRouter);
 
-// Serve frontend
-const distPath = join(ROOT, 'frontend');
-if (existsSync(distPath)) {
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api') && !req.path.startsWith('/ws')) {
-      res.sendFile(join(distPath, 'index.html'));
-    }
+// Centralized Express Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled API Error:', err.stack || err.message || err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : (err.message || 'Unknown error')
   });
-}
+});
 
 export default app;

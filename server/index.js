@@ -1,203 +1,73 @@
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
-
+import app from './app.js';
 import config from './config.js';
-import { closeDB, createConversation, getMessages, updateConversationTitle } from './memory/store.js';
 import { processMessage } from './ai/llm-client.js';
 import { startBot } from './telegram/bot.js';
 import { startCaspianBot } from './caspian/bot.js';
 
-// Create Express app
-import app from "./app.js";
-
-// API routes
-
-// Serve frontend
-
-// Create HTTP server
 const server = createServer(app);
-
-// WebSocket server
 const wss = new WebSocketServer({ server, path: '/ws' });
 
-wss.on('connection', (ws) => {
-  console.log('🔌 Client connected');
+// WebSocket Heartbeat / Stale Connection Purge
+const heartbeatInterval = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
 
-  // Track abort controller per connection for stop functionality
-  let currentAbortController = null;
+wss.on('close', () => {
+  clearInterval(heartbeatInterval);
+});
+
+wss.on('connection', (ws) => {
+  ws.isAlive = true;
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
+
+  // Prevent socket errors from crashing the Node.js process
+  ws.on('error', (err) => {
+    console.error('WebSocket connection error:', err.message);
+  });
+
+  const abortController = new AbortController();
 
   ws.on('message', async (data) => {
     try {
-      const msg = JSON.parse(data.toString());
+      const payload = JSON.parse(data);
+      if (!payload || !payload.message) return;
 
-      switch (msg.type) {
-        case 'chat': {
-          let conversationId = msg.conversationId;
-
-          // Create new conversation if needed
-          if (!conversationId) {
-            const conv = createConversation('New Conversation');
-            conversationId = conv.id;
-            ws.send(JSON.stringify({ type: 'conversation_created', conversationId }));
+      await processMessage(
+        payload.conversationId,
+        payload.message,
+        payload.context,
+        (chunk) => {
+          if (ws.readyState === 1) { // OPEN
+            ws.send(JSON.stringify({ type: 'chunk', data: chunk }));
           }
-
-          // Create a new AbortController for this request
-          currentAbortController = new AbortController();
-          const abortSignal = currentAbortController.signal;
-
-          // Signal start of response
-          ws.send(JSON.stringify({ type: 'response_start', conversationId }));
-
-          await processMessage(
-            conversationId,
-            msg.content,
-            null, // sessionContext
-            // onChunk — stream text
-            (chunk) => {
-              if (ws.readyState === ws.OPEN) {
-                ws.send(JSON.stringify({ type: 'chunk', content: chunk, conversationId }));
-              }
-            },
-            // onToolCall — tool being called
-            (toolCall) => {
-              if (ws.readyState === ws.OPEN) {
-                ws.send(JSON.stringify({ type: 'tool_call', ...toolCall, conversationId }));
-              }
-            },
-            // onToolResult — tool result
-            (toolResult) => {
-              if (ws.readyState === ws.OPEN) {
-                ws.send(JSON.stringify({ type: 'tool_result', ...toolResult, conversationId }));
-              }
-            },
-            // onError
-            (error) => {
-              if (ws.readyState === ws.OPEN) {
-                ws.send(JSON.stringify({ type: 'error', message: error, conversationId }));
-              }
-            },
-            // onThinking — AI reasoning/thinking tokens
-            (thinkingChunk) => {
-              if (ws.readyState === ws.OPEN) {
-                ws.send(JSON.stringify({ type: 'thinking', content: thinkingChunk, conversationId }));
-              }
-            },
-            // abortSignal
-            abortSignal,
-            // onToolProgress — live tool output streaming
-            (progress) => {
-              if (ws.readyState === ws.OPEN) {
-                ws.send(JSON.stringify({ type: 'tool_progress', ...progress, conversationId }));
-              }
-            }
-          );
-
-          currentAbortController = null;
-
-          // Auto-generate title from first message
-          const messages = getMessages(conversationId);
-          const userMsgs = messages.filter(m => m.role === 'user');
-          if (userMsgs.length === 1) {
-            const title = userMsgs[0].content.substring(0, 60) + (userMsgs[0].content.length > 60 ? '...' : '');
-            updateConversationTitle(conversationId, title);
-            ws.send(JSON.stringify({ type: 'title_updated', conversationId, title }));
-          }
-
-          // Signal end of response
-          if (ws.readyState === ws.OPEN) {
-            ws.send(JSON.stringify({ type: 'response_end', conversationId }));
-          }
-          break;
-        }
-
-        case 'stop': {
-          // Abort the current operation
-          if (currentAbortController) {
-            console.log('⏹ Stop requested by user');
-            currentAbortController.abort();
-            currentAbortController = null;
-          }
-          break;
-        }
-
-        case 'ping':
-          ws.send(JSON.stringify({ type: 'pong' }));
-          break;
-
-        default:
-          ws.send(JSON.stringify({ type: 'error', message: `Unknown message type: ${msg.type}` }));
-      }
+        },
+        null, null, null, null,
+        abortController.signal
+      );
     } catch (err) {
-      console.error('WebSocket error:', err);
-      if (ws.readyState === ws.OPEN) {
+      if (ws.readyState === 1) {
         ws.send(JSON.stringify({ type: 'error', message: err.message }));
       }
     }
   });
 
   ws.on('close', () => {
-    console.log('🔌 Client disconnected');
-    // Abort any running operation when client disconnects
-    if (currentAbortController) {
-      currentAbortController.abort();
-      currentAbortController = null;
-    }
+    abortController.abort();
+    console.log('🔌 WebSocket client disconnected');
   });
 });
 
-// Start server
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`\n❌ Error: Port ${config.port} is already in use.`);
-    console.error(`💡 Another instance of PHANTOM is likely running.`);
-    console.error(`   Run 'kill $(lsof -t -i :${config.port})' to free the port, or change PORT in .env\n`);
-    process.exit(1);
-  } else {
-    console.error(`\n❌ Server error:`, err);
-    process.exit(1);
-  }
-});
-
-server.listen(config.port, () => {
+const PORT = config.port || config.server?.port || 1337;
+server.listen(PORT, () => {
+  console.log(`🚀 PHANTOM Server running on port ${PORT}`);
   startBot();
-
-// Start Caspian Gateway Bot
-startCaspianBot();
-  console.log(`
-╔══════════════════════════════════════════════╗
-║                                              ║
-║     ██████╗ ██╗  ██╗ █████╗ ███╗   ██╗      ║
-║     ██╔══██╗██║  ██║██╔══██╗████╗  ██║      ║
-║     ██████╔╝███████║███████║██╔██╗ ██║      ║
-║     ██╔═══╝ ██╔══██║██╔══██║██║╚██╗██║      ║
-║     ██║     ██║  ██║██║  ██║██║ ╚████║      ║
-║     ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝      ║
-║            ████████╗ ██████╗ ███╗   ███╗     ║
-║            ╚══██╔══╝██╔═══██╗████╗ ████║     ║
-║               ██║   ██║   ██║██╔████╔██║     ║
-║               ██║   ██║   ██║██║╚██╔╝██║     ║
-║               ██║   ╚██████╔╝██║ ╚═╝ ██║     ║
-║               ╚═╝    ╚═════╝ ╚═╝     ╚═╝     ║
-║                                              ║
-║   AI-Powered Pentesting Command Center       ║
-║   🌐 http://localhost:${String(config.port).padEnd(24)}║
-║   ⚡ WebSocket: ws://localhost:${String(config.port).padEnd(14)}║
-║   🔓 Unlimited Tool Iterations               ║
-║                                              ║
-╚══════════════════════════════════════════════╝
-  `);
-});
-
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n⚡ Shutting down PHANTOM...');
-  closeDB();
-  server.close();
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  closeDB();
-  server.close();
-  process.exit(0);
+  startCaspianBot();
 });

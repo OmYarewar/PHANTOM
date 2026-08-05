@@ -1,24 +1,30 @@
 /**
- * Toast Notifications & Custom Confirmation UI
+ * Toast Notifications & Custom Confirmation UI (Accessible & Non-leaking)
  */
 
 window.Toast = {
+  activeConfirmation: null,
+  previousActiveElement: null,
+
   init() {
-    // Inject Toast Container
+    // Inject Toast Container with ARIA live region
     if (!document.getElementById('toast-container')) {
       const container = document.createElement('div');
       container.id = 'toast-container';
+      container.setAttribute('aria-live', 'polite');
+      container.setAttribute('aria-atomic', 'true');
+      container.setAttribute('role', 'status');
       document.body.appendChild(container);
     }
 
-    // Inject Confirm Modal
+    // Inject Confirm Modal with proper ARIA roles
     if (!document.getElementById('toast-confirm-modal')) {
       const modalHtml = `
-        <div id="toast-confirm-modal" class="toast-confirm-modal hidden">
+        <div id="toast-confirm-modal" class="toast-confirm-modal hidden" role="alertdialog" aria-modal="true" aria-labelledby="toast-confirm-message">
           <div class="toast-confirm-overlay" id="toast-confirm-overlay"></div>
-          <div class="toast-confirm-dialog">
+          <div class="toast-confirm-dialog" tabindex="-1">
             <div class="toast-confirm-body">
-              <span class="toast-confirm-icon">⚠️</span>
+              <span class="toast-confirm-icon" aria-hidden="true">⚠️</span>
               <p id="toast-confirm-message" class="toast-confirm-message"></p>
             </div>
             <div class="toast-confirm-actions">
@@ -32,34 +38,25 @@ window.Toast = {
     }
   },
 
-  /**
-   * Show a toast notification.
-   * @param {string} message - The message to display.
-   * @param {string} [type='info'] - 'info', 'success', 'error', 'warning'
-   */
   show(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
 
-    let icon = 'ℹ️';
-    if (type === 'success') icon = '✅';
-    if (type === 'error') icon = '❌';
-    if (type === 'warning') icon = '⚠️';
+    const icons = { info: 'ℹ️', success: '✅', error: '❌', warning: '⚠️' };
+    const icon = icons[type] || icons.info;
 
     toast.innerHTML = `
-      <span class="toast-icon">${icon}</span>
+      <span class="toast-icon" aria-hidden="true">${icon}</span>
       <span class="toast-msg">${this.escapeHtml(message)}</span>
     `;
 
     container.appendChild(toast);
 
-    // Trigger animation
-    requestAnimationFrame(() => {
-      toast.classList.add('show');
-    });
+    requestAnimationFrame(() => toast.classList.add('show'));
 
     setTimeout(() => {
       toast.classList.remove('show');
@@ -67,11 +64,6 @@ window.Toast = {
     }, 4000);
   },
 
-  /**
-   * Show a custom confirmation dialog.
-   * @param {string} message - The confirmation message.
-   * @param {Function} onConfirm - Callback if user clicks Confirm.
-   */
   confirm(message, onConfirm) {
     const modal = document.getElementById('toast-confirm-modal');
     const overlay = document.getElementById('toast-confirm-overlay');
@@ -81,16 +73,14 @@ window.Toast = {
 
     if (!modal) return;
 
+    if (this.activeConfirmation) {
+      this.activeConfirmation.cleanup();
+    }
+
+    this.previousActiveElement = document.activeElement;
+
     msgEl.textContent = message;
     modal.classList.remove('hidden');
-
-    const cleanup = () => {
-      modal.classList.add('hidden');
-      okBtn.removeEventListener('click', handleOk);
-      cancelBtn.removeEventListener('click', handleCancel);
-      overlay.removeEventListener('click', handleCancel);
-      document.removeEventListener('keydown', handleEsc);
-    };
 
     const handleOk = () => {
       cleanup();
@@ -99,17 +89,46 @@ window.Toast = {
 
     const handleCancel = () => cleanup();
 
-    const handleEsc = (e) => {
-      if (e.key === 'Escape') handleCancel();
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      } else if (e.key === 'Tab') {
+        const focusables = [cancelBtn, okBtn];
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
+
+    const cleanup = () => {
+      modal.classList.add('hidden');
+      okBtn.removeEventListener('click', handleOk);
+      cancelBtn.removeEventListener('click', handleCancel);
+      overlay.removeEventListener('click', handleCancel);
+      document.removeEventListener('keydown', handleKeyDown);
+      this.activeConfirmation = null;
+
+      if (this.previousActiveElement && typeof this.previousActiveElement.focus === 'function') {
+        this.previousActiveElement.focus();
+      }
+    };
+
+    this.activeConfirmation = { cleanup };
 
     okBtn.addEventListener('click', handleOk);
     cancelBtn.addEventListener('click', handleCancel);
     overlay.addEventListener('click', handleCancel);
-    document.addEventListener('keydown', handleEsc);
+    document.addEventListener('keydown', handleKeyDown);
 
-    // Focus OK button for quick keyboard navigation
-    okBtn.focus();
+    cancelBtn.focus();
   },
 
   escapeHtml(str) {
@@ -120,7 +139,4 @@ window.Toast = {
   }
 };
 
-// Initialize Toast container and modal on load
-window.addEventListener('DOMContentLoaded', () => {
-  window.Toast.init();
-});
+window.addEventListener('DOMContentLoaded', () => window.Toast.init());
