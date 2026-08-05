@@ -1,7 +1,7 @@
 {
   "name": "phantom",
   "version": "1.0.0",
-  "description": "PHANTOM — AI-Powered Pentesting Command Center",
+  "description": "PHANTOM \u2014 AI-Powered Pentesting Command Center",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"node server/index.js\" \"vite --port 5173\"",
@@ -53,6 +53,7 @@
       "agentic-flow": {
         "sharp": "^0.35.3"
       }
-    }
+    },
+    "shell-quote": "1.8.4"
   }
 }
