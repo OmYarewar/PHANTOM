@@ -1,0 +1,51 @@
+/* ─── Light Theme Variable Overrides (Comprehensive) ─── */
+:root.theme-light {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f3f5;
+  --bg-surface: #e9ecef;
+  --bg-hover: #dee2e6;
+  --bg-active: #ced4da;
+  --border-color: #cbd5e1;
+  --border-light: #e2e8f0;
+  --border-focus: #64748b;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-accent: #1e293b;
+  
+  --modal-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  --modal-overlay-bg: rgba(15, 23, 42, 0.4);
+}
+
+/* Accessible Status Badges (WCAG AA) */
+.ar-platform-badge.not-configured {
+  background: rgba(100, 116, 139, 0.12);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+/* Floating Scroll Button */
+.btn-scroll-bottom {
+  position: absolute;
+  bottom: 90px;
+  right: 50%;
+  transform: translateX(50%);
+  z-index: 10;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.btn-scroll-bottom.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(50%, 10px);
+}
