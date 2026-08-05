@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { existsSync, copyFileSync } from 'fs';
+import { existsSync, copyFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,7 +16,12 @@ if (!existsSync(envPath) && existsSync(envExamplePath)) {
 dotenv.config({ path: envPath });
 
 const config = {
+  root: ROOT,
   port: parseInt(process.env.PORT || '1337', 10),
+  workspace: process.env.WORKSPACE_DIR || join(ROOT, 'workspace'),
+  db: {
+    path: process.env.DB_PATH || join(ROOT, 'data', 'phantom.db')
+  },
   api: {
     baseUrl: process.env.API_BASE_URL || 'https://api.openai.com/v1',
     apiKey: process.env.API_KEY || '',
@@ -28,6 +33,15 @@ const config = {
   }
 };
 
+// Ensure workspace directory exists safely
+try {
+  if (!existsSync(config.workspace)) {
+    mkdirSync(config.workspace, { recursive: true });
+  }
+} catch (e) {
+  // Ignore permission errors in restricted environments
+}
+
 /**
  * Update config at runtime (called from settings API)
  */
@@ -36,6 +50,14 @@ export function updateConfig(updates) {
   if (updates.apiKey !== undefined) config.api.apiKey = updates.apiKey;
   if (updates.model !== undefined) config.api.model = updates.model;
   if (updates.provider !== undefined) config.api.provider = updates.provider;
+  if (updates.workspace !== undefined) {
+    config.workspace = updates.workspace;
+    try {
+      if (!existsSync(config.workspace)) {
+        mkdirSync(config.workspace, { recursive: true });
+      }
+    } catch (e) {}
+  }
 }
 
 /**
@@ -51,11 +73,20 @@ export function loadPersistedSettings(getSetting) {
   const apiKey = getSetting('api_key', null);
   const model = getSetting('api_model', null);
   const provider = getSetting('api_provider', null);
+  const workspace = getSetting('workspace', null);
 
   if (baseUrl) config.api.baseUrl = baseUrl;
   if (apiKey) config.api.apiKey = apiKey;
   if (model) config.api.model = model;
   if (provider) config.api.provider = provider;
+  if (workspace) {
+    config.workspace = workspace;
+    try {
+      if (!existsSync(config.workspace)) {
+        mkdirSync(config.workspace, { recursive: true });
+      }
+    } catch (e) {}
+  }
 }
 
 export default config;
