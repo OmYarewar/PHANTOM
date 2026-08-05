@@ -118,6 +118,10 @@ window.Settings = {
       if (e.key === 'Escape' && this.isOpen) this.close();
     });
 
+    // Agent Reach configuration
+    document.getElementById('agent-reach-btn').addEventListener('click', () => this.openAgentReach());
+    this._initAgentReachModal();
+
     // Init AI Doctor modal logic
     this._initDoctorModal();
   },
@@ -360,6 +364,107 @@ window.Settings = {
     }
 
     setTimeout(() => { resultEl.textContent = ''; }, 5000);
+  },
+
+  // ─── Agent Reach ───
+  openAgentReach() {
+    const modal = document.getElementById('agent-reach-modal');
+    modal.classList.remove('hidden');
+    this.loadAgentReachStatus();
+  },
+
+  _initAgentReachModal() {
+    const modal = document.getElementById('agent-reach-modal');
+    const overlay = document.getElementById('agent-reach-overlay');
+    const closeBtn = document.getElementById('agent-reach-close');
+
+    overlay?.addEventListener('click', () => modal.classList.add('hidden'));
+    closeBtn?.addEventListener('click', () => modal.classList.add('hidden'));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+      }
+    });
+
+    // Save buttons for each platform
+    document.querySelectorAll('.ar-save-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const platform = btn.dataset.platform;
+        const cookie = document.getElementById(`ar-cookie-${platform}`).value.trim();
+
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        try {
+          const res = await fetch('/api/agent-reach/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ platform, cookie }),
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            btn.textContent = '✓ Saved';
+            btn.style.background = '#16a34a';
+            this.loadAgentReachStatus();
+          } else {
+            throw new Error(data.error || 'Save failed');
+          }
+        } catch (err) {
+          console.error(`Failed to save ${platform} config:`, err);
+          btn.textContent = '✗ Error';
+          btn.style.background = '#ef4444';
+        }
+
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 1500);
+      });
+    });
+
+    // Load status on init
+    this.loadAgentReachStatus();
+  },
+
+  async loadAgentReachStatus() {
+    const platforms = ['twitter', 'reddit', 'xiaohongshu', 'linkedin', 'instagram'];
+
+    try {
+      const res = await fetch('/api/agent-reach/config');
+      const data = await res.json();
+
+      const statusContainer = document.getElementById('agent-reach-status');
+      let badges = '';
+
+      for (const p of platforms) {
+        const configured = data[p]?.configured || false;
+        const icon = { twitter: '🐦', reddit: '📖', xiaohongshu: '📕', linkedin: '💼', instagram: '📷' }[p];
+        const label = { twitter: 'Twitter', reddit: 'Reddit', xiaohongshu: 'XHS', linkedin: 'LinkedIn', instagram: 'Instagram' }[p];
+
+        badges += `<span class="ar-settings-badge ${configured ? 'active' : 'inactive'}">${icon} ${label}</span>`;
+
+        // Update modal badges
+        const badgeEl = document.getElementById(`ar-status-${p}`);
+        if (badgeEl) {
+          badgeEl.textContent = configured ? '✓ Configured' : 'Not configured';
+          badgeEl.className = `ar-platform-badge ${configured ? 'configured' : 'not-configured'}`;
+        }
+
+        // Pre-fill cookie field if configured (show masked)
+        const cookieEl = document.getElementById(`ar-cookie-${p}`);
+        if (cookieEl && configured && !cookieEl.value) {
+          cookieEl.placeholder = 'Cookie saved ✓ — paste new cookie to replace';
+        }
+      }
+
+      if (statusContainer) statusContainer.innerHTML = badges;
+    } catch (err) {
+      console.error('Failed to load Agent Reach status:', err);
+    }
   },
 
   // ─── AI Doctor ───

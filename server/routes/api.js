@@ -122,6 +122,35 @@ router.post('/telegram/restart', (req, res) => {
   }
 });
 
+// ─── Agent Reach Config ───
+const AR_PLATFORMS = ['twitter', 'reddit', 'xiaohongshu', 'linkedin', 'instagram'];
+
+router.get('/agent-reach/config', (req, res) => {
+  try {
+    const result = {};
+    for (const p of AR_PLATFORMS) {
+      const cookie = getSetting(`ar_cookie_${p}`);
+      result[p] = { configured: !!cookie };
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/agent-reach/config', (req, res) => {
+  try {
+    const { platform, cookie } = req.body;
+    if (!platform || !AR_PLATFORMS.includes(platform)) {
+      return res.status(400).json({ error: `Invalid platform. Must be one of: ${AR_PLATFORMS.join(', ')}` });
+    }
+    setSetting(`ar_cookie_${platform}`, cookie || '');
+    res.json({ success: true, message: `${platform} cookie saved` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Conversations ───
 router.get('/conversations', (req, res) => {
   try {

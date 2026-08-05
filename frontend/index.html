@@ -323,6 +323,20 @@
             </div>
           </section>
 
+          <!-- Agent Reach — Internet Crawling -->
+          <section class="settings-section">
+            <h3>👁️ Agent Reach — Internet Access</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.6;">
+              Configure cookies and credentials for social media platforms so the AI can crawl Twitter, Reddit, and more.
+            </p>
+            <div id="agent-reach-status" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+              <!-- Platform status badges will be injected by JS -->
+            </div>
+            <button type="button" id="agent-reach-btn" class="btn btn-secondary" style="width:100%;justify-content:center;" aria-label="Configure Agent Reach">
+              👁️ Configure Internet Platforms
+            </button>
+          </section>
+
           <!-- System Access -->
           <section class="settings-section">
             <h3>🔑 System Access</h3>
@@ -466,6 +480,125 @@
                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
               </svg>
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent Reach Configuration Modal -->
+    <div id="agent-reach-modal" class="ai-doctor-modal hidden" style="z-index: 9998;">
+      <div class="ai-doctor-overlay" id="agent-reach-overlay"></div>
+      <div class="ai-doctor-dialog" style="max-width: 600px;">
+        <div class="ai-doctor-header">
+          <div class="ai-doctor-title-row">
+            <span class="ai-doctor-icon">👁️</span>
+            <div>
+              <h2 class="ai-doctor-title">Agent Reach</h2>
+              <p class="ai-doctor-subtitle">Configure social media access for AI internet crawling</p>
+            </div>
+          </div>
+          <button type="button" id="agent-reach-close" class="btn-icon" aria-label="Close Agent Reach">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="doctor-config-screen" style="max-height: 70vh; overflow-y: auto; padding: 20px;">
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
+            Paste cookies from <a href="https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm" target="_blank" style="color: #818cf8;">Cookie-Editor</a> Chrome extension. Export as <strong>Header String</strong> format.
+          </p>
+
+          <!-- Twitter/X -->
+          <div class="ar-platform" data-platform="twitter">
+            <div class="ar-platform-header">
+              <span class="ar-platform-icon">🐦</span>
+              <div class="ar-platform-info">
+                <strong>Twitter / X</strong>
+                <small>Search tweets, read timelines, browse profiles</small>
+              </div>
+              <span class="ar-platform-badge" id="ar-status-twitter">Not configured</span>
+            </div>
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="ar-cookie-twitter">Cookie (Header String)</label>
+              <textarea id="ar-cookie-twitter" rows="2" placeholder='Paste cookie string from Cookie-Editor...' style="width:100%;resize:vertical;font-family:var(--font-mono);font-size:12px;"></textarea>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm ar-save-btn" data-platform="twitter" aria-label="Save Twitter Cookie">💾 Save Twitter</button>
+          </div>
+
+          <!-- Reddit -->
+          <div class="ar-platform" data-platform="reddit">
+            <div class="ar-platform-header">
+              <span class="ar-platform-icon">📖</span>
+              <div class="ar-platform-info">
+                <strong>Reddit</strong>
+                <small>Search subreddits, read posts and comments</small>
+              </div>
+              <span class="ar-platform-badge" id="ar-status-reddit">Not configured</span>
+            </div>
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="ar-cookie-reddit">Cookie (Header String)</label>
+              <textarea id="ar-cookie-reddit" rows="2" placeholder='Paste cookie string from Cookie-Editor...' style="width:100%;resize:vertical;font-family:var(--font-mono);font-size:12px;"></textarea>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm ar-save-btn" data-platform="reddit" aria-label="Save Reddit Cookie">💾 Save Reddit</button>
+          </div>
+
+          <!-- XiaoHongShu -->
+          <div class="ar-platform" data-platform="xiaohongshu">
+            <div class="ar-platform-header">
+              <span class="ar-platform-icon">📕</span>
+              <div class="ar-platform-info">
+                <strong>XiaoHongShu (小红书)</strong>
+                <small>Search, read posts and comments</small>
+              </div>
+              <span class="ar-platform-badge" id="ar-status-xiaohongshu">Not configured</span>
+            </div>
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="ar-cookie-xiaohongshu">Cookie (Header String)</label>
+              <textarea id="ar-cookie-xiaohongshu" rows="2" placeholder='Paste cookie string from Cookie-Editor...' style="width:100%;resize:vertical;font-family:var(--font-mono);font-size:12px;"></textarea>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm ar-save-btn" data-platform="xiaohongshu" aria-label="Save XiaoHongShu Cookie">💾 Save XiaoHongShu</button>
+          </div>
+
+          <!-- LinkedIn -->
+          <div class="ar-platform" data-platform="linkedin">
+            <div class="ar-platform-header">
+              <span class="ar-platform-icon">💼</span>
+              <div class="ar-platform-info">
+                <strong>LinkedIn</strong>
+                <small>Read profiles, company pages, job search</small>
+              </div>
+              <span class="ar-platform-badge" id="ar-status-linkedin">Not configured</span>
+            </div>
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="ar-cookie-linkedin">Cookie (Header String)</label>
+              <textarea id="ar-cookie-linkedin" rows="2" placeholder='Paste cookie string from Cookie-Editor...' style="width:100%;resize:vertical;font-family:var(--font-mono);font-size:12px;"></textarea>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm ar-save-btn" data-platform="linkedin" aria-label="Save LinkedIn Cookie">💾 Save LinkedIn</button>
+          </div>
+
+          <!-- Instagram -->
+          <div class="ar-platform" data-platform="instagram">
+            <div class="ar-platform-header">
+              <span class="ar-platform-icon">📷</span>
+              <div class="ar-platform-info">
+                <strong>Instagram</strong>
+                <small>Search users, browse profiles and posts</small>
+              </div>
+              <span class="ar-platform-badge" id="ar-status-instagram">Not configured</span>
+            </div>
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="ar-cookie-instagram">Cookie (Header String)</label>
+              <textarea id="ar-cookie-instagram" rows="2" placeholder='Paste cookie string from Cookie-Editor...' style="width:100%;resize:vertical;font-family:var(--font-mono);font-size:12px;"></textarea>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm ar-save-btn" data-platform="instagram" aria-label="Save Instagram Cookie">💾 Save Instagram</button>
+          </div>
+
+          <div style="margin-top: 16px; padding: 12px; background: rgba(129,140,248,0.1); border: 1px solid rgba(129,140,248,0.2); border-radius: 8px;">
+            <p style="font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+              🔒 <strong>Privacy:</strong> Cookies are stored locally in your PHANTOM database only. Never uploaded or transmitted externally.<br>
+              ⚠️ <strong>Tip:</strong> Use a secondary/burner account for each platform to avoid any risk to your main accounts.
+            </p>
           </div>
         </div>
       </div>

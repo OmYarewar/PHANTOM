@@ -9,6 +9,7 @@
 
 import { spawn } from 'child_process';
 import { validateUrlForSSRF } from './executor.js';
+import { getSetting } from '../memory/store.js';
 
 // ─── Jina Reader: Read any URL as clean Markdown ───
 
@@ -385,4 +386,203 @@ function formatNumber(num) {
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
   if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
   return String(num);
+}
+
+// ─── Cookie-Based Social Media Crawl ───
+
+/**
+ * Crawl social media platforms using saved cookies.
+ * Supports Twitter, Reddit, XiaoHongShu, LinkedIn, Instagram.
+ */
+export async function socialMediaCrawl({ platform, action = 'read', url, query, max_results = 10 }) {
+  const cookieKey = `ar_cookie_${platform}`;
+  const cookie = getSetting(cookieKey);
+
+  if (!cookie) {
+    return `Error: ${platform} is not configured. The user needs to paste their ${platform} cookies in Settings → Agent Reach → ${platform}. They can export cookies using the Cookie-Editor Chrome extension (Header String format).`;
+  }
+
+  try {
+    switch (platform) {
+      case 'twitter':
+        return await crawlTwitter(cookie, action, url, query, max_results);
+      case 'reddit':
+        return await crawlReddit(cookie, action, url, query, max_results);
+      case 'xiaohongshu':
+        return await crawlGeneric(cookie, 'https://www.xiaohongshu.com', 'XiaoHongShu', action, url, query);
+      case 'linkedin':
+        return await crawlGeneric(cookie, 'https://www.linkedin.com', 'LinkedIn', action, url, query);
+      case 'instagram':
+        return await crawlGeneric(cookie, 'https://www.instagram.com', 'Instagram', action, url, query);
+      default:
+        return `Unknown platform: ${platform}. Available: twitter, reddit, xiaohongshu, linkedin, instagram`;
+    }
+  } catch (err) {
+    return `${platform} crawl error: ${err.message}`;
+  }
+}
+
+async function crawlTwitter(cookie, action, url, query, maxResults) {
+  const headers = {
+    'Cookie': cookie,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+  };
+
+  if (action === 'read' && url) {
+    // Read a specific tweet/page via Jina Reader with cookie
+    const jinaUrl = `https://r.jina.ai/${url}`;
+    const response = await fetch(jinaUrl, {
+      headers: { ...headers, 'Accept': 'text/markdown' },
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok) return `Twitter read error: HTTP ${response.status}`;
+    const markdown = await response.text();
+    return `# Twitter Content\n\nURL: ${url}\n\n${markdown.substring(0, 50000)}`;
+  }
+
+  if (action === 'search' && query) {
+    // Search Twitter via Jina Reader on search URL
+    const searchUrl = `https://r.jina.ai/https://x.com/search?q=${encodeURIComponent(query)}&f=live`;
+    const response = await fetch(searchUrl, {
+      headers: { ...headers, 'Accept': 'text/markdown' },
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok) return `Twitter search error: HTTP ${response.status}`;
+    const markdown = await response.text();
+    return `# Twitter Search: "${query}"\n\n${markdown.substring(0, 50000)}`;
+  }
+
+  return 'Twitter: specify action="read" with url, or action="search" with query.';
+}
+
+async function crawlReddit(cookie, action, url, query, maxResults) {
+  const headers = {
+    'Cookie': cookie,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json',
+  };
+
+  if (action === 'read' && url) {
+    // Read a Reddit post as JSON
+    const jsonUrl = url.endsWith('.json') ? url : url.replace(/\/$/, '') + '.json';
+    validateUrlForSSRF(jsonUrl);
+    const response = await fetch(jsonUrl, {
+      headers,
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      // Fallback to Jina Reader
+      const jinaResponse = await fetch(`https://r.jina.ai/${url}`, {
+        headers: { 'Accept': 'text/markdown', 'User-Agent': 'PHANTOM/1.0' },
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!jinaResponse.ok) return `Reddit read error: HTTP ${response.status}`;
+      const md = await jinaResponse.text();
+      return `# Reddit Post\n\nURL: ${url}\n\n${md.substring(0, 50000)}`;
+    }
+
+    const data = await response.json();
+    const listing = Array.isArray(data) ? data : [data];
+    let output = `# Reddit Post\n\nURL: ${url}\n\n`;
+
+    // Post content
+    const post = listing[0]?.data?.children?.[0]?.data;
+    if (post) {
+      output += `## ${post.title || 'Untitled'}\n`;
+      output += `👤 u/${post.author} | ⬆️ ${post.score} | 💬 ${post.num_comments} comments\n\n`;
+      output += `${post.selftext || post.url || ''}\n\n`;
+    }
+
+    // Comments
+    const comments = listing[1]?.data?.children || [];
+    if (comments.length > 0) {
+      output += `---\n\n## Comments\n\n`;
+      for (const c of comments.slice(0, 15)) {
+        if (c.data?.body) {
+          output += `**u/${c.data.author}** (⬆️ ${c.data.score}):\n${c.data.body}\n\n`;
+        }
+      }
+    }
+
+    return output;
+  }
+
+  if (action === 'search' && query) {
+    const searchUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&limit=${maxResults}&sort=relevance`;
+    const response = await fetch(searchUrl, {
+      headers,
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      // Fallback to Jina
+      const jinaResponse = await fetch(`https://r.jina.ai/https://www.reddit.com/search/?q=${encodeURIComponent(query)}`, {
+        headers: { 'Accept': 'text/markdown' },
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!jinaResponse.ok) return `Reddit search error: HTTP ${response.status}`;
+      const md = await jinaResponse.text();
+      return `# Reddit Search: "${query}"\n\n${md.substring(0, 50000)}`;
+    }
+
+    const data = await response.json();
+    const posts = data.data?.children || [];
+    let output = `# Reddit Search: "${query}"\n\nFound ${posts.length} results\n\n---\n\n`;
+
+    for (const p of posts) {
+      const d = p.data;
+      output += `### ${d.title}\n`;
+      output += `📂 r/${d.subreddit} | 👤 u/${d.author} | ⬆️ ${d.score} | 💬 ${d.num_comments} comments\n`;
+      output += `🔗 https://reddit.com${d.permalink}\n\n`;
+    }
+
+    return output;
+  }
+
+  return 'Reddit: specify action="read" with url, or action="search" with query.';
+}
+
+async function crawlGeneric(cookie, baseUrl, platformName, action, url, query) {
+  const headers = {
+    'Cookie': cookie,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml',
+    'Accept-Language': 'en-US,en;q=0.9',
+  };
+
+  if (action === 'read' && url) {
+    // Use Jina Reader for clean content
+    const jinaUrl = `https://r.jina.ai/${url}`;
+    const response = await fetch(jinaUrl, {
+      headers: { ...headers, 'Accept': 'text/markdown' },
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok) return `${platformName} read error: HTTP ${response.status}`;
+    const markdown = await response.text();
+    return `# ${platformName} Content\n\nURL: ${url}\n\n${markdown.substring(0, 50000)}`;
+  }
+
+  if (action === 'search' && query) {
+    // Try search via Jina Reader
+    const searchUrls = {
+      'XiaoHongShu': `https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(query)}`,
+      'LinkedIn': `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(query)}`,
+      'Instagram': `https://www.instagram.com/explore/tags/${encodeURIComponent(query)}/`,
+    };
+    const searchUrl = searchUrls[platformName] || `${baseUrl}/search?q=${encodeURIComponent(query)}`;
+    
+    const jinaUrl = `https://r.jina.ai/${searchUrl}`;
+    const response = await fetch(jinaUrl, {
+      headers: { ...headers, 'Accept': 'text/markdown' },
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok) return `${platformName} search error: HTTP ${response.status}`;
+    const markdown = await response.text();
+    return `# ${platformName} Search: "${query}"\n\n${markdown.substring(0, 50000)}`;
+  }
+
+  return `${platformName}: specify action="read" with url, or action="search" with query.`;
 }

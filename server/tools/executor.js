@@ -7,7 +7,7 @@ import { saveMemory, searchMemories, searchConversations, createConversation } f
 import { getSetting } from '../memory/store.js';
 import config from '../config.js';
 import { getSystemCapabilities } from './self_awareness.js';
-import { jinaReadUrl, youtubeSearch, youtubeGetSubtitles, rssReadFeed, v2exBrowse } from './internet.js';
+import { jinaReadUrl, youtubeSearch, youtubeGetSubtitles, rssReadFeed, v2exBrowse, socialMediaCrawl } from './internet.js';
 
 /**
  * Helper to securely escape arguments for bash shell
@@ -104,6 +104,7 @@ export async function executeTool(name, args, onProgress) {
     case 'youtube_get_subtitles': return await youtubeGetSubtitles(args);
     case 'rss_read_feed': return await rssReadFeed(args);
     case 'v2ex_browse': return await v2exBrowse(args);
+    case 'social_media_crawl': return await socialMediaCrawl(args);
     default:
       return `Unknown tool: ${name}`;
   }

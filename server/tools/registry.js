@@ -715,5 +715,42 @@ export function getToolDefinitions() {
         },
       },
     },
+    {
+      type: 'function',
+      function: {
+        name: 'social_media_crawl',
+        description: 'Crawl social media platforms using user-configured cookies. Supports Twitter/X, Reddit, XiaoHongShu (小红书), LinkedIn, and Instagram. Cookies must be configured in Settings → Agent Reach first. Use for searching, reading posts, profiles, and comments.',
+        parameters: {
+          type: 'object',
+          properties: {
+            platform: {
+              type: 'string',
+              enum: ['twitter', 'reddit', 'xiaohongshu', 'linkedin', 'instagram'],
+              description: 'The social media platform to crawl.',
+            },
+            action: {
+              type: 'string',
+              enum: ['read', 'search'],
+              description: '"read" = read a specific URL. "search" = search the platform.',
+              default: 'read',
+            },
+            url: {
+              type: 'string',
+              description: 'URL to read — required when action is "read" (e.g., a tweet URL, Reddit post URL, etc.).',
+            },
+            query: {
+              type: 'string',
+              description: 'Search query — required when action is "search".',
+            },
+            max_results: {
+              type: 'integer',
+              description: 'Maximum number of search results (default: 10).',
+              default: 10,
+            },
+          },
+          required: ['platform'],
+        },
+      },
+    },
   ];
 }
