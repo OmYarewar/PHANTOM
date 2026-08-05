@@ -393,6 +393,7 @@ function formatNumber(num) {
 /**
  * Crawl social media platforms using saved cookies.
  * Supports Twitter, Reddit, XiaoHongShu, LinkedIn, Instagram.
+ * All requests are made DIRECTLY to the target platform using local fetch + saved cookies.
  */
 export async function socialMediaCrawl({ platform, action = 'read', url, query, max_results = 10 }) {
   const cookieKey = `ar_cookie_${platform}`;
@@ -409,11 +410,11 @@ export async function socialMediaCrawl({ platform, action = 'read', url, query, 
       case 'reddit':
         return await crawlReddit(cookie, action, url, query, max_results);
       case 'xiaohongshu':
-        return await crawlGeneric(cookie, 'https://www.xiaohongshu.com', 'XiaoHongShu', action, url, query);
+        return await crawlXiaoHongShu(cookie, action, url, query, max_results);
       case 'linkedin':
-        return await crawlGeneric(cookie, 'https://www.linkedin.com', 'LinkedIn', action, url, query);
+        return await crawlLinkedIn(cookie, action, url, query, max_results);
       case 'instagram':
-        return await crawlGeneric(cookie, 'https://www.instagram.com', 'Instagram', action, url, query);
+        return await crawlInstagram(cookie, action, url, query, max_results);
       default:
         return `Unknown platform: ${platform}. Available: twitter, reddit, xiaohongshu, linkedin, instagram`;
     }
@@ -422,50 +423,140 @@ export async function socialMediaCrawl({ platform, action = 'read', url, query, 
   }
 }
 
+/**
+ * Convert raw HTML response into clean Markdown text
+ */
+function htmlToMarkdown(html, fallbackTitle = '') {
+  if (!html) return '';
+
+  // Extract title
+  const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].trim() : fallbackTitle;
+
+  // Extract meta description if available
+  const descMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]*)"/i) ||
+                    html.match(/<meta[^>]*property="og:description"[^>]*content="([^"]*)"/i);
+  const metaDesc = descMatch ? descMatch[1].trim() : '';
+
+  // Remove script, style, nav, footer, header, svg, noscript tags
+  let text = html.replace(/<(script|style|nav|footer|header|svg|noscript)[^>]*>[\s\S]*?<\/\1>/gi, '');
+
+  // Convert HTML elements to readable Markdown
+  text = text.replace(/<br\s*\/?>|<\/p>|<\/div>|<\/li>|<li[^>]*>|<\/h[1-6]>|<h[1-6][^>]*>|<\/tr>|<td[^>]*>|<th[^>]*>/gi, (match) => {
+    const lower = match.toLowerCase();
+    if (lower.startsWith('<br')) return '\n';
+    if (lower.startsWith('</p')) return '\n\n';
+    if (lower.startsWith('</div') || lower.startsWith('</li') || lower.startsWith('</tr')) return '\n';
+    if (lower.startsWith('<li')) return '• ';
+    if (lower.startsWith('</h')) return '\n\n';
+    if (lower.startsWith('<h')) return '\n## ';
+    if (lower.startsWith('<td') || lower.startsWith('<th')) return ' | ';
+    return '';
+  });
+
+  // Convert links
+  text = text.replace(/<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/gi, '$2 ($1)');
+
+  // Remove remaining HTML tags
+  text = text.replace(/<[^>]+>/g, '');
+
+  // Decode HTML entities
+  const entities = { 'nbsp': ' ', 'amp': '&', 'lt': '<', 'gt': '>', 'quot': '"', '#39': "'", '#x27': "'" };
+  text = text.replace(/&(nbsp|amp|lt|gt|quot|#39|#x27);/g, (m, p1) => entities[p1] || m);
+
+  // Collapse consecutive empty lines
+  text = text.replace(/\n\s*\n\s*\n+/g, '\n\n').trim();
+
+  let output = '';
+  if (title) output += `# ${title}\n\n`;
+  if (metaDesc) output += `> ${metaDesc}\n\n`;
+  output += text;
+
+  return output;
+}
+
+// ─── Twitter / X ───
+
 async function crawlTwitter(cookie, action, url, query, maxResults) {
+  const ct0Match = cookie.match(/ct0=([^;]+)/);
+  const ct0 = ct0Match ? ct0Match[1].trim() : '';
+
   const headers = {
     'Cookie': cookie,
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
+    'x-twitter-active-user': 'yes',
+    'x-twitter-client-language': 'en',
   };
 
-  if (action === 'read' && url) {
-    // Read a specific tweet/page via Jina Reader with cookie
-    const jinaUrl = `https://r.jina.ai/${url}`;
-    const response = await fetch(jinaUrl, {
-      headers: { ...headers, 'Accept': 'text/markdown' },
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!response.ok) return `Twitter read error: HTTP ${response.status}`;
-    const markdown = await response.text();
-    return `# Twitter Content\n\nURL: ${url}\n\n${markdown.substring(0, 50000)}`;
+  if (ct0) {
+    headers['x-csrf-token'] = ct0;
+    headers['authorization'] = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCO1M52a8U%2FY71dqTHY%3DUdSSJLwbEioFsgdSLAcBFi0tAYWgYwCQYoAfswTxT8';
   }
 
   if (action === 'search' && query) {
-    // Search Twitter via Jina Reader on search URL
-    const searchUrl = `https://r.jina.ai/https://x.com/search?q=${encodeURIComponent(query)}&f=live`;
-    const response = await fetch(searchUrl, {
-      headers: { ...headers, 'Accept': 'text/markdown' },
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!response.ok) return `Twitter search error: HTTP ${response.status}`;
-    const markdown = await response.text();
-    return `# Twitter Search: "${query}"\n\n${markdown.substring(0, 50000)}`;
+    if (ct0) {
+      try {
+        const apiUrl = `https://x.com/i/api/1.1/search/adaptive.json?q=${encodeURIComponent(query)}&count=${maxResults}&query_source=typed_query&tweet_mode=extended`;
+        validateUrlForSSRF(apiUrl);
+        const apiRes = await fetch(apiUrl, { headers, signal: AbortSignal.timeout(15000) });
+        if (apiRes.ok) {
+          const data = await apiRes.json();
+          const tweetsObj = data.globalObjects?.tweets || {};
+          const usersObj = data.globalObjects?.users || {};
+          const tweets = Object.values(tweetsObj);
+
+          if (tweets.length > 0) {
+            let output = `# Twitter Search: "${query}"\n\nFound ${tweets.length} tweets\n\n---\n\n`;
+            for (const t of tweets) {
+              const user = usersObj[t.user_id_str] || {};
+              output += `### @${user.screen_name || 'user'} (${user.name || ''})\n`;
+              output += `${t.full_text || t.text}\n`;
+              output += `📅 ${t.created_at || ''} | 🔁 ${t.retweet_count || 0} | ❤️ ${t.favorite_count || 0}\n`;
+              output += `🔗 https://x.com/${user.screen_name}/status/${t.id_str}\n\n---\n\n`;
+            }
+            return output;
+          }
+        }
+      } catch (err) {
+        // Fall back to direct HTML fetch
+      }
+    }
+
+    const targetUrl = `https://x.com/search?q=${encodeURIComponent(query)}&f=live`;
+    validateUrlForSSRF(targetUrl);
+    const response = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(20000) });
+    if (!response.ok) {
+      return `Twitter search error: HTTP ${response.status} ${response.statusText}`;
+    }
+    const html = await response.text();
+    return htmlToMarkdown(html, `Twitter Search: ${query}`);
+  }
+
+  if (action === 'read' && url) {
+    validateUrlForSSRF(url);
+    const response = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
+    if (!response.ok) {
+      return `Twitter read error: HTTP ${response.status} ${response.statusText}`;
+    }
+    const html = await response.text();
+    return htmlToMarkdown(html, `Twitter Post`);
   }
 
   return 'Twitter: specify action="read" with url, or action="search" with query.';
 }
 
+// ─── Reddit ───
+
 async function crawlReddit(cookie, action, url, query, maxResults) {
   const headers = {
     'Cookie': cookie,
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     'Accept': 'application/json',
   };
 
   if (action === 'read' && url) {
-    // Read a Reddit post as JSON
     const jsonUrl = url.endsWith('.json') ? url : url.replace(/\/$/, '') + '.json';
     validateUrlForSSRF(jsonUrl);
     const response = await fetch(jsonUrl, {
@@ -474,21 +565,16 @@ async function crawlReddit(cookie, action, url, query, maxResults) {
     });
 
     if (!response.ok) {
-      // Fallback to Jina Reader
-      const jinaResponse = await fetch(`https://r.jina.ai/${url}`, {
-        headers: { 'Accept': 'text/markdown', 'User-Agent': 'PHANTOM/1.0' },
-        signal: AbortSignal.timeout(30000),
-      });
-      if (!jinaResponse.ok) return `Reddit read error: HTTP ${response.status}`;
-      const md = await jinaResponse.text();
-      return `# Reddit Post\n\nURL: ${url}\n\n${md.substring(0, 50000)}`;
+      const htmlRes = await fetch(url, { headers: { ...headers, Accept: 'text/html' }, signal: AbortSignal.timeout(20000) });
+      if (!htmlRes.ok) return `Reddit read error: HTTP ${response.status}`;
+      const md = await htmlRes.text();
+      return htmlToMarkdown(md, `Reddit Post`);
     }
 
     const data = await response.json();
     const listing = Array.isArray(data) ? data : [data];
     let output = `# Reddit Post\n\nURL: ${url}\n\n`;
 
-    // Post content
     const post = listing[0]?.data?.children?.[0]?.data;
     if (post) {
       output += `## ${post.title || 'Untitled'}\n`;
@@ -496,7 +582,6 @@ async function crawlReddit(cookie, action, url, query, maxResults) {
       output += `${post.selftext || post.url || ''}\n\n`;
     }
 
-    // Comments
     const comments = listing[1]?.data?.children || [];
     if (comments.length > 0) {
       output += `---\n\n## Comments\n\n`;
@@ -512,20 +597,20 @@ async function crawlReddit(cookie, action, url, query, maxResults) {
 
   if (action === 'search' && query) {
     const searchUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&limit=${maxResults}&sort=relevance`;
+    validateUrlForSSRF(searchUrl);
     const response = await fetch(searchUrl, {
       headers,
       signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) {
-      // Fallback to Jina
-      const jinaResponse = await fetch(`https://r.jina.ai/https://www.reddit.com/search/?q=${encodeURIComponent(query)}`, {
-        headers: { 'Accept': 'text/markdown' },
-        signal: AbortSignal.timeout(30000),
+      const htmlRes = await fetch(`https://www.reddit.com/search/?q=${encodeURIComponent(query)}`, {
+        headers: { ...headers, Accept: 'text/html' },
+        signal: AbortSignal.timeout(20000),
       });
-      if (!jinaResponse.ok) return `Reddit search error: HTTP ${response.status}`;
-      const md = await jinaResponse.text();
-      return `# Reddit Search: "${query}"\n\n${md.substring(0, 50000)}`;
+      if (!htmlRes.ok) return `Reddit search error: HTTP ${response.status}`;
+      const md = await htmlRes.text();
+      return htmlToMarkdown(md, `Reddit Search: ${query}`);
     }
 
     const data = await response.json();
@@ -545,44 +630,125 @@ async function crawlReddit(cookie, action, url, query, maxResults) {
   return 'Reddit: specify action="read" with url, or action="search" with query.';
 }
 
-async function crawlGeneric(cookie, baseUrl, platformName, action, url, query) {
+// ─── LinkedIn ───
+
+async function crawlLinkedIn(cookie, action, url, query, maxResults) {
   const headers = {
     'Cookie': cookie,
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'same-origin',
   };
 
-  if (action === 'read' && url) {
-    // Use Jina Reader for clean content
-    const jinaUrl = `https://r.jina.ai/${url}`;
-    const response = await fetch(jinaUrl, {
-      headers: { ...headers, 'Accept': 'text/markdown' },
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!response.ok) return `${platformName} read error: HTTP ${response.status}`;
-    const markdown = await response.text();
-    return `# ${platformName} Content\n\nURL: ${url}\n\n${markdown.substring(0, 50000)}`;
+  let targetUrl = url;
+  if (action === 'search' && query) {
+    targetUrl = `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(query)}`;
   }
+
+  if (!targetUrl) {
+    return 'LinkedIn: specify action="read" with url, or action="search" with query.';
+  }
+
+  validateUrlForSSRF(targetUrl);
+  const response = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(20000) });
+  if (!response.ok) {
+    return `LinkedIn error: HTTP ${response.status} ${response.statusText}. Make sure your cookie is valid and fresh.`;
+  }
+
+  const html = await response.text();
+  return htmlToMarkdown(html, `LinkedIn - ${query || url}`);
+}
+
+// ─── Instagram ───
+
+async function crawlInstagram(cookie, action, url, query, maxResults) {
+  const headers = {
+    'Cookie': cookie,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'x-ig-app-id': '936619743392459',
+    'x-requested-with': 'XMLHttpRequest',
+  };
 
   if (action === 'search' && query) {
-    // Try search via Jina Reader
-    const searchUrls = {
-      'XiaoHongShu': `https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(query)}`,
-      'LinkedIn': `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(query)}`,
-      'Instagram': `https://www.instagram.com/explore/tags/${encodeURIComponent(query)}/`,
-    };
-    const searchUrl = searchUrls[platformName] || `${baseUrl}/search?q=${encodeURIComponent(query)}`;
-    
-    const jinaUrl = `https://r.jina.ai/${searchUrl}`;
-    const response = await fetch(jinaUrl, {
-      headers: { ...headers, 'Accept': 'text/markdown' },
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!response.ok) return `${platformName} search error: HTTP ${response.status}`;
-    const markdown = await response.text();
-    return `# ${platformName} Search: "${query}"\n\n${markdown.substring(0, 50000)}`;
+    try {
+      const searchUrl = `https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}`;
+      validateUrlForSSRF(searchUrl);
+      const res = await fetch(searchUrl, { headers, signal: AbortSignal.timeout(15000) });
+      if (res.ok) {
+        const data = await res.json();
+        const users = data.users || [];
+        const hashtags = data.hashtags || [];
+
+        let output = `# Instagram Search Results for "${query}"\n\n`;
+        if (users.length > 0) {
+          output += `## Users\n\n`;
+          for (const u of users.slice(0, 10)) {
+            const user = u.user || {};
+            output += `- **${user.full_name || user.username}** (@${user.username}) ${user.is_verified ? '☑️' : ''}\n  🔗 https://instagram.com/${user.username}\n`;
+          }
+        }
+        if (hashtags.length > 0) {
+          output += `\n## Hashtags\n\n`;
+          for (const h of hashtags.slice(0, 5)) {
+            const tag = h.hashtag || {};
+            output += `- #${tag.name} (${formatNumber(tag.media_count)} posts)\n`;
+          }
+        }
+        if (users.length > 0 || hashtags.length > 0) return output;
+      }
+    } catch (err) {
+      // Fall back to direct fetch
+    }
+
+    const targetUrl = `https://www.instagram.com/explore/tags/${encodeURIComponent(query)}/`;
+    validateUrlForSSRF(targetUrl);
+    const res = await fetch(targetUrl, { headers: { ...headers, Accept: 'text/html' }, signal: AbortSignal.timeout(20000) });
+    if (!res.ok) return `Instagram search error: HTTP ${res.status}`;
+    const html = await res.text();
+    return htmlToMarkdown(html, `Instagram Search: ${query}`);
   }
 
-  return `${platformName}: specify action="read" with url, or action="search" with query.`;
+  if (action === 'read' && url) {
+    validateUrlForSSRF(url);
+    const res = await fetch(url, { headers: { ...headers, Accept: 'text/html' }, signal: AbortSignal.timeout(20000) });
+    if (!res.ok) return `Instagram read error: HTTP ${res.status}`;
+    const html = await res.text();
+    return htmlToMarkdown(html, `Instagram Post`);
+  }
+
+  return 'Instagram: specify action="read" with url, or action="search" with query.';
+}
+
+// ─── XiaoHongShu ───
+
+async function crawlXiaoHongShu(cookie, action, url, query, maxResults) {
+  const headers = {
+    'Cookie': cookie,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+  };
+
+  let targetUrl = url;
+  if (action === 'search' && query) {
+    targetUrl = `https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(query)}`;
+  }
+
+  if (!targetUrl) {
+    return 'XiaoHongShu: specify action="read" with url, or action="search" with query.';
+  }
+
+  validateUrlForSSRF(targetUrl);
+  const response = await fetch(targetUrl, { headers, signal: AbortSignal.timeout(20000) });
+  if (!response.ok) {
+    return `XiaoHongShu error: HTTP ${response.status} ${response.statusText}`;
+  }
+
+  const html = await response.text();
+  return htmlToMarkdown(html, `XiaoHongShu - ${query || url}`);
 }
