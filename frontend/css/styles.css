@@ -956,67 +956,29 @@ html, body {
   --text-accent: #343a40;
 }
 
-/* ─── Workspace Explorer Right Panel ─── */
-.workspace-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 990;
-  opacity: 1;
-  transition: opacity var(--transition-normal);
-}
-.workspace-overlay.hidden {
-  display: none;
-  opacity: 0;
-}
-
+/* ─── Workspace Explorer Side-by-Side Panel ─── */
 .workspace-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 380px;
-  max-width: 90vw;
+  position: relative;
+  width: 360px;
+  max-width: 40vw;
+  height: 100%;
   background: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
-  z-index: 1000;
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
-  animation-duration: 0.28s;
-  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-  animation-fill-mode: forwards;
+  flex-shrink: 0;
+  z-index: 10;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  overflow: hidden;
 }
 
-.workspace-panel.slide-in-right {
-  animation-name: slideInRight;
-}
-
-.workspace-panel.slide-out-right {
-  animation-name: slideOutRight;
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0.6;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
+.workspace-panel.hidden {
+  display: flex !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  border-left: none !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .workspace-panel-header {

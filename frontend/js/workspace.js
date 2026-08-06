@@ -52,24 +52,14 @@ window.WorkspaceExplorer = {
   open() {
     if (!this.panel) return;
     this.isOpen = true;
-    this.overlay?.classList.remove('hidden');
-    this.panel.classList.remove('hidden', 'slide-out-right');
-    this.panel.classList.add('slide-in-right');
+    this.panel.classList.remove('hidden');
     this.loadTree();
   },
 
   close() {
     if (!this.panel || !this.isOpen) return;
     this.isOpen = false;
-    this.panel.classList.remove('slide-in-right');
-    this.panel.classList.add('slide-out-right');
-    this.overlay?.classList.add('hidden');
-
-    setTimeout(() => {
-      if (!this.isOpen) {
-        this.panel.classList.add('hidden');
-      }
-    }, 280);
+    this.panel.classList.add('hidden');
   },
 
   async loadTree() {
