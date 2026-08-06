@@ -653,8 +653,35 @@
     });
   }
 
+  let searchTimeout;
   searchInput.addEventListener('input', () => {
-    renderConversationList(searchInput.value);
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      renderConversationList(searchInput.value);
+    }, 300);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+
+    // Cmd/Ctrl + K: Focus search
+    if (cmdOrCtrl && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+
+    // Cmd/Ctrl + N: New chat
+    if (cmdOrCtrl && e.key.toLowerCase() === 'n') {
+      e.preventDefault();
+      document.getElementById('new-chat-btn')?.click();
+    }
+
+    // Cmd/Ctrl + Shift + S: Toggle sidebar
+    if (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      sidebarToggle?.click();
+    }
   });
 
   sidebarToggle?.addEventListener('click', () => {
