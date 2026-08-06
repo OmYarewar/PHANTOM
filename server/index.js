@@ -5,9 +5,22 @@ import config from './config.js';
 import { processMessage } from './ai/llm-client.js';
 import { startBot } from './telegram/bot.js';
 import { startCaspianBot } from './caspian/bot.js';
+import { createConversation } from './memory/store.js';
 
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
+
+// Handle server errors (e.g. EADDRINUSE)
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    const port = config.port || config.server?.port || 1337;
+    console.error(`\n❌ [PHANTOM] Port ${port} is already in use by another process.`);
+    console.error(`👉 Stop the process using port ${port} or run with a custom port: PORT=1338 npm run dev\n`);
+    process.exit(1);
+  } else {
+    console.error('[Server Error]', err);
+  }
+});
 
 // WebSocket Heartbeat / Stale Connection Purge
 const heartbeatInterval = setInterval(() => {
@@ -53,9 +66,19 @@ wss.on('connection', (ws) => {
         ws.isAlive = true;
         return;
       }
-      if (!payload || !payload.message) return;
+      
+      // Support both payload.message and payload.content (sent by frontend)
+      const messageText = payload.message || payload.content;
+      if (!payload || !messageText) return;
 
-      const conversationId = payload.conversationId;
+      let conversationId = payload.conversationId;
+      if (!conversationId) {
+        const conv = createConversation(messageText.substring(0, 30) || 'New Chat');
+        conversationId = conv.id;
+        if (ws.readyState === 1) {
+          ws.send(JSON.stringify({ type: 'conversation_created', conversationId }));
+        }
+      }
 
       // 1. Notify frontend response start
       if (ws.readyState === 1) {
@@ -64,7 +87,7 @@ wss.on('connection', (ws) => {
 
       await processMessage(
         conversationId,
-        payload.message,
+        messageText,
         payload.context,
         // onChunk
         (chunk) => {
