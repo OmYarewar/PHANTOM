@@ -142,6 +142,22 @@ export async function processMessage(conversationId, userMessage, sessionContext
   const tools = getToolDefinitions();
   const client = getClient();
 
+let lastNvidiaCallTime = 0;
+
+async function checkNvidiaRateLimit() {
+  const isNvidia = (config.api.baseUrl || '').includes('nvidia') || (config.api.apiKey || '').startsWith('nvapi-');
+  if (isNvidia) {
+    const minIntervalMs = 1500; // 40 RPM = 60,000ms / 40 = 1,500ms between calls
+    const now = Date.now();
+    const elapsed = now - lastNvidiaCallTime;
+    if (elapsed < minIntervalMs) {
+      const waitTime = minIntervalMs - elapsed;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    lastNvidiaCallTime = Date.now();
+  }
+}
+
   // Unlimited tool calling loop — runs until AI stops or abort signal fires
   while (true) {
     // Check if aborted
@@ -155,10 +171,13 @@ export async function processMessage(conversationId, userMessage, sessionContext
     try {
       let response;
       let retries = 0;
-      const maxRetries = 3;
+      const isNvidia = (config.api.baseUrl || '').includes('nvidia') || (config.api.apiKey || '').startsWith('nvapi-');
+      const maxRetries = isNvidia ? 6 : 4;
 
       while (retries < maxRetries) {
         try {
+          await checkNvidiaRateLimit();
+
           // If planner, strictly forbid raw tool access (tools undefined)
           // The planner delegates to orchestrator/executors.
           const effectiveTools = (agentRole === 'planner') ? undefined : (tools.length > 0 ? tools : undefined);
@@ -178,8 +197,9 @@ export async function processMessage(conversationId, userMessage, sessionContext
           if (apiError.status === 429 || apiError.message.includes('429') || apiError.message.includes('ResourceExhausted')) {
             retries++;
             if (retries >= maxRetries) throw apiError;
-            console.log(`[PHANTOM] Rate limit hit (429). Retrying in ${Math.pow(2, retries)}s...`);
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
+            const retryDelay = isNvidia ? Math.max(2000, retries * 2000) : Math.pow(2, retries) * 1000;
+            console.log(`[PHANTOM] Rate limit hit (429). Retrying in ${retryDelay / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
             if (abortSignal?.aborted) throw new Error('Operation stopped by user.');
             continue;
           }

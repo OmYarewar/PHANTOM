@@ -28,6 +28,22 @@ window.Settings = {
       input.type = input.type === 'password' ? 'text' : 'password';
     });
 
+    // Auto-configure NVIDIA NIM provider if nvapi- key is entered
+    const apiKeyInput = document.getElementById('setting-api-key');
+    apiKeyInput?.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (val.startsWith('nvapi-')) {
+        const baseUrlInput = document.getElementById('setting-base-url');
+        const modelInput = document.getElementById('setting-model');
+        if (baseUrlInput && (!baseUrlInput.value || baseUrlInput.value === 'https://api.openai.com/v1')) {
+          baseUrlInput.value = 'https://integrate.api.nvidia.com/v1';
+        }
+        if (modelInput && (!modelInput.value || modelInput.value === 'gpt-4o')) {
+          modelInput.value = 'meta/llama-3.3-70b-instruct';
+        }
+      }
+    });
+
     // Sudo password visibility toggle
     document.getElementById('toggle-sudo-pass').addEventListener('click', () => {
       const input = document.getElementById('setting-sudo-password');
