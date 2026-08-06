@@ -78,6 +78,7 @@
           </svg>
         </button>
         <div class="top-bar-actions">
+          <button type="button" id="workspace-toggle-btn" class="btn btn-sm btn-secondary" title="Workspace Explorer" aria-label="Toggle Workspace Panel">📁 Workspace</button>
           <button type="button" id="theme-toggle-btn" class="btn btn-sm btn-secondary" title="Toggle Theme" aria-label="Toggle Theme">🌓 Theme</button>
           <button type="button" id="export-chat-btn" class="btn btn-sm btn-secondary" title="Export Chat" aria-label="Export Chat">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
@@ -648,6 +649,33 @@
       </div>
     </div>
   </div>
+
+  <!-- Workspace Right Panel -->
+  <div id="workspace-overlay" class="workspace-overlay hidden"></div>
+  <aside id="workspace-panel" class="workspace-panel hidden">
+    <div class="workspace-panel-header">
+      <div class="workspace-panel-title">
+        <span class="workspace-icon">📁</span>
+        <span>Workspace Explorer</span>
+      </div>
+      <div class="workspace-panel-actions">
+        <button type="button" id="workspace-refresh-btn" class="btn-icon-sm" title="Refresh files">🔄</button>
+        <button type="button" id="workspace-close-btn" class="btn-icon-sm" title="Close panel">✕</button>
+      </div>
+    </div>
+    <div class="workspace-panel-body">
+      <div id="workspace-tree" class="workspace-tree">
+        <!-- Tree rendered dynamically -->
+      </div>
+    </div>
+    <div id="workspace-preview-modal" class="workspace-preview-modal hidden">
+      <div class="workspace-preview-header">
+        <span id="preview-filename" class="preview-filename">file.js</span>
+        <button type="button" id="preview-close-btn" class="btn-icon-sm">✕</button>
+      </div>
+      <pre id="preview-content" class="preview-content"><code></code></pre>
+    </div>
+  </aside>
 
   <script type="module" src="js/main.js"></script>
 </body>

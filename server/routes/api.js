@@ -493,6 +493,66 @@ router.get('/system/info', async (req, res) => {
   }
 });
 
+// ─── Workspace File Explorer ───
+router.get('/workspace/files', async (req, res) => {
+  try {
+    const rootDir = config.workspace;
+    if (!existsSync(rootDir)) {
+      mkdirSync(rootDir, { recursive: true });
+    }
+
+    async function scanDirectory(dirPath, relativeDir = '') {
+      const items = [];
+      const entries = await fsPromises.readdir(dirPath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.name === '.git' || entry.name === 'node_modules') continue;
+        const relPath = relativeDir ? join(relativeDir, entry.name) : entry.name;
+        const fullPath = join(dirPath, entry.name);
+        if (entry.isDirectory()) {
+          const children = await scanDirectory(fullPath, relPath);
+          items.push({
+            name: entry.name,
+            path: relPath,
+            isDirectory: true,
+            children
+          });
+        } else {
+          const stats = await fsPromises.stat(fullPath);
+          items.push({
+            name: entry.name,
+            path: relPath,
+            isDirectory: false,
+            size: stats.size,
+            mtime: stats.mtime
+          });
+        }
+      }
+      items.sort((a, b) => (b.isDirectory ? 1 : 0) - (a.isDirectory ? 1 : 0) || a.name.localeCompare(b.name));
+      return items;
+    }
+
+    const tree = await scanDirectory(rootDir);
+    res.json({ success: true, workspace: config.workspace, tree });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/workspace/file', async (req, res) => {
+  try {
+    const relPath = req.query.path;
+    if (!relPath) return res.status(400).json({ error: 'Missing path parameter' });
+    const fullPath = join(config.workspace, relPath);
+    if (!fullPath.startsWith(config.workspace)) {
+      return res.status(403).json({ error: 'Access denied: outside workspace' });
+    }
+    const content = await fsPromises.readFile(fullPath, 'utf8');
+    res.json({ success: true, path: relPath, content });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Skills Management ───
 function getSkillsDir() {
   const dir = join(config.workspace, 'skills');

@@ -59,6 +59,7 @@
   Chat.init();
   Settings.init();
   Management.init();
+  if (window.WorkspaceExplorer) window.WorkspaceExplorer.init();
   initMatrix();
   connectWebSocket();
   loadConversations();

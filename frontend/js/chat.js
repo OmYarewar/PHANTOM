@@ -318,14 +318,16 @@ window.Chat = {
   addToolCall(data) {
     this.hideWelcome();
 
-    if (data.name === 'write_file' || data.name === 'edit_source_code') {
+    if (data.name === 'write_file' || data.name === 'edit_source_code' || data.name === 'read_file') {
       const card = document.createElement('div');
       card.className = 'tool-card file-mod-card';
       card.id = `tool-${data.id}`;
 
-      const filePath = typeof data.args === 'object' ? (data.args.path || data.args.file_path || 'unknown file') : 'unknown file';
-      const actionName = data.name === 'write_file' ? 'Creating file' : 'Editing file';
-      const icon = data.name === 'write_file' ? '📄' : '📝';
+      const filePath = typeof data.args === 'object' ? (data.args.path || data.args.file_path || data.args.target_file || 'unknown file') : 'unknown file';
+      let actionName = 'Editing file';
+      let icon = '📝';
+      if (data.name === 'write_file') { actionName = 'Creating file'; icon = '📄'; }
+      if (data.name === 'read_file') { actionName = 'Reading file'; icon = '📖'; }
 
       card.innerHTML = `
         <div class="tool-card-header file-mod-header" onclick="this.nextElementSibling.classList.toggle('expanded')" style="background: var(--bg-tertiary); border-left: 3px solid var(--accent);">
@@ -386,6 +388,11 @@ window.Chat = {
       const body = card.querySelector('.tool-card-body');
       body.textContent = data.result || 'No output';
     }
+
+    if (['write_file', 'edit_source_code', 'execute_command'].includes(data.name)) {
+      window.WorkspaceExplorer?.loadTree();
+    }
+
     this.scrollToBottom();
   },
 
