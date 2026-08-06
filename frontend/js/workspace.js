@@ -1,44 +1,119 @@
 /**
- * Workspace File Explorer Right Panel Logic
+ * Workspace File Explorer & Reader Logic
  * Features:
- * - Animated opening & closing (slideInRight / slideOutRight)
- * - Tree view for workspace files & folders
- * - Live file content preview
- * - Auto-refresh when AI creates/modifies files
+ * - Drag-to-resize workspace panel width
+ * - Forward & Back navigation history
+ * - Real-time file filter/search
+ * - View any text/code file (.txt, .md, .json, .sh, .py, .js, .html, etc.)
+ * - Rich rendered markdown preview for .md files
+ * - Copy content button
  */
 window.WorkspaceExplorer = {
   panel: null,
-  overlay: null,
+  resizer: null,
   isOpen: false,
+  treeData: [],
+  history: [],
+  historyIndex: -1,
+  currentFile: null,
 
   init() {
     this.panel = document.getElementById('workspace-panel');
-    this.overlay = document.getElementById('workspace-overlay');
+    this.resizer = document.getElementById('workspace-resizer');
 
     const toggleBtn = document.getElementById('workspace-toggle-btn');
     const closeBtn = document.getElementById('workspace-close-btn');
     const refreshBtn = document.getElementById('workspace-refresh-btn');
+    const searchInput = document.getElementById('workspace-search-input');
+    const backBtn = document.getElementById('ws-nav-back');
+    const forwardBtn = document.getElementById('ws-nav-forward');
+    const viewerBackBtn = document.getElementById('viewer-back-btn');
+    const viewerCloseBtn = document.getElementById('viewer-close-btn');
+    const viewerCopyBtn = document.getElementById('viewer-copy-btn');
 
     toggleBtn?.addEventListener('click', () => this.toggle());
     closeBtn?.addEventListener('click', () => this.close());
     refreshBtn?.addEventListener('click', () => this.loadTree());
-    this.overlay?.addEventListener('click', () => this.close());
 
-    // Preview close button
-    document.getElementById('preview-close-btn')?.addEventListener('click', () => {
-      document.getElementById('workspace-preview-modal')?.classList.add('hidden');
+    // Navigation
+    backBtn?.addEventListener('click', () => this.goBack());
+    forwardBtn?.addEventListener('click', () => this.goForward());
+    viewerBackBtn?.addEventListener('click', () => this.showTree());
+    viewerCloseBtn?.addEventListener('click', () => this.showTree());
+
+    // Copy file content
+    viewerCopyBtn?.addEventListener('click', () => {
+      const contentEl = document.getElementById('viewer-content');
+      const text = contentEl?.textContent || '';
+      if (text && window.copyText) {
+        window.copyText(text, viewerCopyBtn);
+      }
     });
 
+    // Real-time Search / Filter
+    searchInput?.addEventListener('input', (e) => {
+      this.filterTree(e.target.value.trim().toLowerCase());
+    });
+
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const previewModal = document.getElementById('workspace-preview-modal');
-        if (previewModal && !previewModal.classList.contains('hidden')) {
-          previewModal.classList.add('hidden');
-        } else if (this.isOpen) {
+      if (e.key === 'Escape' && this.isOpen) {
+        const viewer = document.getElementById('workspace-file-viewer');
+        if (viewer && !viewer.classList.contains('hidden')) {
+          this.showTree();
+        } else {
           this.close();
         }
       }
     });
+
+    // Resizing logic
+    this.initResizer();
+
+    // Restore saved width
+    const savedWidth = localStorage.getItem('phantom_workspace_width');
+    if (savedWidth && this.panel) {
+      this.panel.style.width = `${savedWidth}px`;
+    }
+  },
+
+  initResizer() {
+    if (!this.resizer || !this.panel) return;
+
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    const onMouseDown = (e) => {
+      isResizing = true;
+      startX = e.clientX;
+      startWidth = this.panel.offsetWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    };
+
+    const onMouseMove = (e) => {
+      if (!isResizing) return;
+      const dx = startX - e.clientX; // drag left expands panel
+      const newWidth = Math.max(220, Math.min(window.innerWidth * 0.7, startWidth + dx));
+      this.panel.style.width = `${newWidth}px`;
+    };
+
+    const onMouseUp = () => {
+      if (!isResizing) return;
+      isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      localStorage.setItem('phantom_workspace_width', this.panel.offsetWidth);
+
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    this.resizer.addEventListener('mousedown', onMouseDown);
   },
 
   toggle() {
@@ -53,6 +128,9 @@ window.WorkspaceExplorer = {
     if (!this.panel) return;
     this.isOpen = true;
     this.panel.classList.remove('hidden');
+    if (this.history.length === 0) {
+      this.pushHistory({ type: 'tree' });
+    }
     this.loadTree();
   },
 
@@ -62,6 +140,49 @@ window.WorkspaceExplorer = {
     this.panel.classList.add('hidden');
   },
 
+  // ─── History Navigation (Back / Forward) ───
+  pushHistory(state) {
+    // Truncate forward history if we're in the middle
+    if (this.historyIndex < this.history.length - 1) {
+      this.history = this.history.slice(0, this.historyIndex + 1);
+    }
+    this.history.push(state);
+    this.historyIndex = this.history.length - 1;
+    this.updateNavButtons();
+  },
+
+  goBack() {
+    if (this.historyIndex > 0) {
+      this.historyIndex--;
+      this.restoreHistoryState(this.history[this.historyIndex]);
+    }
+  },
+
+  goForward() {
+    if (this.historyIndex < this.history.length - 1) {
+      this.historyIndex++;
+      this.restoreHistoryState(this.history[this.historyIndex]);
+    }
+  },
+
+  restoreHistoryState(state) {
+    this.updateNavButtons();
+    if (!state) return;
+    if (state.type === 'tree') {
+      this.showTree(false);
+    } else if (state.type === 'file' && state.path) {
+      this.previewFile(state.path, false);
+    }
+  },
+
+  updateNavButtons() {
+    const backBtn = document.getElementById('ws-nav-back');
+    const forwardBtn = document.getElementById('ws-nav-forward');
+    if (backBtn) backBtn.disabled = this.historyIndex <= 0;
+    if (forwardBtn) forwardBtn.disabled = this.historyIndex >= this.history.length - 1;
+  },
+
+  // ─── Tree Explorer ───
   async loadTree() {
     const treeEl = document.getElementById('workspace-tree');
     if (!treeEl) return;
@@ -73,11 +194,12 @@ window.WorkspaceExplorer = {
       const data = await res.json();
 
       if (data.success) {
-        if (!data.tree || data.tree.length === 0) {
+        this.treeData = data.tree || [];
+        if (this.treeData.length === 0) {
           treeEl.innerHTML = '<div class="workspace-empty">📁 Workspace is empty</div>';
           return;
         }
-        treeEl.innerHTML = this.renderNodes(data.tree);
+        treeEl.innerHTML = this.renderNodes(this.treeData);
         this.attachTreeListeners();
       } else {
         treeEl.innerHTML = `<div class="workspace-error">❌ ${data.error}</div>`;
@@ -145,31 +267,110 @@ window.WorkspaceExplorer = {
     treeEl.querySelectorAll('.file-item').forEach(fileItem => {
       fileItem.addEventListener('click', () => {
         const path = fileItem.dataset.path;
-        if (path) this.previewFile(path);
+        if (path) this.previewFile(path, true);
       });
     });
   },
 
-  async previewFile(path) {
-    const modal = document.getElementById('workspace-preview-modal');
-    const nameEl = document.getElementById('preview-filename');
-    const contentEl = document.getElementById('preview-content');
-    if (!modal || !nameEl || !contentEl) return;
+  filterTree(query) {
+    const treeEl = document.getElementById('workspace-tree');
+    if (!treeEl) return;
 
-    nameEl.textContent = path;
-    contentEl.textContent = 'Loading...';
-    modal.classList.remove('hidden');
+    if (!query) {
+      treeEl.innerHTML = this.renderNodes(this.treeData);
+      this.attachTreeListeners();
+      return;
+    }
+
+    const filterNodes = (nodes) => {
+      const result = [];
+      for (const node of nodes) {
+        if (node.isDirectory) {
+          const matchingChildren = node.children ? filterNodes(node.children) : [];
+          if (matchingChildren.length > 0 || node.name.toLowerCase().includes(query)) {
+            result.push({ ...node, children: matchingChildren });
+          }
+        } else {
+          if (node.name.toLowerCase().includes(query) || node.path.toLowerCase().includes(query)) {
+            result.push(node);
+          }
+        }
+      }
+      return result;
+    };
+
+    const filtered = filterNodes(this.treeData);
+    if (filtered.length === 0) {
+      treeEl.innerHTML = `<div class="workspace-empty">🔍 No matching files found</div>`;
+    } else {
+      treeEl.innerHTML = this.renderNodes(filtered);
+      this.attachTreeListeners();
+    }
+  },
+
+  // ─── In-Panel File Viewer (Text, Code, Markdown) ───
+  showTree(recordHistory = true) {
+    const viewer = document.getElementById('workspace-file-viewer');
+    const headerTitle = document.getElementById('ws-header-title');
+    if (viewer) viewer.classList.add('hidden');
+    if (headerTitle) headerTitle.textContent = 'Workspace';
+    this.currentFile = null;
+
+    if (recordHistory) {
+      this.pushHistory({ type: 'tree' });
+    }
+  },
+
+  async previewFile(path, recordHistory = true) {
+    const viewer = document.getElementById('workspace-file-viewer');
+    const filenameEl = document.getElementById('viewer-filename');
+    const contentEl = document.getElementById('viewer-content');
+    const markdownEl = document.getElementById('viewer-markdown');
+    const headerTitle = document.getElementById('ws-header-title');
+
+    if (!viewer || !filenameEl || !contentEl || !markdownEl) return;
+
+    this.currentFile = path;
+    filenameEl.textContent = path;
+    if (headerTitle) headerTitle.textContent = path.split('/').pop();
+
+    contentEl.textContent = '⏳ Loading file content...';
+    markdownEl.classList.add('hidden');
+    contentEl.classList.remove('hidden');
+    viewer.classList.remove('hidden');
+
+    if (recordHistory) {
+      this.pushHistory({ type: 'file', path });
+    }
 
     try {
       const res = await fetch(`/api/workspace/file?path=${encodeURIComponent(path)}`);
       const data = await res.json();
+
       if (data.success) {
-        contentEl.textContent = data.content;
+        const ext = path.split('.').pop()?.toLowerCase();
+        const content = data.content;
+
+        if (ext === 'md' && window.renderMarkdown) {
+          // Markdown rendered view
+          markdownEl.innerHTML = window.renderMarkdown(content);
+          markdownEl.classList.remove('hidden');
+          contentEl.classList.add('hidden');
+        } else if (ext === 'json') {
+          try {
+            const parsed = JSON.parse(content);
+            contentEl.textContent = JSON.stringify(parsed, null, 2);
+          } catch (e) {
+            contentEl.textContent = content;
+          }
+        } else {
+          contentEl.textContent = content;
+        }
       } else {
-        contentEl.textContent = `Error: ${data.error}`;
+        contentEl.textContent = `❌ Error loading file: ${data.error}`;
       }
     } catch (err) {
-      contentEl.textContent = `Error loading file: ${err.message}`;
+      contentEl.textContent = `❌ Network Error: ${err.message}`;
     }
   },
 
@@ -186,6 +387,8 @@ window.WorkspaceExplorer = {
       case 'sh': case 'bash': return '⚡';
       case 'sql': case 'db': return '💾';
       case 'png': case 'jpg': case 'jpeg': case 'svg': return '🖼️';
+      case 'yaml': case 'yml': return '⚙️';
+      case 'txt': case 'log': return '📄';
       default: return '📄';
     }
   },

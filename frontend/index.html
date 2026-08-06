@@ -648,29 +648,48 @@
         </div>
       </div>
     </div>
-  <!-- Workspace Explorer Right Panel (Side-by-Side Flex Layout) -->
+  <!-- Workspace Explorer Right Panel (Resizable & Side-by-Side Flex Layout) -->
   <aside id="workspace-panel" class="workspace-panel hidden">
+    <div id="workspace-resizer" class="workspace-resizer" title="Drag to resize panel"></div>
+
     <div class="workspace-panel-header">
+      <div class="workspace-panel-nav">
+        <button type="button" id="ws-nav-back" class="btn-icon-sm" title="Go back" disabled>◀</button>
+        <button type="button" id="ws-nav-forward" class="btn-icon-sm" title="Go forward" disabled>▶</button>
+      </div>
       <div class="workspace-panel-title">
         <span class="workspace-icon">📁</span>
-        <span>Workspace Explorer</span>
+        <span id="ws-header-title">Workspace</span>
       </div>
       <div class="workspace-panel-actions">
         <button type="button" id="workspace-refresh-btn" class="btn-icon-sm" title="Refresh files">🔄</button>
         <button type="button" id="workspace-close-btn" class="btn-icon-sm" title="Close panel">✕</button>
       </div>
     </div>
+
+    <div class="workspace-search-bar">
+      <input type="text" id="workspace-search-input" placeholder="🔍 Search workspace files..." />
+    </div>
+
     <div class="workspace-panel-body">
       <div id="workspace-tree" class="workspace-tree">
         <!-- Tree rendered dynamically -->
       </div>
     </div>
-    <div id="workspace-preview-modal" class="workspace-preview-modal hidden">
-      <div class="workspace-preview-header">
-        <span id="preview-filename" class="preview-filename">file.js</span>
-        <button type="button" id="preview-close-btn" class="btn-icon-sm">✕</button>
+
+    <div id="workspace-file-viewer" class="workspace-file-viewer hidden">
+      <div class="workspace-viewer-header">
+        <button type="button" id="viewer-back-btn" class="btn btn-xs btn-secondary" title="Back to Explorer">← Explorer</button>
+        <span id="viewer-filename" class="viewer-filename">file.js</span>
+        <div class="viewer-actions">
+          <button type="button" id="viewer-copy-btn" class="btn-icon-sm" title="Copy file content">📋</button>
+          <button type="button" id="viewer-close-btn" class="btn-icon-sm" title="Close file">✕</button>
+        </div>
       </div>
-      <pre id="preview-content" class="preview-content"><code></code></pre>
+      <div id="viewer-body" class="viewer-body">
+        <pre id="viewer-content" class="viewer-content"><code></code></pre>
+        <div id="viewer-markdown" class="viewer-markdown hidden"></div>
+      </div>
     </div>
   </aside>
   </div>
