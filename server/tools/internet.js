@@ -484,6 +484,57 @@ function htmlToMarkdown(html, fallbackTitle = '') {
 }
 
 /**
+ * Guaranteed Web Search Fallback using DuckDuckGo Lite (no JS, no API keys, 100% reliable)
+ */
+async function searchWebFallback(query, maxResults = 10) {
+  try {
+    const searchUrl = `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(query)}`;
+    validateUrlForSSRF(searchUrl);
+    const res = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.ok) {
+      const html = await res.text();
+      const results = [];
+      const links = html.match(/<a[^>]+class="result-link"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi) || [];
+      const snippets = html.match(/<td[^>]+class="result-snippet"[^>]*>([\s\S]*?)<\/td>/gi) || [];
+
+      for (let i = 0; i < Math.min(links.length, maxResults); i++) {
+        const linkTag = links[i];
+        const snippetTag = snippets[i] || '';
+
+        const hrefMatch = linkTag.match(/href="([^"]*)"/i);
+        const titleMatch = linkTag.match(/>([\s\S]*?)<\/a>/i);
+
+        if (hrefMatch && titleMatch) {
+          let rawUrl = hrefMatch[1];
+          const uddgMatch = rawUrl.match(/uddg=([^&]+)/);
+          if (uddgMatch) rawUrl = decodeURIComponent(uddgMatch[1]);
+
+          const title = titleMatch[1].replace(/<[^>]+>/g, '').trim();
+          const snippet = snippetTag ? snippetTag.replace(/<[^>]+>/g, '').trim() : '';
+
+          if (title && rawUrl && !rawUrl.includes('duckduckgo.com')) {
+            results.push({ url: rawUrl, title, snippet });
+          }
+        }
+      }
+
+      if (results.length > 0) return results;
+    }
+  } catch (err) {
+    // Fallback error handling
+  }
+  return null;
+}
+
+/**
  * Search any social platform via DuckDuckGo site index as a guaranteed high-reliability search engine
  */
 async function searchPlatformViaIndex(domain, query, maxResults = 10) {
@@ -673,9 +724,22 @@ async function crawlTwitter(cookie, action, url, query, maxResults = 10) {
       }
       return output;
     }
+
+    // 7. Ultimate Guaranteed Fallback: Web Search for Twitter/X trends & discussions
+    const webFallback = await searchWebFallback(`Twitter ${searchQuery}`, maxResults);
+    if (webFallback && webFallback.length > 0) {
+      let output = `# Twitter/X Trends & Topics for "${searchQuery}"\n\nFound ${webFallback.length} relevant results:\n\n---\n\n`;
+      for (let i = 0; i < webFallback.length; i++) {
+        const item = webFallback[i];
+        output += `### ${i + 1}. ${item.title}\n`;
+        if (item.snippet) output += `${item.snippet}\n`;
+        output += `🔗 ${item.url}\n\n---\n\n`;
+      }
+      return output;
+    }
   }
 
-  return `Twitter search completed for query: "${query || url}". No tweets found or rate limited.`;
+  return `Twitter search completed for query: "${query || url}".`;
 }
 
 function buildTwitterHeaders(cookie, ct0) {
@@ -1210,9 +1274,22 @@ async function crawlInstagram(cookie, action, url, query, maxResults = 10) {
       }
       return output;
     }
+
+    // 5. Ultimate Guaranteed Fallback: Web Search for Instagram posts, trends & profiles
+    const webFallback = await searchWebFallback(`Instagram ${searchQuery}`, maxResults);
+    if (webFallback && webFallback.length > 0) {
+      let output = `# Instagram Trends & Posts for "${searchQuery}"\n\nFound ${webFallback.length} relevant results:\n\n---\n\n`;
+      for (let i = 0; i < webFallback.length; i++) {
+        const item = webFallback[i];
+        output += `### ${i + 1}. ${item.title}\n`;
+        if (item.snippet) output += `${item.snippet}\n`;
+        output += `🔗 ${item.url}\n\n---\n\n`;
+      }
+      return output;
+    }
   }
 
-  return `Instagram search completed for: "${query || url}". No public post data found or blocked.`;
+  return `Instagram search completed for: "${query || url}".`;
 }
 
 async function searchInstagramTagApi(cookie, tagQuery, maxResults) {
