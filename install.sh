@@ -83,6 +83,23 @@ update_shell_rc() {
 update_shell_rc "$HOME/.bashrc"
 update_shell_rc "$HOME/.zshrc"
 
+# Configure Fish shell if fish directory or command exists
+FISH_CONF_DIR="$HOME/.config/fish"
+FISH_CONF_FILE="$FISH_CONF_DIR/config.fish"
+if [ -d "$FISH_CONF_DIR" ] || command -v fish >/dev/null 2>&1; then
+  mkdir -p "$FISH_CONF_DIR"
+  touch "$FISH_CONF_FILE"
+  if ! grep -q '\.local/bin' "$FISH_CONF_FILE"; then
+    echo "" >> "$FISH_CONF_FILE"
+    echo "# PHANTOM CLI PATH" >> "$FISH_CONF_FILE"
+    echo 'set -gx PATH $HOME/.local/bin $HOME/.npm-global/bin $PATH' >> "$FISH_CONF_FILE"
+    echo -e "  ${CG}✓ Added PHANTOM CLI to ${FISH_CONF_FILE}${RST}"
+  fi
+  if command -v fish >/dev/null 2>&1; then
+    fish -c "fish_add_path -m $HOME/.local/bin $HOME/.npm-global/bin" 2>/dev/null || true
+  fi
+fi
+
 # Export PATH for current session
 export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
 
