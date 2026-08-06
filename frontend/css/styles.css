@@ -432,16 +432,45 @@ html, body {
 .sudo-modal-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .sudo-modal-actions .btn { min-width: 140px; justify-content: center; }
 
-/* ─── Settings Panel ─── */
-.settings-panel { position: fixed; inset: 0; z-index: 100; display: flex; justify-content: flex-end; transition: visibility var(--transition-normal); }
-.settings-panel.hidden { visibility: hidden; pointer-events: none; }
-.settings-panel.hidden .settings-overlay { opacity: 0; }
-.settings-panel.hidden .settings-drawer { transform: translateX(100%); }
-.settings-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); transition: opacity var(--transition-normal); }
-.settings-drawer {
+/* ─── Settings & Manage Sidebars (Sliding Animations) ─── */
+.settings-panel,
+.manage-panel {
+  position: fixed; inset: 0; z-index: 100; display: flex; justify-content: flex-end;
+  visibility: visible;
+  transition: visibility 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.settings-panel.hidden,
+.manage-panel.hidden {
+  display: flex !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+.settings-overlay,
+.manage-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 1;
+  transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.settings-panel.hidden .settings-overlay,
+.manage-panel.hidden .manage-overlay {
+  opacity: 0;
+}
+.settings-drawer,
+.manage-drawer {
   position: relative; width: var(--settings-width); max-width: 90vw;
   background: var(--bg-secondary); border-left: 1px solid var(--border-color);
-  display: flex; flex-direction: column; transition: transform var(--transition-normal); z-index: 1;
+  display: flex; flex-direction: column;
+  transform: translateX(0);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+.settings-panel.hidden .settings-drawer,
+.manage-panel.hidden .manage-drawer {
+  transform: translateX(100%);
 }
 .settings-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-color); }
 .settings-header h2 { font-size: 16px; font-weight: 600; }
