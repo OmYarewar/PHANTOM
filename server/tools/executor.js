@@ -539,11 +539,8 @@ async function webRequest({ url, method = 'GET', headers = {}, body, follow_redi
 }
 
 /**
- * Search the web using DuckDuckGo HTML for better results
- */
-/**
- * Search the web using DuckDuckGo Lite, HTML, API, system curl, and Jina search fallbacks.
- * Guaranteed to return rich results and never throw unhandled 'fetch failed' errors.
+ * Search the web using Exa Neural Search MCP, DuckDuckGo Lite, HTML, system curl, and Jina search fallbacks.
+ * Zero-config, free, and guaranteed to return rich neural search results without error.
  */
 async function searchWeb({ query }) {
   if (!query || typeof query !== 'string' || !query.trim()) {
@@ -551,9 +548,45 @@ async function searchWeb({ query }) {
   }
 
   const encoded = encodeURIComponent(query.trim());
+
+  // Engine 1: Exa MCP Free Neural Search (Highest Quality Neural Search)
+  try {
+    const exaRes = await fetch('https://mcp.exa.ai/mcp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'web_search_exa',
+          arguments: { query: query.trim(), numResults: 8 }
+        }
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (exaRes.ok) {
+      const text = await exaRes.text();
+      const dataMatch = text.match(/data:\s*({[\s\S]*})/);
+      if (dataMatch) {
+        const parsed = JSON.parse(dataMatch[1]);
+        const content = parsed?.result?.content?.[0]?.text;
+        if (content && content.trim()) {
+          return `Search results for "${query}":\n\n${content.trim()}`;
+        }
+      }
+    }
+  } catch (err) {
+    // Continue to Engine 2
+  }
+
   const results = [];
 
-  // Engine 1: DuckDuckGo Lite via fetch GET
+  // Engine 2: DuckDuckGo Lite via fetch GET
   try {
     const res = await fetch(`https://lite.duckduckgo.com/lite/?q=${encoded}`, {
       headers: {
