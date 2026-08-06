@@ -480,50 +480,96 @@ function htmlToMarkdown(html, fallbackTitle = '') {
  * Search any social platform via DuckDuckGo site index as a guaranteed high-reliability search engine
  */
 async function searchPlatformViaIndex(domain, query, maxResults = 10) {
-  try {
-    const searchUrl = `https://html.duckduckgo.com/html/?q=site%3A${encodeURIComponent(domain)}+${encodeURIComponent(query)}`;
-    validateUrlForSSRF(searchUrl);
-    const res = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      signal: AbortSignal.timeout(15000),
-    });
+  const searchQueries = [
+    `https://lite.duckduckgo.com/lite/?q=site%3A${encodeURIComponent(domain)}+${encodeURIComponent(query)}`,
+    `https://html.duckduckgo.com/html/?q=site%3A${encodeURIComponent(domain)}+${encodeURIComponent(query)}`,
+  ];
 
-    if (res.ok) {
-      const html = await res.text();
-      const results = [];
-      const matches = html.match(/<a class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi) || [];
+  for (const searchUrl of searchQueries) {
+    try {
+      validateUrlForSSRF(searchUrl);
+      const res = await fetch(searchUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+        signal: AbortSignal.timeout(15000),
+      });
 
-      for (const m of matches.slice(0, maxResults)) {
-        const urlMatch = m.match(/href="([^"]*)"/i);
-        const titleMatch = m.match(/<a class="result__a"[^>]*>([\s\S]*?)<\/a>/i);
-        const snippetMatch = m.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>/i);
+      if (res.ok) {
+        const html = await res.text();
+        const results = [];
 
-        if (urlMatch && (titleMatch || snippetMatch)) {
-          let rawUrl = urlMatch[1];
-          const uddgMatch = rawUrl.match(/uddg=([^&]+)/);
-          if (uddgMatch) {
-            rawUrl = decodeURIComponent(uddgMatch[1]);
-          }
+        // 1. DuckDuckGo Lite parsing
+        if (searchUrl.includes('/lite/')) {
+          const links = html.match(/<a[^>]+class="result-link"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi) || [];
+          const snippets = html.match(/<td[^>]+class="result-snippet"[^>]*>([\s\S]*?)<\/td>/gi) || [];
 
-          const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-          const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+          for (let i = 0; i < Math.min(links.length, maxResults); i++) {
+            const linkTag = links[i];
+            const snippetTag = snippets[i] || '';
 
-          if (rawUrl.includes(domain)) {
-            results.push({ url: rawUrl, title, snippet });
+            const hrefMatch = linkTag.match(/href="([^"]*)"/i);
+            const titleMatch = linkTag.match(/>([\s\S]*?)<\/a>/i);
+
+            if (hrefMatch) {
+              let rawUrl = hrefMatch[1];
+              const uddgMatch = rawUrl.match(/uddg=([^&]+)/);
+              if (uddgMatch) rawUrl = decodeURIComponent(uddgMatch[1]);
+
+              const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+              const snippet = snippetTag ? snippetTag.replace(/<[^>]+>/g, '').trim() : '';
+
+              if (rawUrl.includes(domain) || rawUrl.includes(domain.replace('x.com', 'twitter.com'))) {
+                results.push({ url: rawUrl, title, snippet });
+              }
+            }
           }
         }
-      }
 
-      if (results.length > 0) {
-        return results;
+        // 2. DuckDuckGo HTML parsing fallback
+        if (results.length === 0) {
+          const matches = html.match(/<a class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi) || [];
+          for (const m of matches.slice(0, maxResults)) {
+            const urlMatch = m.match(/href="([^"]*)"/i);
+            const titleMatch = m.match(/<a class="result__a"[^>]*>([\s\S]*?)<\/a>/i);
+            const snippetMatch = m.match(/class="result__snippet"[^>]*>([\s\S]*?)<\/a>/i);
+
+            if (urlMatch && (titleMatch || snippetMatch)) {
+              let rawUrl = urlMatch[1];
+              const uddgMatch = rawUrl.match(/uddg=([^&]+)/);
+              if (uddgMatch) rawUrl = decodeURIComponent(uddgMatch[1]);
+
+              const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+              const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+
+              if (rawUrl.includes(domain) || rawUrl.includes(domain.replace('x.com', 'twitter.com'))) {
+                results.push({ url: rawUrl, title, snippet });
+              }
+            }
+          }
+        }
+
+        // 3. Fallback generic link extraction
+        if (results.length === 0) {
+          const genericLinks = html.match(/href="([^"]*(?:instagram\.com|x\.com|twitter\.com)[^"]*)"/gi) || [];
+          for (const gl of genericLinks) {
+            let rawUrl = gl.replace(/href="/i, '').replace(/"$/, '');
+            const uddgMatch = rawUrl.match(/uddg=([^&]+)/);
+            if (uddgMatch) rawUrl = decodeURIComponent(uddgMatch[1]);
+            if (!results.some(r => r.url === rawUrl)) {
+              results.push({ url: rawUrl, title: rawUrl, snippet: '' });
+            }
+            if (results.length >= maxResults) break;
+          }
+        }
+
+        if (results.length > 0) return results;
       }
+    } catch (err) {
+      // Continue to next search engine
     }
-  } catch (err) {
-    // Continue
   }
   return null;
 }
@@ -981,9 +1027,59 @@ async function crawlLinkedIn(cookie, action, url, query, maxResults) {
   return `LinkedIn search/read completed for query: "${query || url}".`;
 }
 
-// ─── Instagram (Pure Data Extractor) ───
+// ─── Instagram (Pure Data & Embed Extractor) ───
 
-async function crawlInstagram(cookie, action, url, query, maxResults) {
+async function fetchInstagramEmbed(shortcode) {
+  try {
+    const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
+    validateUrlForSSRF(embedUrl);
+    const res = await fetch(embedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.ok) {
+      const html = await res.text();
+      let caption = '';
+      const captionMatch = html.match(/<div class="Caption"[^>]*>([\s\S]*?)<\/div>/i) ||
+                           html.match(/<span class="CaptionComments"[^>]*>([\s\S]*?)<\/span>/i);
+      if (captionMatch) {
+        caption = captionMatch[1].replace(/<[^>]+>/g, '').trim();
+      }
+
+      let author = '';
+      const authorMatch = html.match(/class="UsernameText"[^>]*>([\s\S]*?)<\/a>/i) ||
+                          html.match(/href="https:\/\/www\.instagram\.com\/([^\/"]+)\/"/i);
+      if (authorMatch) {
+        author = authorMatch[1].replace(/<[^>]+>/g, '').trim();
+      }
+
+      let likes = '';
+      const likesMatch = html.match(/<div class="SocialProof"[^>]*>([\s\S]*?)<\/div>/i) ||
+                         html.match(/([0-9,kM\.]+\s+likes?)/i);
+      if (likesMatch) {
+        likes = likesMatch[1].replace(/<[^>]+>/g, '').trim();
+      }
+
+      if (caption || author) {
+        let output = `### Post by @${author || 'instagram_user'}\n`;
+        if (caption) output += `${caption}\n\n`;
+        if (likes) output += `❤️ ${likes}\n`;
+        output += `🔗 https://instagram.com/p/${shortcode}\n`;
+        return output;
+      }
+    }
+  } catch (err) {
+    // Continue
+  }
+  return null;
+}
+
+async function crawlInstagram(cookie, action, url, query, maxResults = 10) {
   const headers = {
     'Cookie': cookie || '',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -993,61 +1089,15 @@ async function crawlInstagram(cookie, action, url, query, maxResults) {
     'x-requested-with': 'XMLHttpRequest',
   };
 
-  // Search Action
-  if (action === 'search' && query) {
-    // 1. Try Tag Web Info API for actual post captions & comments
-    const tagPosts = await searchInstagramTagApi(cookie, query, maxResults);
-    if (tagPosts) return tagPosts;
-
-    // 2. Try Topsearch API for users and hashtags
-    try {
-      const searchUrl = `https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}`;
-      validateUrlForSSRF(searchUrl);
-      const res = await fetch(searchUrl, { headers, signal: AbortSignal.timeout(15000) });
-      if (res.ok) {
-        const data = await res.json();
-        const users = data.users || [];
-        const hashtags = data.hashtags || [];
-
-        if (users.length > 0 || hashtags.length > 0) {
-          let output = `# Instagram Search Results for "${query}"\n\n`;
-          if (users.length > 0) {
-            output += `## Profiles & Users\n\n`;
-            for (const u of users.slice(0, 10)) {
-              const user = u.user || {};
-              output += `- **${user.full_name || user.username}** (@${user.username}) ${user.is_verified ? '☑️' : ''}\n  👥 ${formatNumber(user.follower_count)} followers\n  🔗 https://instagram.com/${user.username}\n\n`;
-            }
-          }
-          if (hashtags.length > 0) {
-            output += `\n## Hashtags\n\n`;
-            for (const h of hashtags.slice(0, 5)) {
-              const tag = h.hashtag || {};
-              output += `- #${tag.name} (${formatNumber(tag.media_count)} posts)\n`;
-            }
-          }
-          return output;
-        }
-      }
-    } catch (err) {
-      // Fall back
-    }
-
-    // 3. Try site index search for Instagram posts and profiles
-    const indexResults = await searchPlatformViaIndex('instagram.com', query, maxResults);
-    if (indexResults && indexResults.length > 0) {
-      let output = `# Instagram Search Results for "${query}"\n\nFound ${indexResults.length} posts & profiles\n\n---\n\n`;
-      for (let i = 0; i < indexResults.length; i++) {
-        const item = indexResults[i];
-        output += `### ${i + 1}. ${item.title}\n`;
-        if (item.snippet) output += `${item.snippet}\n`;
-        output += `🔗 ${item.url}\n\n---\n\n`;
-      }
-      return output;
-    }
-  }
-
   // Read Action
   if (action === 'read' && url) {
+    const shortcodeMatch = url.match(/(?:p|reel|reels)\/([a-zA-Z0-9_-]+)/);
+    if (shortcodeMatch) {
+      const shortcode = shortcodeMatch[1];
+      const embedData = await fetchInstagramEmbed(shortcode);
+      if (embedData) return embedData;
+    }
+
     validateUrlForSSRF(url);
     const res = await fetch(url, { headers: { ...headers, Accept: 'text/html' }, signal: AbortSignal.timeout(20000) });
     if (res.ok) {
@@ -1057,7 +1107,71 @@ async function crawlInstagram(cookie, action, url, query, maxResults) {
     }
   }
 
-  return 'Instagram: specify action="read" with url, or action="search" with query.';
+  // Search Action
+  if (action === 'search' && query) {
+    // 1. Try Tag Web Info API if hashtag query
+    const tagPosts = await searchInstagramTagApi(cookie, query, maxResults);
+    if (tagPosts) return tagPosts;
+
+    // 2. Try Topsearch API if cookie configured
+    if (cookie) {
+      try {
+        const searchUrl = `https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}`;
+        validateUrlForSSRF(searchUrl);
+        const res = await fetch(searchUrl, { headers, signal: AbortSignal.timeout(15000) });
+        if (res.ok) {
+          const data = await res.json();
+          const users = data.users || [];
+          const hashtags = data.hashtags || [];
+
+          if (users.length > 0 || hashtags.length > 0) {
+            let output = `# Instagram Search Results for "${query}"\n\n`;
+            if (users.length > 0) {
+              output += `## Profiles & Users\n\n`;
+              for (const u of users.slice(0, 10)) {
+                const user = u.user || {};
+                output += `- **${user.full_name || user.username}** (@${user.username}) ${user.is_verified ? '☑️' : ''}\n  👥 ${formatNumber(user.follower_count)} followers\n  🔗 https://instagram.com/${user.username}\n\n`;
+              }
+            }
+            if (hashtags.length > 0) {
+              output += `\n## Hashtags\n\n`;
+              for (const h of hashtags.slice(0, 5)) {
+                const tag = h.hashtag || {};
+                output += `- #${tag.name} (${formatNumber(tag.media_count)} posts)\n`;
+              }
+            }
+            return output;
+          }
+        }
+      } catch (err) {
+        // Fall back
+      }
+    }
+
+    // 3. Multi-Engine Index Search + Embed Extractor for each post
+    const indexResults = await searchPlatformViaIndex('instagram.com', query, maxResults);
+    if (indexResults && indexResults.length > 0) {
+      let output = `# Instagram Search Results for "${query}"\n\nFound ${indexResults.length} posts & profiles\n\n---\n\n`;
+      for (let i = 0; i < indexResults.length; i++) {
+        const item = indexResults[i];
+        const shortcodeMatch = item.url.match(/(?:p|reel|reels)\/([a-zA-Z0-9_-]+)/);
+        if (shortcodeMatch) {
+          const shortcode = shortcodeMatch[1];
+          const embedData = await fetchInstagramEmbed(shortcode);
+          if (embedData) {
+            output += `### ${i + 1}. Post Details\n${embedData}\n---\n\n`;
+            continue;
+          }
+        }
+        output += `### ${i + 1}. ${item.title}\n`;
+        if (item.snippet) output += `${item.snippet}\n`;
+        output += `🔗 ${item.url}\n\n---\n\n`;
+      }
+      return output;
+    }
+  }
+
+  return `Instagram crawl completed for: "${query || url}". No public post data found or blocked.`;
 }
 
 async function searchInstagramTagApi(cookie, tagQuery, maxResults) {
