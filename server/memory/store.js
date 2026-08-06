@@ -16,10 +16,19 @@ export function validateParams(sql, params) {
 }
 
 
+import { existsSync, mkdirSync } from 'fs';
+import { dirname } from 'path';
+
 let db;
 
 export function initDB(dbPath = config.db.path) {
   if (db) db.close();
+  if (dbPath && dbPath !== ':memory:') {
+    const dir = dirname(dbPath);
+    if (dir && !existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+  }
   db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');

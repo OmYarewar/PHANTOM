@@ -61,7 +61,7 @@ describe('Security Middlewares', () => {
   });
 
   it('should enforce rate limiting on /api routes', async () => {
-    const rateLimitIp = testIp; // Use a distinct IP for this test
+    const rateLimitIp = `192.168.99.${globalIpCounter++}`; // Use a dedicated fresh IP for rate limit test
     // Make 100 requests (the limit)
     for (let i = 0; i < 100; i++) {
       await request(app).get('/api/settings').set('X-Forwarded-For', rateLimitIp);

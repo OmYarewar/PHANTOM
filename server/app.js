@@ -23,6 +23,18 @@ if (process.env.NODE_ENV === 'production' && process.env.TRUST_PROXY) {
   app.set('trust proxy', 1);
 }
 
+import rateLimit from 'express-rate-limit';
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
+import helmet from 'helmet';
+
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use('/api', apiLimiter);
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 

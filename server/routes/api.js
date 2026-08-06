@@ -28,6 +28,21 @@ const router = Router();
 // Multer for file uploads (skills .zip)
 const upload = multer({ dest: '/tmp/phantom-uploads/', limits: { fileSize: 50 * 1024 * 1024 } });
 
+// ─── Authentication Middleware ───
+router.use((req, res, next) => {
+  const token = process.env.API_TOKEN;
+  if (!token) return next();
+
+  const authHeader = req.headers.authorization;
+  const queryToken = req.query.token;
+  const provided = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : queryToken;
+
+  if (!provided || provided !== token) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing API_TOKEN' });
+  }
+  next();
+});
+
 // ─── Settings ───
 router.get('/settings', (req, res) => {
   try {
