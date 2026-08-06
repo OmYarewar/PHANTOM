@@ -14,7 +14,11 @@ const heartbeatInterval = setInterval(() => {
   wss.clients.forEach((ws) => {
     if (ws.isAlive === false) return ws.terminate();
     ws.isAlive = false;
-    ws.ping();
+    try {
+      ws.ping();
+    } catch (err) {
+      // Ignore ping send errors on closing sockets
+    }
   });
 }, 30000);
 
@@ -30,7 +34,7 @@ wss.on('connection', (ws) => {
 
   // Prevent socket errors from crashing the Node.js process
   ws.on('error', (err) => {
-    console.error('WebSocket connection error:', err.message);
+    console.warn('[WebSocket] Connection error:', err.message);
   });
 
   const abortController = new AbortController();
@@ -38,6 +42,17 @@ wss.on('connection', (ws) => {
   ws.on('message', async (data) => {
     try {
       const payload = JSON.parse(data);
+      if (payload?.type === 'ping') {
+        ws.isAlive = true;
+        if (ws.readyState === 1) {
+          ws.send(JSON.stringify({ type: 'pong' }));
+        }
+        return;
+      }
+      if (payload?.type === 'pong') {
+        ws.isAlive = true;
+        return;
+      }
       if (!payload || !payload.message) return;
 
       await processMessage(
@@ -61,7 +76,6 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     abortController.abort();
-    console.log('🔌 WebSocket client disconnected');
   });
 });
 

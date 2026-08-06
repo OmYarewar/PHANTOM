@@ -134,20 +134,52 @@
   });
 
   // ─── WebSocket ───
+  let pingTimer = null;
+  let reconnectTimer = null;
+
+  function startHeartbeat() {
+    stopHeartbeat();
+    pingTimer = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ type: 'ping' }));
+        } catch (e) {}
+      }
+    }, 15000);
+  }
+
+  function stopHeartbeat() {
+    if (pingTimer) {
+      clearInterval(pingTimer);
+      pingTimer = null;
+    }
+  }
+
   function connectWebSocket() {
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${location.host}/ws`;
 
-    ws = new WebSocket(wsUrl);
+    try {
+      ws = new WebSocket(wsUrl);
+    } catch (err) {
+      attemptReconnect();
+      return;
+    }
 
     ws.onopen = () => {
       setStatus(true);
       reconnectAttempts = 0;
+      startHeartbeat();
     };
 
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        if (msg.type === 'pong') return;
         handleMessage(msg);
       } catch (err) {
         console.error('WebSocket parsing error:', err);
@@ -155,21 +187,34 @@
     };
 
     ws.onclose = () => {
+      stopHeartbeat();
       setStatus(false);
       attemptReconnect();
     };
 
     ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
+      console.warn('WebSocket connection error:', err);
     };
   }
 
   function attemptReconnect() {
-    if (reconnectAttempts >= MAX_RECONNECT) return;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
     reconnectAttempts++;
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-    setTimeout(connectWebSocket, delay);
+    // Exponential backoff capped at 10 seconds, infinite retries
+    const delay = Math.min(1000 * Math.pow(1.5, Math.min(reconnectAttempts, 10)), 10000);
+    reconnectTimer = setTimeout(() => {
+      connectWebSocket();
+    }, delay);
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+        reconnectAttempts = 0;
+        connectWebSocket();
+      }
+    }
+  });
 
   function setStatus(online) {
     if (online) {
