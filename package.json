@@ -4,11 +4,11 @@
   "description": "PHANTOM — AI-Powered Pentesting Command Center",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"node server/index.js\" \"vite --port 5173\"",
-    "start": "node server/index.js",
+    "dev": "bash -c 'if [ -d \"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin\" ]; then export PATH=\"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin:$PATH\"; fi; concurrently \"node server/index.js\" \"vite --port 5173\"'",
+    "start": "bash -c 'if [ -d \"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin\" ]; then export PATH=\"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin:$PATH\"; fi; node server/index.js'",
     "build": "vite build frontend",
-    "test": "vitest run --dir tests",
-    "test:watch": "vitest --dir tests",
+    "test": "bash -c 'if [ -d \"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin\" ]; then export PATH=\"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin:$PATH\"; fi; vitest run --dir tests'",
+    "test:watch": "bash -c 'if [ -d \"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin\" ]; then export PATH=\"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin:$PATH\"; fi; vitest --dir tests'",
     "lint": "eslint server/ frontend/js/"
   },
   "dependencies": {
