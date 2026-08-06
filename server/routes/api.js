@@ -5,7 +5,7 @@ import {
   createConversation, getConversations, getConversation, deleteConversation,
   updateConversationTitle, getMessages,
   getAllSettings, getSetting, setSetting,
-  getAllMemories, searchMemories,
+  getAllMemories, searchMemories, hybridSearchMemories, getMemoryStats, saveMemory,
   getMCPServers, addMCPServer, removeMCPServer,
 } from '../memory/store.js';
 import { getToolDefinitions } from '../tools/registry.js';
@@ -146,6 +146,39 @@ router.put('/agent-reach/config', (req, res) => {
     }
     setSetting(`ar_cookie_${platform}`, cookie || '');
     res.json({ success: true, message: `${platform} cookie saved` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── AgentMemory Engine Endpoints ───
+router.get('/memory/stats', (req, res) => {
+  try {
+    const stats = getMemoryStats();
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/memory/search', async (req, res) => {
+  try {
+    const { q = '', category = null, limit = 10 } = req.query;
+    const results = await hybridSearchMemories(q, category || null, parseInt(limit, 10) || 10);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/memory', async (req, res) => {
+  try {
+    const { category, key, value, importance = 3, metadata = {} } = req.body;
+    if (!category || !key || !value) {
+      return res.status(400).json({ error: 'category, key, and value are required' });
+    }
+    const id = await saveMemory(category, key, value, metadata, importance);
+    res.json({ success: true, id, message: `Memory [${category}] ${key} saved to AgentMemory` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

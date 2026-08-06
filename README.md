@@ -150,7 +150,7 @@ PHANTOM/
 
 ## 🛠️ Available Tools
 
-PHANTOM has **24 built-in tools** that the AI uses autonomously:
+PHANTOM has **25 built-in tools** that the AI uses autonomously:
 
 | Tool | Purpose |
 |------|---------|
@@ -164,8 +164,9 @@ PHANTOM has **24 built-in tools** that the AI uses autonomously:
 | `scrape_webpage` | Fetch & parse webpage content |
 | `scrapling_fetch` | ⭐ Advanced scraping — anti-bot bypass, Cloudflare, JS rendering ([Scrapling](https://github.com/D4Vinci/Scrapling)) |
 | `python_execute` | Execute Python code directly |
-| `save_memory` | Store findings to persistent memory |
-| `recall_memory` | Search persistent memory |
+| `save_memory` | Store findings to AgentMemory engine (supports 4-tier taxonomy & 1-5 importance rating) |
+| `recall_memory` | Hybrid RRF search across persistent memory (BM25 + Vector + Recency decay) |
+| `get_memory_stats` | 🧠 Get AgentMemory Engine stats, taxonomy breakdown, and top-recalled items |
 | `edit_source_code` | Self-modify PHANTOM's own code |
 | `save_trace` | Log execution traces for self-optimization |
 | `jina_read_url` | 🌐 Read any URL as clean Markdown via [Jina Reader](https://github.com/jina-ai/reader) — zero config |
@@ -177,6 +178,18 @@ PHANTOM has **24 built-in tools** that the AI uses autonomously:
 | `reddit_crawl` | 📖 Dedicated Reddit tool (search subreddits, read threads & comments) — zero config |
 | `linkedin_crawl` | 💼 Dedicated LinkedIn tool (search posts, jobs, articles & profiles) |
 | `instagram_crawl` | 📷 Dedicated Instagram tool (search tags/users, read post captions & comments) |
+
+## 🧠 AgentMemory Engine (rohitg00/agentmemory)
+
+PHANTOM incorporates a persistent, compounding cross-session memory engine based on [agentmemory](https://github.com/rohitg00/agentmemory):
+
+- **4-Tier Taxonomy**:
+  - `episodic` — Session logs, debugging steps, error workarounds, and user feedback.
+  - `semantic` — Facts, architecture decisions, API schemas, target metadata, and preferences.
+  - `procedural` — Reusable workflows, script blueprints, and code automation patterns.
+  - `working` — Active prompt & session execution context.
+- **Hybrid RRF Search Engine**: Combines FTS5 BM25 keyword matching with vector similarity embeddings and Ebbinghaus recency decay (`score = RRF * importance * access_frequency * recency_factor`).
+- **Contradiction Resolution & Auto-Upsert**: Auto-reconciles conflicting facts when keys are updated.
 
 ## 🌐 Internet Crawling (Agent Reach)
 

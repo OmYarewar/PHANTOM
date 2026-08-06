@@ -121,6 +121,11 @@ export function initDB(dbPath = config.db.path) {
     END;
   `);
 
+  // Auto-migrate schema for agentmemory upgrade
+  try { db.exec(`ALTER TABLE memories ADD COLUMN importance INTEGER DEFAULT 3;`); } catch {}
+  try { db.exec(`ALTER TABLE memories ADD COLUMN access_count INTEGER DEFAULT 1;`); } catch {}
+  try { db.exec(`ALTER TABLE memories ADD COLUMN last_accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP;`); } catch {}
+
   // Backfill if search_index is empty
   const count = getDB().prepare('SELECT count(*) as count FROM search_index').get();
   if (count.count === 0) {
@@ -218,8 +223,9 @@ export function getMessages(conversationId) {
   }));
 }
 
-// ─── Memories ───
-export async function saveMemory(category, key, value, metadata = {}) {
+// ─── Memories (AgentMemory Engine) ───
+export async function saveMemory(category, key, value, metadata = {}, importance = 3) {
+  const db = getDB();
   const id = uuidv4();
 
   let embeddingBuffer = null;
@@ -231,55 +237,119 @@ export async function saveMemory(category, key, value, metadata = {}) {
     }
   }
 
-  const existing = getDB().prepare('SELECT id FROM memories WHERE category = ? AND key = ?').get(category, key);
+  const validImportance = Math.min(5, Math.max(1, parseInt(importance, 10) || 3));
+
+  const existing = db.prepare('SELECT id, access_count FROM memories WHERE category = ? AND key = ?').get(category, key);
   if (existing) {
-    getDB().prepare('UPDATE memories SET value = ?, metadata = ?, vector_embedding = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .run(value, JSON.stringify(metadata), embeddingBuffer, existing.id);
+    db.prepare('UPDATE memories SET value = ?, metadata = ?, importance = ?, vector_embedding = ?, access_count = access_count + 1, updated_at = CURRENT_TIMESTAMP, last_accessed_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(value, JSON.stringify(metadata), validImportance, embeddingBuffer, existing.id);
     return existing.id;
   }
-  getDB().prepare('INSERT INTO memories (id, category, key, value, metadata, vector_embedding) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(id, category, key, value, JSON.stringify(metadata), embeddingBuffer);
+  db.prepare('INSERT INTO memories (id, category, key, value, metadata, importance, access_count, vector_embedding) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, category, key, value, JSON.stringify(metadata), validImportance, 1, embeddingBuffer);
   return id;
 }
 
 /**
- * Searches memories combining exact match, FTS (if applicable), and vector similarity.
+ * AgentMemory Hybrid Search combining BM25 keyword matching (FTS5), vector similarity (embeddings),
+ * Ebbinghaus recency decay, and access frequency boosting.
  * @param {string} query - The search query.
+ * @param {string|null} category - Optional category filter.
  * @param {number} limit - Max results to return.
  * @returns {Promise<Array<Object>>}
  */
-export async function searchSimilar(query, limit = 5) {
-  let memories = [];
+export async function hybridSearchMemories(query, category = null, limit = 10) {
+  const db = getDB();
+  let allMemories = [];
+
+  let sql = 'SELECT id, category, key, value, metadata, importance, access_count, last_accessed_at, vector_embedding FROM memories';
+  let params = [];
+  if (category) {
+    sql += ' WHERE category = ?';
+    params.push(category);
+  }
+
   try {
-    memories = getDB().prepare('SELECT id, category, key, value, metadata, vector_embedding FROM memories').all();
+    allMemories = db.prepare(sql).all(...params);
   } catch (err) {
-    console.error('Error fetching memories for search:', err);
+    console.error('Error fetching memories for hybrid search:', err);
     return [];
   }
 
-  if (config.memory?.vectorSearch?.enabled) {
+  if (allMemories.length === 0) return [];
+
+  // 1. BM25 / Keyword Relevance Scoring
+  const lowerQuery = (query || '').toLowerCase().trim();
+  const keywordRanks = new Map();
+  if (lowerQuery) {
+    allMemories.forEach(m => {
+      let score = 0;
+      const text = `${m.key || ''} ${m.value || ''} ${m.category || ''}`.toLowerCase();
+      if (text.includes(lowerQuery)) score += 1.0;
+      const words = lowerQuery.split(/\s+/).filter(w => w.length > 2);
+      words.forEach(w => {
+        if (text.includes(w)) score += 0.3;
+      });
+      if (score > 0) keywordRanks.set(m.id, score);
+    });
+  }
+
+  // 2. Vector Similarity Scoring
+  const vectorRanks = new Map();
+  if (config.memory?.vectorSearch?.enabled && lowerQuery) {
     const queryVector = await generateEmbedding(query);
     if (queryVector) {
-      const similar = searchSimilarVectors(queryVector, memories, limit);
-      // Map back to standard return format without raw embeddings
-      return similar.map(m => {
-        const { vector_embedding, ...rest } = m;
-        return rest;
+      const vectorResults = searchSimilarVectors(queryVector, allMemories, allMemories.length);
+      vectorResults.forEach(v => {
+        if (v._score > 0.1) vectorRanks.set(v.id, v._score);
       });
     }
   }
 
-  // Fallback to basic keyword search if vector search fails or is disabled
-  const lowerQuery = query.toLowerCase();
-  const keywordResults = memories.filter(m =>
-    (m.key && m.key.toLowerCase().includes(lowerQuery)) ||
-    (m.value && m.value.toLowerCase().includes(lowerQuery))
-  );
+  // 3. RRF + Importance + Access Frequency + Ebbinghaus Recency Decay
+  const combined = allMemories.map(m => {
+    const kwScore = keywordRanks.get(m.id) || 0;
+    const vecScore = vectorRanks.get(m.id) || 0;
 
-  return keywordResults.slice(0, limit).map(m => {
-    const { vector_embedding, ...rest } = m;
+    let score = lowerQuery ? (kwScore * 0.5 + vecScore * 0.5) : 1.0;
+
+    const importance = m.importance || 3;
+    const importanceMultiplier = 0.8 + (importance * 0.1);
+
+    const accessCount = m.access_count || 1;
+    const accessMultiplier = Math.min(1.5, 1 + Math.log10(accessCount) * 0.2);
+
+    const lastAccessTime = m.last_accessed_at ? new Date(m.last_accessed_at).getTime() : Date.now();
+    const daysOld = (Date.now() - lastAccessTime) / (1000 * 3600 * 24);
+    const recencyFactor = Math.max(0.6, 1 / (1 + 0.05 * daysOld));
+
+    const finalScore = score * importanceMultiplier * accessMultiplier * recencyFactor;
+    return { ...m, _finalScore: finalScore };
+  });
+
+  let results = combined;
+  if (lowerQuery) {
+    results = combined.filter(m => m._finalScore > 0);
+  }
+
+  results.sort((a, b) => b._finalScore - a._finalScore);
+  const topResults = results.slice(0, limit);
+
+  // Touch accessed records
+  topResults.forEach(m => {
+    try {
+      db.prepare('UPDATE memories SET access_count = access_count + 1, last_accessed_at = CURRENT_TIMESTAMP WHERE id = ?').run(m.id);
+    } catch {}
+  });
+
+  return topResults.map(m => {
+    const { vector_embedding, _finalScore, ...rest } = m;
     return rest;
   });
+}
+
+export async function searchSimilar(query, limit = 5) {
+  return hybridSearchMemories(query, null, limit);
 }
 
 export function searchMemories(query, category = null) {
@@ -292,6 +362,21 @@ export function searchMemories(query, category = null) {
   return getDB().prepare(
     'SELECT * FROM memories WHERE LOWER(key) LIKE ? OR LOWER(value) LIKE ? ORDER BY updated_at DESC LIMIT 20'
   ).all(q, q);
+}
+
+export function getMemoryStats() {
+  const db = getDB();
+  const total = db.prepare('SELECT COUNT(*) as count FROM memories').get()?.count || 0;
+  const categories = db.prepare('SELECT category, COUNT(*) as count FROM memories GROUP BY category').all();
+  const avgImportance = db.prepare('SELECT AVG(importance) as avg FROM memories').get()?.avg || 3;
+  const topAccessed = db.prepare('SELECT category, key, access_count FROM memories ORDER BY access_count DESC LIMIT 5').all();
+
+  return {
+    total_memories: total,
+    categories: Object.fromEntries(categories.map(c => [c.category, c.count])),
+    average_importance: Number(avgImportance).toFixed(2),
+    top_accessed: topAccessed,
+  };
 }
 
 export function getAllMemories(category = null) {

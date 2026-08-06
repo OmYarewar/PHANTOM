@@ -3,7 +3,7 @@ import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
 import { dirname, resolve, join, sep } from 'path';
 import os from 'os';
-import { saveMemory, searchMemories, searchConversations, createConversation } from '../memory/store.js';
+import { saveMemory, searchMemories, hybridSearchMemories, getMemoryStats, searchConversations, createConversation } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
 import config from '../config.js';
 import { getSystemCapabilities } from './self_awareness.js';
@@ -82,8 +82,9 @@ export async function executeTool(name, args, onProgress) {
     case 'web_request': return await webRequest(args);
     case 'search_web': return await searchWeb(args);
     case 'scrape_webpage': return await scrapeWebpage(args);
-    case 'save_memory': return saveMemoryTool(args);
-    case 'recall_memory': return recallMemoryTool(args);
+    case 'save_memory': return await saveMemoryTool(args);
+    case 'recall_memory': return await recallMemoryTool(args);
+    case 'get_memory_stats': return getMemoryStatsTool();
     case 'search_conversations': return searchConversationsTool(args);
     case 'delegate_task': return await delegateTaskTool(args, onProgress);
     case 'list_directory': return await listDirectory(args);
@@ -660,27 +661,52 @@ async function scrapeWebpage({ url, max_length = 30000 }) {
 }
 
 /**
- * Save to persistent memory
+ * Save to persistent memory (AgentMemory Engine)
  */
-function saveMemoryTool({ category, key, value }) {
+async function saveMemoryTool({ category, key, value, importance = 3 }) {
   try {
-    saveMemory(category, key, value);
-    return `Memory saved: [${category}] ${key}`;
+    await saveMemory(category, key, value, {}, importance);
+    return `Memory saved to AgentMemory Engine: [${category}] ${key} (Importance: ${importance}/5)`;
   } catch (err) {
     return `Error saving memory: ${err.message}`;
   }
 }
 
 /**
- * Recall from persistent memory
+ * Recall from persistent memory via Hybrid RRF Search
  */
-function recallMemoryTool({ query, category }) {
+async function recallMemoryTool({ query, category }) {
   try {
-    const results = searchMemories(query, category);
+    const results = await hybridSearchMemories(query, category, 10);
     if (results.length === 0) return 'No matching memories found.';
-    return results.map(m => `[${m.category}] ${m.key}: ${m.value}`).join('\n');
+    return results.map(m => `[${m.category}] ${m.key}: ${m.value} (Importance: ${m.importance || 3}, Recalled: ${m.access_count || 1}x)`).join('\n');
   } catch (err) {
     return `Error searching memory: ${err.message}`;
+  }
+}
+
+/**
+ * Get AgentMemory statistics and breakdown
+ */
+function getMemoryStatsTool() {
+  try {
+    const stats = getMemoryStats();
+    let output = `# 🧠 AgentMemory Engine Stats\n\n`;
+    output += `- **Total Memories:** ${stats.total_memories}\n`;
+    output += `- **Average Importance:** ${stats.average_importance}/5.00\n\n`;
+    output += `### Breakdown by Category\n`;
+    for (const [cat, count] of Object.entries(stats.categories)) {
+      output += `- **${cat}:** ${count}\n`;
+    }
+    if (stats.top_accessed.length > 0) {
+      output += `\n### Top Accessed Memories\n`;
+      stats.top_accessed.forEach(m => {
+        output += `- [${m.category}] \`${m.key}\` — accessed ${m.access_count} times\n`;
+      });
+    }
+    return output;
+  } catch (err) {
+    return `Error retrieving memory stats: ${err.message}`;
   }
 }
 

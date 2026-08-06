@@ -311,22 +311,26 @@ export function getToolDefinitions() {
       type: 'function',
       function: {
         name: 'save_memory',
-        description: 'Save important information to persistent memory. Use for targets, credentials, findings, network maps, etc.',
+        description: 'Save important information to the AgentMemory Engine. Supports 4-tier taxonomy (episodic, semantic, procedural, working) and importance scoring.',
         parameters: {
           type: 'object',
           properties: {
             category: {
               type: 'string',
-              enum: ['target', 'credential', 'finding', 'vulnerability', 'network', 'note', 'tool_config'],
-              description: 'Category of the memory.',
+              enum: ['episodic', 'semantic', 'procedural', 'working', 'target', 'credential', 'finding', 'vulnerability', 'network', 'note', 'tool_config'],
+              description: 'Category/tier of the memory (episodic=session logs/debug, semantic=facts/schemas, procedural=workflows/scripts, working=current context).',
             },
             key: {
               type: 'string',
-              description: 'A short descriptive key (e.g., "target_ip", "admin_password", "open_ports_192.168.1.1").',
+              description: 'A short descriptive key (e.g., "target_ip", "architecture_rule", "nmap_workflow").',
             },
             value: {
               type: 'string',
-              description: 'The information to remember.',
+              description: 'The information or knowledge to remember.',
+            },
+            importance: {
+              type: 'integer',
+              description: 'Importance rating from 1 (transient) to 5 (critical architecture rule/fact). Default is 3.',
             },
           },
           required: ['category', 'key', 'value'],
@@ -337,7 +341,7 @@ export function getToolDefinitions() {
       type: 'function',
       function: {
         name: 'recall_memory',
-        description: 'Search persistent memory for previously stored information.',
+        description: 'Search persistent memory via Hybrid RRF Search (BM25 keyword + vector similarity + Ebbinghaus recency decay).',
         parameters: {
           type: 'object',
           properties: {
@@ -347,11 +351,22 @@ export function getToolDefinitions() {
             },
             category: {
               type: 'string',
-              enum: ['target', 'credential', 'finding', 'vulnerability', 'network', 'note', 'tool_config'],
+              enum: ['episodic', 'semantic', 'procedural', 'working', 'target', 'credential', 'finding', 'vulnerability', 'network', 'note', 'tool_config'],
               description: 'Optional category filter.',
             },
           },
           required: ['query'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'get_memory_stats',
+        description: 'Get AgentMemory Engine stats, total stored items, category breakdown, and top-recalled memories.',
+        parameters: {
+          type: 'object',
+          properties: {},
         },
       },
     },
