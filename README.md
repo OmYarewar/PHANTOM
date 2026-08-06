@@ -186,10 +186,8 @@ PHANTOM has **25 built-in tools** that the AI uses autonomously:
 | `youtube_get_subtitles` | Extract YouTube video subtitles/transcripts |
 | `rss_read_feed` | Read any RSS/Atom feed |
 | `v2ex_browse` | Browse V2EX tech community |
-| `twitter_crawl` | Twitter/X search and status reading |
 | `reddit_crawl` | Reddit search and post/thread reading |
 | `linkedin_crawl` | LinkedIn posts, jobs, and article reading |
-| `instagram_crawl` | Instagram tag/user search and post reading |
 
 ## 🧪 Testing
 

@@ -360,7 +360,7 @@ window.Settings = {
   },
 
   async loadAgentReachStatus() {
-    const platforms = ['twitter', 'reddit', 'xiaohongshu', 'linkedin', 'instagram'];
+    const platforms = ['reddit', 'xiaohongshu', 'linkedin'];
 
     try {
       const res = await fetch('/api/agent-reach/config');
@@ -371,8 +371,8 @@ window.Settings = {
 
       for (const p of platforms) {
         const configured = data[p]?.configured || false;
-        const icon = { twitter: '🐦', reddit: '📖', xiaohongshu: '📕', linkedin: '💼', instagram: '📷' }[p];
-        const label = { twitter: 'Twitter', reddit: 'Reddit', xiaohongshu: 'XHS', linkedin: 'LinkedIn', instagram: 'Instagram' }[p];
+        const icon = { reddit: '📖', xiaohongshu: '📕', linkedin: '💼' }[p];
+        const label = { reddit: 'Reddit', xiaohongshu: 'XHS', linkedin: 'LinkedIn' }[p];
 
         badges += `<span class="ar-settings-badge ${configured ? 'active' : 'inactive'}">${icon} ${label}</span>`;
 

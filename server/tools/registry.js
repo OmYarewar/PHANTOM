@@ -770,38 +770,6 @@ export function getToolDefinitions() {
     {
       type: 'function',
       function: {
-        name: 'twitter_crawl',
-        description: '🔍 Dedicated Twitter/X Tool. Search tweets by keyword or read specific tweet URLs and user profiles. Returns full tweet text, author handles, timestamps, likes, retweets, and links. Works zero-config out of the box (guest tokens + syndication API).',
-        parameters: {
-          type: 'object',
-          properties: {
-            action: {
-              type: 'string',
-              enum: ['search', 'read'],
-              description: '"search" = search Twitter/X for a keyword. "read" = read a specific Tweet URL or profile URL.',
-              default: 'search',
-            },
-            query: {
-              type: 'string',
-              description: 'Search query (e.g., "AI agents", "cybersecurity news"). Required if action is "search".',
-            },
-            url: {
-              type: 'string',
-              description: 'Tweet URL or user profile URL (e.g., "https://x.com/user/status/123456789" or "https://x.com/elonmusk"). Required if action is "read".',
-            },
-            max_results: {
-              type: 'integer',
-              description: 'Maximum number of tweets to return (default: 10).',
-              default: 10,
-            },
-          },
-          required: [],
-        },
-      },
-    },
-    {
-      type: 'function',
-      function: {
         name: 'reddit_crawl',
         description: '📖 Dedicated Reddit Tool. Search subreddits and Reddit posts by keyword, or read specific Reddit threads and comments. Returns post titles, author handles, score, comment threads, and direct links.',
         parameters: {
@@ -856,38 +824,6 @@ export function getToolDefinitions() {
             max_results: {
               type: 'integer',
               description: 'Maximum number of results (default: 10).',
-              default: 10,
-            },
-          },
-          required: [],
-        },
-      },
-    },
-    {
-      type: 'function',
-      function: {
-        name: 'instagram_crawl',
-        description: '📷 Dedicated Instagram Tool. Search Instagram for profiles, hashtag posts, and captions, or read specific Instagram post and profile URLs. Returns post captions, handles, likes, comments, and post links.',
-        parameters: {
-          type: 'object',
-          properties: {
-            action: {
-              type: 'string',
-              enum: ['search', 'read'],
-              description: '"search" = search Instagram hashtags and profiles. "read" = read a specific Instagram post/profile URL.',
-              default: 'search',
-            },
-            query: {
-              type: 'string',
-              description: 'Search query or hashtag (e.g., "python", "#tech"). Required if action is "search".',
-            },
-            url: {
-              type: 'string',
-              description: 'Instagram post or profile URL (e.g., "https://instagram.com/p/C12345/"). Required if action is "read".',
-            },
-            max_results: {
-              type: 'integer',
-              description: 'Maximum number of posts/profiles to return (default: 10).',
               default: 10,
             },
           },

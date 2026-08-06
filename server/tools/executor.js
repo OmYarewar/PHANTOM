@@ -105,11 +105,9 @@ export async function executeTool(name, args, onProgress) {
     case 'youtube_get_subtitles': return await youtubeGetSubtitles(args);
     case 'rss_read_feed': return await rssReadFeed(args);
     case 'v2ex_browse': return await v2exBrowse(args);
-    case 'social_media_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, args?.platform || 'twitter'));
-    case 'twitter_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, 'twitter'));
+    case 'social_media_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, args?.platform || 'reddit'));
     case 'reddit_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, 'reddit'));
     case 'linkedin_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, 'linkedin'));
-    case 'instagram_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, 'instagram'));
     default:
       return `Unknown tool: ${name}`;
   }

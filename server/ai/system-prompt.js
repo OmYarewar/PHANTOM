@@ -227,29 +227,21 @@ Advanced web scraping powered by Scrapling framework. Use this instead of scrape
 ### 🌐 INTERNET & SOCIAL MEDIA CRAWLING TOOLS (Agent Reach)
 Use these dedicated platform tools to search, crawl, and read social media and web content:
 
-1. **twitter_crawl**: Dedicated Twitter/X tool.
-   - action="search", query="<topic>" — Search tweets. Returns full tweet text, author handles, timestamps, likes, retweets, and links. Works zero-config via Guest Tokens & Syndication CDN!
-   - action="read", url="<tweet_or_profile_url>" — Read a specific Tweet URL or user profile.
-
-2. **reddit_crawl**: Dedicated Reddit tool.
+1. **reddit_crawl**: Dedicated Reddit tool.
    - action="search", query="<topic>" — Search subreddits & posts. Returns post titles, author handles, scores, comment counts, and direct links.
    - action="read", url="<post_url>" — Read full post text and top comment threads.
 
-3. **linkedin_crawl**: Dedicated LinkedIn tool.
+2. **linkedin_crawl**: Dedicated LinkedIn tool.
    - action="search", query="<topic>" — Search professional discussions, articles, company updates, and jobs.
    - action="read", url="<post_or_profile_url>" — Read LinkedIn post/article details.
 
-4. **instagram_crawl**: Dedicated Instagram tool.
-   - action="search", query="<topic_or_hashtag>" — Search Instagram hashtags and profiles. Returns post captions, handles, likes, comments, and post links.
-   - action="read", url="<post_url>" — Read specific Instagram post captions and author details.
+3. **jina_read_url**: Read ANY web page or article as clean Markdown. Zero config, free, no API key needed. Use when reading articles, blog posts, documentation URLs.
+4. **youtube_search**: Search YouTube videos by keyword. Returns titles, channels, durations, views, URLs.
+5. **youtube_get_subtitles**: Extract full transcripts/subtitles from any YouTube video URL.
+6. **rss_read_feed**: Parse any RSS or Atom feed. Returns structured entries with titles, links, dates, and summaries.
+7. **v2ex_browse**: Browse V2EX tech community topics ("hot", "latest", "topic", "node").
 
-5. **jina_read_url**: Read ANY web page or article as clean Markdown. Zero config, free, no API key needed. Use when reading articles, blog posts, documentation URLs.
-6. **youtube_search**: Search YouTube videos by keyword. Returns titles, channels, durations, views, URLs.
-7. **youtube_get_subtitles**: Extract full transcripts/subtitles from any YouTube video URL.
-8. **rss_read_feed**: Parse any RSS or Atom feed. Returns structured entries with titles, links, dates, and summaries.
-9. **v2ex_browse**: Browse V2EX tech community topics ("hot", "latest", "topic", "node").
-
-**IMPORTANT:** When presenting findings from social media, ALWAYS organize your summary by platform (e.g. "### 🐦 Twitter/X", "### 📖 Reddit", "### 💼 LinkedIn", "### 📷 Instagram") so the user can clearly see which data came from which platform.
+**IMPORTANT:** When presenting findings from social media, ALWAYS organize your summary by platform (e.g. "### 📖 Reddit", "### 💼 LinkedIn") so the user can clearly see which data came from which platform.
 
 ### show_preview_window
 Render interactive HTML, JS, CSS, charts, or graphs directly in the user's UI.
