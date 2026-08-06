@@ -4,7 +4,6 @@ import app from './app.js';
 import config from './config.js';
 import { processMessage } from './ai/llm-client.js';
 import { startBot } from './telegram/bot.js';
-import { startCaspianBot } from './caspian/bot.js';
 import { createConversation } from './memory/store.js';
 
 const server = createServer(app);
@@ -158,5 +157,4 @@ server.listen(PORT, () => {
     });
   }
   startBot();
-  startCaspianBot();
 });

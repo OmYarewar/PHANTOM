@@ -71,35 +71,7 @@ window.Settings = {
     }
 
 
-    // Caspian Bot enable/disable toggle
-    const caspianEnableToggle = document.getElementById('setting-caspian-enable');
-    const caspianFields = document.getElementById('caspian-fields');
-    if (caspianEnableToggle && caspianFields) {
-      caspianEnableToggle.addEventListener('change', (e) => {
-        if (e.target.checked) {
-          caspianFields.style.opacity = '1';
-          caspianFields.style.pointerEvents = 'auto';
-        } else {
-          caspianFields.style.opacity = '0.5';
-          caspianFields.style.pointerEvents = 'none';
-        }
-      });
-    }
 
-    // Caspian API Key visibility toggle
-    const caspianKeyToggle = document.getElementById('toggle-caspian-api-key');
-    const caspianKeyInput = document.getElementById('setting-caspian-api-key');
-    if (caspianKeyToggle && caspianKeyInput) {
-      caspianKeyToggle.addEventListener('click', () => {
-        caspianKeyInput.type = caspianKeyInput.type === 'password' ? 'text' : 'password';
-      });
-    }
-
-    // Save Caspian settings
-    const saveCaspianBtn = document.getElementById('save-caspian-btn');
-    if (saveCaspianBtn) {
-      saveCaspianBtn.addEventListener('click', () => this.saveCaspian());
-    }
 
     // AI Doctor button
     document.getElementById('ai-doctor-btn').addEventListener('click', () => this.openDoctor());
@@ -150,7 +122,6 @@ window.Settings = {
       document.getElementById('setting-workspace').value = data.workspace || '';
       document.getElementById('setting-telegram-token').value = data.telegramBotToken || '';
       document.getElementById('setting-telegram-userid').value = data.telegramUserId || '';
-      document.getElementById('setting-caspian-api-key').value = data.caspianApiKey || '';
       const systemPromptEl = document.getElementById('setting-system-prompt');
       if (systemPromptEl) {
           systemPromptEl.value = data.systemPrompt || '';
@@ -163,14 +134,6 @@ window.Settings = {
           tgEnable.dispatchEvent(new Event('change'));
       }
       this.updateTelegramStatus();
-
-      const hasCaspianConfig = !!data.caspianApiKey;
-      const caspianEnable = document.getElementById('setting-caspian-enable');
-      if (caspianEnable) {
-          caspianEnable.checked = hasCaspianConfig;
-          caspianEnable.dispatchEvent(new Event('change'));
-      }
-      this.updateCaspianStatus();
 
       // Update model badge
       document.getElementById('current-model').textContent = data.model || 'No Model';
@@ -193,7 +156,6 @@ window.Settings = {
       workspace: document.getElementById('setting-workspace').value,
       telegramBotToken: document.getElementById('setting-telegram-enable').checked ? document.getElementById('setting-telegram-token').value : '',
       telegramUserId: document.getElementById('setting-telegram-enable').checked ? document.getElementById('setting-telegram-userid').value : '',
-      caspianApiKey: document.getElementById('setting-caspian-enable')?.checked ? document.getElementById('setting-caspian-api-key').value : '',
       systemPrompt: document.getElementById('setting-system-prompt')?.value || '',
     };
 
@@ -270,55 +232,6 @@ window.Settings = {
       if (!statusContainer) return;
       try {
           const res = await fetch('/api/telegram/status');
-          const data = await res.json();
-          if (data.error) {
-              statusContainer.innerHTML = `<span class="status-dot" style="background: #ef4444;"></span> Error: ${data.error}`;
-          } else if (data.running) {
-              statusContainer.innerHTML = `<span class="status-dot" style="background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite;"></span> Bot running`;
-          } else {
-              statusContainer.innerHTML = `<span class="status-dot" style="background: gray;"></span> Not configured`;
-          }
-      } catch (err) {
-          statusContainer.innerHTML = `<span class="status-dot" style="background: #ef4444;"></span> Error: ${err.message}`;
-      }
-  },
-
-
-  async saveCaspian() {
-    const btn = document.getElementById('save-caspian-btn');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Saving...';
-
-    await this.save(); // Save everything first
-
-    try {
-        const res = await fetch('/api/caspian/restart', { method: 'POST' });
-        const data = await res.json();
-
-        if (data.success) {
-            btn.textContent = '✓ Restarted';
-            btn.style.background = '#16a34a';
-        } else {
-            throw new Error(data.error);
-        }
-    } catch (err) {
-        console.error('Failed to restart Caspian bot:', err);
-    } finally {
-        setTimeout(() => {
-            btn.textContent = originalText;
-            btn.style.background = '';
-            btn.disabled = false;
-        }, 1500);
-        this.updateCaspianStatus();
-    }
-  },
-
-  async updateCaspianStatus() {
-      const statusContainer = document.getElementById('caspian-status');
-      if (!statusContainer) return;
-      try {
-          const res = await fetch('/api/caspian/status');
           const data = await res.json();
           if (data.error) {
               statusContainer.innerHTML = `<span class="status-dot" style="background: #ef4444;"></span> Error: ${data.error}`;

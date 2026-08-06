@@ -19,7 +19,6 @@ const execAsync = promisify(exec);
 import { join, basename, resolve, sep } from 'path';
 import multer from 'multer';
 import { startBot, stopBot, getBotStatus } from '../telegram/bot.js';
-import { startCaspianBot, stopCaspianBot, getCaspianBotStatus } from '../caspian/bot.js';
 import AdmZip from 'adm-zip';
 import { marked } from 'marked';
 
@@ -58,7 +57,6 @@ router.get('/settings', (req, res) => {
       sudoConfigured: !!settings.sudo_password,
       telegramBotToken: settings.telegram_bot_token ? '••••••••' : '',
       telegramUserId: settings.telegram_user_id || '',
-      caspianApiKey: settings.caspian_api_key ? '••••••••' : '',
       systemPrompt: settings.system_prompt || config.systemPrompt || '',
     });
   } catch (err) {
@@ -68,7 +66,7 @@ router.get('/settings', (req, res) => {
 
 router.put('/settings', (req, res) => {
   try {
-    const { baseUrl, apiKey, model, temperature, maxTokens, sudoPassword, workspace, telegramBotToken, telegramUserId, systemPrompt, caspianApiKey } = req.body;
+    const { baseUrl, apiKey, model, temperature, maxTokens, sudoPassword, workspace, telegramBotToken, telegramUserId, systemPrompt } = req.body;
 
     if (baseUrl) { setSetting('api_base_url', baseUrl); updateConfig({ baseUrl }); }
     if (apiKey && apiKey !== '••••••••') { setSetting('api_key', apiKey); updateConfig({ apiKey }); }
@@ -79,7 +77,6 @@ router.put('/settings', (req, res) => {
     if (workspace) { setSetting('workspace', workspace); updateConfig({ workspace }); }
     if (telegramBotToken !== undefined && telegramBotToken !== '••••••••') { setSetting('telegram_bot_token', telegramBotToken); updateConfig({ telegramBotToken }); }
     if (telegramUserId !== undefined) { setSetting('telegram_user_id', telegramUserId); updateConfig({ telegramUserId }); }
-    if (caspianApiKey !== undefined && caspianApiKey !== '••••••••') { setSetting('caspian_api_key', caspianApiKey); updateConfig({ caspianApiKey }); }
     if (systemPrompt !== undefined) { setSetting('system_prompt', systemPrompt); updateConfig({ systemPrompt }); }
 
     resetClient();
@@ -99,24 +96,7 @@ router.post('/settings/test', async (req, res) => {
 });
 
 
-// ─── Caspian Gateway ───
-router.get('/caspian/status', (req, res) => {
-  try {
-    res.json(getCaspianBotStatus());
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
-router.post('/caspian/restart', (req, res) => {
-  try {
-    stopCaspianBot();
-    startCaspianBot();
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 // ─── Telegram ───
 router.get('/telegram/status', (req, res) => {
