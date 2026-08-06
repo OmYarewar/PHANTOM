@@ -188,6 +188,13 @@ describe('API Routes', () => {
     expect(res.body).toHaveProperty('hostname');
     expect(res.body).toHaveProperty('platform');
   });
+
+  it('GET /api/workspace/file should reject path traversal requests', async () => {
+    const res1 = await request(app).get('/api/workspace/file?path=../package.json').set('X-Forwarded-For', testIp);
+    expect(res1.status).toBe(403);
+    expect(res1.body.error).toContain('Access denied');
+  });
+
   it('DELETE /api/skills/:name should reject invalid skill names (path traversal)', async () => {
     const res1 = await request(app).delete('/api/skills/..%2Fsecret').set('X-Forwarded-For', testIp);
     expect(res1.status).toBe(404); // The router actually fails to match the route for ..%2Fsecret and goes to 404 handler, or the param is not matching.
