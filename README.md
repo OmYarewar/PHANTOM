@@ -4,7 +4,6 @@
 
 ### AI-Powered Pentesting Command Center
 
-
 [![CI](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml/badge.svg)](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
@@ -21,6 +20,58 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 ---
 
 </div>
+
+## ⚡ Quick 1-Line Installation (Any Terminal)
+
+Install **PHANTOM** and configure the `phantom` CLI command across any terminal in a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OmYarewar/PHANTOM/main/install.sh | bash
+```
+
+Once installed, launch PHANTOM from **any terminal window** instantly:
+
+```bash
+# 🚀 Launch PHANTOM server
+phantom start
+
+# 💻 Launch in development mode (Backend + Vite UI)
+phantom dev
+
+# 🔌 Specify custom port
+phantom start --port 8080
+
+# ❓ View CLI menu & options
+phantom --help
+```
+
+Open **http://localhost:1337** (or **http://localhost:5173** in dev mode) in your browser.
+
+---
+
+## 👩‍💻 Developer Setup (Manual Installation)
+
+For developers contributing to PHANTOM or customizing the codebase:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/OmYarewar/PHANTOM.git
+cd PHANTOM
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment
+cp .env.example .env
+
+# 4. Start development mode
+npm run dev
+
+# 5. Run test suite
+npm test
+```
+
+---
 
 ## 🤔 Why PHANTOM?
 
@@ -46,35 +97,11 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 | 💾 **Semantic Memory** | Local Vector Search (`@xenova/transformers`) paired with standard FTS |
 | 🛑 **Emergency Stop** | Instant abort button to halt any running operation |
 | 🎨 **Premium Dark UI** | Includes live animated Canvas graph of multi-agent communication |
-| 🌐 **Internet Crawling** | Zero-config web reading, YouTube subtitles, RSS feeds, V2EX via [Agent Reach](https://github.com/Panniantong/agent-reach) integration |
+| 🌐 **Internet Crawling** | Zero-config web reading, YouTube subtitles, RSS feeds, V2EX via Agent Reach integration |
 
-## 🚀 Quick Start
+## ⚙️ Configuration
 
-### Prerequisites
-
-- **Node.js** 18+ ([install](https://nodejs.org))
-- **Python** 3.10+ (for Scrapling integration)
-- **npm** (comes with Node.js)
-- Any **OpenAI-compatible API** key
-- **Docker** (Optional, for containerized usage)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/OmYarewar/PHANTOM.git
-cd PHANTOM
-
-# Install dependencies
-npm install
-
-# Configure your API
-cp .env.example .env
-```
-
-### Configuration
-
-Edit `.env` with your API provider:
+Edit `.env` or configure via the Web UI Settings panel:
 
 ```env
 # OpenAI
@@ -91,46 +118,33 @@ MODEL_ID=deepseek/deepseek-chat
 API_BASE_URL=http://localhost:11434/v1
 API_KEY=ollama
 MODEL_ID=llama3
-
-# LM Studio (local)
-API_BASE_URL=http://localhost:1234/v1
-API_KEY=lm-studio
-MODEL_ID=your-model-name
 ```
 
-### Run
+## 🐳 Docker Deployment
 
-```bash
-npm run dev # START
-```
-
-Open **http://localhost:5173** in your browser. That's it! 🎉
-
-### Docker
-
-You can also run PHANTOM using Docker Compose:
+Run PHANTOM in a containerized environment using Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 Open **http://localhost:3000** in your browser.
 
-
 ## 🏗️ Architecture
 
 ```text
 PHANTOM/
+├── bin/                    # PHANTOM CLI executable script (phantom)
+├── install.sh              # 1-line curl installer script
 ├── server/                 # Backend (Express + WebSocket)
 │   ├── ai/
 │   │   ├── llm-client.js   # LLM communication & streaming
 │   │   └── system-prompt.js # Dynamic system prompt builder
 │   ├── tools/
-│   │   ├── executor.js      # Tool execution engine (14 tools)
+│   │   ├── executor.js      # Tool execution engine (25 tools)
 │   │   └── registry.js      # Tool definitions for function calling
 │   ├── memory/
 │   │   └── store.js         # SQLite persistence layer
-│   ├── routes/
-│   │   └── api.js           # REST API endpoints
+│   ├── banner.js            # Colorful ANSI terminal banner
 │   ├── config.js            # Configuration management
 │   └── index.js             # Server entry point
 ├── frontend/               # Frontend (Vanilla JS + Vite)
@@ -138,9 +152,7 @@ PHANTOM/
 │   ├── js/
 │   │   ├── app.js           # Main controller & WebSocket
 │   │   ├── chat.js          # Chat rendering & animations
-│   │   ├── settings.js      # Settings panel
-│   │   ├── management.js    # MCP & Skills management
-│   │   └── markdown.js      # Markdown renderer
+│   │   └── settings.js      # Settings panel
 │   └── index.html           # Main page
 ├── workspace/              # AI workspace (scripts, reports, skills)
 ├── .env.example            # Configuration template
@@ -162,149 +174,30 @@ PHANTOM has **25 built-in tools** that the AI uses autonomously:
 | `web_request` | HTTP requests for recon & API testing |
 | `search_web` | Web search via DuckDuckGo |
 | `scrape_webpage` | Fetch & parse webpage content |
-| `scrapling_fetch` | ⭐ Advanced scraping — anti-bot bypass, Cloudflare, JS rendering ([Scrapling](https://github.com/D4Vinci/Scrapling)) |
+| `scrapling_fetch` | Advanced scraping — anti-bot bypass, Cloudflare, JS rendering ([Scrapling](https://github.com/D4Vinci/Scrapling)) |
 | `python_execute` | Execute Python code directly |
-| `save_memory` | Store findings to AgentMemory engine (supports 4-tier taxonomy & 1-5 importance rating) |
-| `recall_memory` | Hybrid RRF search across persistent memory (BM25 + Vector + Recency decay) |
-| `get_memory_stats` | 🧠 Get AgentMemory Engine stats, taxonomy breakdown, and top-recalled items |
+| `save_memory` | Store findings to AgentMemory engine (4-tier taxonomy) |
+| `recall_memory` | Hybrid RRF search across persistent memory |
+| `get_memory_stats` | Get AgentMemory Engine stats & top-recalled items |
 | `edit_source_code` | Self-modify PHANTOM's own code |
 | `save_trace` | Log execution traces for self-optimization |
-| `jina_read_url` | 🌐 Read any URL as clean Markdown via [Jina Reader](https://github.com/jina-ai/reader) — zero config |
-| `youtube_search` | 📺 Search YouTube videos — zero config |
-| `youtube_get_subtitles` | 📺 Extract YouTube video subtitles/transcripts — zero config |
-| `rss_read_feed` | 📡 Read any RSS/Atom feed — zero config |
-| `v2ex_browse` | 💻 Browse V2EX tech community (hot, latest, topics, nodes) — zero config |
-| `twitter_crawl` | 🐦 Dedicated Twitter/X tool (search tweets, read status/profiles) — zero config |
-| `reddit_crawl` | 📖 Dedicated Reddit tool (search subreddits, read threads & comments) — zero config |
-| `linkedin_crawl` | 💼 Dedicated LinkedIn tool (search posts, jobs, articles & profiles) |
-| `instagram_crawl` | 📷 Dedicated Instagram tool (search tags/users, read post captions & comments) |
+| `jina_read_url` | Read any URL as clean Markdown |
+| `youtube_search` | Search YouTube videos |
+| `youtube_get_subtitles` | Extract YouTube video subtitles/transcripts |
+| `rss_read_feed` | Read any RSS/Atom feed |
+| `v2ex_browse` | Browse V2EX tech community |
+| `twitter_crawl` | Twitter/X search and status reading |
+| `reddit_crawl` | Reddit search and post/thread reading |
+| `linkedin_crawl` | LinkedIn posts, jobs, and article reading |
+| `instagram_crawl` | Instagram tag/user search and post reading |
 
-## 🧠 AgentMemory Engine (rohitg00/agentmemory)
+## 🧪 Testing
 
-PHANTOM incorporates a persistent, compounding cross-session memory engine based on [agentmemory](https://github.com/rohitg00/agentmemory):
+Run the Vitest test suite:
 
-- **4-Tier Taxonomy**:
-  - `episodic` — Session logs, debugging steps, error workarounds, and user feedback.
-  - `semantic` — Facts, architecture decisions, API schemas, target metadata, and preferences.
-  - `procedural` — Reusable workflows, script blueprints, and code automation patterns.
-  - `working` — Active prompt & session execution context.
-- **Hybrid RRF Search Engine**: Combines FTS5 BM25 keyword matching with vector similarity embeddings and Ebbinghaus recency decay (`score = RRF * importance * access_frequency * recency_factor`).
-- **Contradiction Resolution & Auto-Upsert**: Auto-reconciles conflicting facts when keys are updated.
-
-## 🛡️ Reverse-Skill Security Pack (zhaoxuya520/reverse-skill)
-
-PHANTOM comes bundled by default with the complete **Reverse-Skill Pack** ([zhaoxuya520/reverse-skill](https://github.com/zhaoxuya520/reverse-skill)) featuring **43+ specialist security and reverse engineering skills**:
-
-- **Binary & Reverse Engineering**: `reverse-engineering`, `ghidra-reverse`, `ida-reverse`, `radare2`, `binary-diff`, `dotnet-reverse`, `go-rust-reverse`, `macos-reverse`.
-- **Exploitation & Bypasses**: `pwn-chain`, `patch-diff-exploit`, `edr-bypass-re`, `code-audit`, `hardware-security`, `firmware-pentest`.
-- **Mobile & Web/API**: `apk-reverse`, `mobile-reverse`, `js-reverse`, `browser-extension-reverse`, `api-security`, `llm-security`.
-- **Red Team & Forensics**: `attack-chain`, `pentest-tools`, `windows-ad`, `cloud-k8s`, `digital-forensics`, `threat-hunting`.
-
-## ⚡ Autonomous Tool Auto-Installation Policy
-
-Whenever PHANTOM needs any tool, library, binary, or CLI package that is not pre-installed on the host system (e.g. `gdb`, `pwntools`, `radare2`, `frida`, `apktool`, `jadx`, `ghidra`, `nmap`, `scrapling`, Python/npm/apt/pacman packages):
-
-1. **Zero Setup Required**: PHANTOM autonomously detects missing dependencies and installs them immediately via `install_tool` or auto-sudo `execute_command`.
-2. **Seamless Execution**: PHANTOM never halts or asks the user to manually install tools — it installs what it needs and finishes the task autonomously.
-
-## 🌐 Internet Crawling (Agent Reach)
-
-PHANTOM integrates zero-config internet crawling capabilities inspired by [Agent Reach](https://github.com/Panniantong/agent-reach), giving the AI agent eyes to see the entire internet. **No API keys, no cookies, no configuration needed** — these tools work out of the box:
-
-| Tool | What it does | Example |
-|------|--------------|---------|
-| **Jina Reader** | Read any webpage as clean Markdown | "Read this article for me" |
-| **YouTube Search** | Find videos by keyword | "Search YouTube for Python tutorials" |
-| **YouTube Subtitles** | Extract video transcripts | "What does this YouTube video talk about?" |
-| **RSS Reader** | Parse any RSS/Atom feed | "Show me the latest posts from this RSS feed" |
-| **V2EX Browser** | Browse tech community topics | "What's trending on V2EX?" |
-
-> 💡 These tools require no setup. The AI will automatically choose the best tool for the task.
->
-> For YouTube features, `yt-dlp` must be installed: `pip install yt-dlp`
-
-## 🔒 Security Notes
-
-- **Sudo passwords** are stored in a local SQLite database on your machine only
-- **API keys** are stored locally and never transmitted except to your configured API endpoint
-- The `.env` file and `phantom.db` are excluded from git
-- PHANTOM runs **locally only** — no external telemetry or data collection
-- The `edit_source_code` tool only works within the project directory and creates backups
-
-## 🎨 Screenshots
-
-<details>
-<summary>Click to expand</summary>
-
-### Main Interface
-The dark-themed command center with matrix background, real-time streaming, and AI thinking display.
-
-### Settings Panel
-Configure API provider, model, temperature, workspace, and sudo access.
-
-### Management Panel
-Manage MCP servers and skills with tabbed interface and .zip import.
-
-</details>
-
-## ⚙️ Settings (via Web UI)
-
-All settings can be configured from the web UI and **persist across restarts**:
-
-- **API Configuration** — Base URL, API key, model, temperature, max tokens
-- **Workspace** — Default directory for all AI file operations
-- **Sudo Password** — System-validated and securely stored
-- **MCP Servers** — Add/remove Model Context Protocol servers
-- **Skills** — Import .zip skill packages or let AI create them
-
-## 🧠 How It Works
-
-1. **You ask** — Type a request in the chat
-2. **AI thinks** — Reasoning displayed in real-time (for supported models)
-3. **AI acts** — Executes tools autonomously with live output streaming
-4. **AI reports** — Clean, formatted results with typing animation
-5. **AI learns** — Saves traces and memories for future optimization
-
-PHANTOM implements ideas from [Meta-Harness](https://arxiv.org/abs/2603.28052) for automated harness optimization — the AI can review its own execution traces and improve its approach over time.
-
-## 📋 API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/settings` | GET/PUT | Configuration management |
-| `/api/conversations` | GET/POST | Conversation CRUD |
-| `/api/conversations/:id` | GET/DELETE | Single conversation |
-| `/api/tools` | GET | List available tools |
-| `/api/memory` | GET | Query persistent memory |
-| `/api/mcp/servers` | GET/POST/DELETE | MCP server management |
-| `/api/skills` | GET | List installed skills |
-| `/api/skills/upload` | POST | Import skill (.zip) |
-| `/api/sudo/validate` | POST | Validate sudo password |
-| `/api/system/info` | GET | System information |
-| `/ws` | WebSocket | Real-time chat & streaming |
-
-## 🗺️ Roadmap
-
-- [x] MCP server integration
-- [x] Skills system with .zip import
-- [x] Persistent memory (SQLite)
-- [x] Multi-agent orchestration
-- [x] Semantic Vector Memory
-- [ ] Docker support
-- [ ] Web UI for memory visualization
-- [ ] CVE database integration
-
-## 📝 Changelog
-
-**v0.1.0** — Initial release: 15 tools, MCP support, streaming
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/awesome`)
-3. Commit your changes (`git commit -m 'Add awesome feature'`)
-4. Push to the branch (`git push origin feature/awesome`)
-5. Open a Pull Request
+```bash
+npm test
+```
 
 ## 📄 License
 
