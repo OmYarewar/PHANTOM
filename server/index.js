@@ -144,9 +144,19 @@ wss.on('connection', (ws) => {
   });
 });
 
+import { printBanner } from './banner.js';
+
 const PORT = config.port || config.server?.port || 1337;
 server.listen(PORT, () => {
-  console.log(`🚀 PHANTOM Server running on port ${PORT}`);
+  if (!process.env.PHANTOM_SILENT_BANNER) {
+    printBanner({
+      port: PORT,
+      mode: process.env.NODE_ENV === 'production' ? 'Production' : 'Development',
+      provider: config.api.provider || 'OpenAI',
+      model: config.api.model || 'gpt-4o',
+      isDev: process.env.PHANTOM_DEV === 'true',
+    });
+  }
   startBot();
   startCaspianBot();
 });
