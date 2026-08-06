@@ -2,7 +2,7 @@
 
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { spawn, execSync } from 'child_process';
 import { printHelpBanner } from '../server/banner.js';
 
@@ -79,18 +79,11 @@ if (port) {
 }
 
 async function main() {
-  await verifyNativeModules();
+  const serverPath = join(projectRoot, 'server', 'index.js');
+  const viteBin = join(projectRoot, 'node_modules', '.bin', 'vite');
 
   if (command === 'dev') {
     process.env.PHANTOM_DEV = 'true';
-    const serverPath = join(projectRoot, 'server', 'index.js');
-    const viteBin = join(projectRoot, 'node_modules', '.bin', 'vite');
-
-    const nodeProc = spawn(process.execPath, [serverPath], {
-      cwd: projectRoot,
-      stdio: 'inherit',
-      env: process.env
-    });
 
     const viteProc = spawn(viteBin, ['--port', '5173'], {
       cwd: projectRoot,
@@ -99,24 +92,64 @@ async function main() {
     });
 
     const cleanup = () => {
-      nodeProc.kill();
       viteProc.kill();
       process.exit(0);
     };
 
     process.on('SIGINT', cleanup);
     process.on('SIGTERM', cleanup);
-  } else {
-    const serverPath = join(projectRoot, 'server', 'index.js');
-    const child = spawn(process.execPath, [serverPath], {
-      cwd: projectRoot,
-      stdio: 'inherit',
-      env: process.env
-    });
 
-    child.on('exit', (code) => {
-      process.exit(code ?? 0);
-    });
+    let keepRunning = true;
+    while (keepRunning) {
+      await verifyNativeModules();
+      await new Promise((resolve) => {
+        const nodeProc = spawn(process.execPath, [serverPath], {
+          cwd: projectRoot,
+          stdio: 'inherit',
+          env: process.env
+        });
+
+        nodeProc.on('exit', (code) => {
+          if (code === 42) {
+            console.log('\n\x1b[38;2;6;182;212m🔄 System update complete! Auto-restarting PHANTOM server...\x1b[0m\n');
+            resolve();
+          } else {
+            keepRunning = false;
+            viteProc.kill();
+            process.exit(code ?? 0);
+          }
+        });
+      });
+    }
+  } else {
+    const cleanup = () => {
+      process.exit(0);
+    };
+
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
+
+    let keepRunning = true;
+    while (keepRunning) {
+      await verifyNativeModules();
+      await new Promise((resolve) => {
+        const child = spawn(process.execPath, [serverPath], {
+          cwd: projectRoot,
+          stdio: 'inherit',
+          env: process.env
+        });
+
+        child.on('exit', (code) => {
+          if (code === 42) {
+            console.log('\n\x1b[38;2;6;182;212m🔄 System update complete! Auto-restarting PHANTOM server...\x1b[0m\n');
+            resolve();
+          } else {
+            keepRunning = false;
+            process.exit(code ?? 0);
+          }
+        });
+      });
+    }
   }
 }
 

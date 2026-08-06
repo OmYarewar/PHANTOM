@@ -435,15 +435,15 @@ router.post('/system/update', async (req, res) => {
     const npmResult = await execAsync('npm install', { encoding: 'utf8' });
     sendProgress(npmResult.stdout);
 
-    sendProgress('Update complete! Restarting system...');
+    sendProgress('Update complete! Auto-restarting system...');
     res.write('data: [DONE]\n\n');
     res.end();
 
-    // Give time for the SSE connection to finish
+    // Give time for the SSE connection to finish, then trigger auto-restart (exit code 42)
     setTimeout(() => {
-      console.log('Restarting due to update...');
-      process.exit(0);
-    }, 2000);
+      console.log('[PHANTOM] Auto-restarting server after update...');
+      process.exit(42);
+    }, 1500);
   } catch (err) {
     console.error('Update error:', err);
     res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);

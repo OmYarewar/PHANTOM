@@ -823,8 +823,26 @@
               if (line.startsWith('data: ')) {
                 const dataStr = line.substring(6);
                 if (dataStr === '[DONE]') {
-                  logEl.textContent += '\nReconnecting...';
-                  setTimeout(() => window.location.reload(), 3000);
+                  logEl.textContent += '\n✓ Update complete! Reconnecting to PHANTOM server...';
+                  logEl.scrollTop = logEl.scrollHeight;
+                  let pollCount = 0;
+                  const pollInterval = setInterval(() => {
+                    pollCount++;
+                    fetch('/api/system/info')
+                      .then(r => {
+                        if (r.ok) {
+                          clearInterval(pollInterval);
+                          logEl.textContent += '\n✓ Server online! Reloading interface...';
+                          setTimeout(() => window.location.reload(), 600);
+                        }
+                      })
+                      .catch(() => {
+                        if (pollCount > 60) {
+                          clearInterval(pollInterval);
+                          window.location.reload();
+                        }
+                      });
+                  }, 1000);
                   return;
                 }
                 try {
