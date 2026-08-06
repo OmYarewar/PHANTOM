@@ -3,17 +3,31 @@
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync, existsSync } from 'fs';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import { printHelpBanner } from '../server/banner.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..');
 
-// Ensure fnm node path is included in PATH if present
-const fnmBin = join(process.env.HOME || '', '.local/share/fnm/node-versions/v24.18.0/installation/bin');
-if (existsSync(fnmBin) && !process.env.PATH?.includes(fnmBin)) {
-  process.env.PATH = `${fnmBin}:${process.env.PATH}`;
+// Check and auto-repair native module NODE_MODULE_VERSION mismatch
+async function verifyNativeModules() {
+  try {
+    const Database = (await import('better-sqlite3')).default;
+    const testDb = new Database(':memory:');
+    testDb.close();
+  } catch (err) {
+    if (err.code === 'ERR_DLOPEN_FAILED' || err.message?.includes('NODE_MODULE_VERSION')) {
+      console.log(`\n\x1b[38;2;234;179;8m⚠️ Native addon mismatch detected for Node.js ${process.version}.\x1b[0m`);
+      console.log(`\x1b[38;2;6;182;212m🔧 Auto-rebuilding native sqlite3 module...\x1b[0m\n`);
+      try {
+        execSync('npm rebuild better-sqlite3', { cwd: projectRoot, stdio: 'inherit' });
+        console.log(`\x1b[38;2;16;185;129m✓ Auto-rebuild complete!\x1b[0m\n`);
+      } catch (rebuildErr) {
+        console.error('⚠️ Auto-rebuild failed:', rebuildErr.message);
+      }
+    }
+  }
 }
 
 const args = process.argv.slice(2);
@@ -50,40 +64,49 @@ if (port) {
   process.env.PORT = port;
 }
 
-if (command === 'dev') {
-  process.env.PHANTOM_DEV = 'true';
-  const serverPath = join(projectRoot, 'server', 'index.js');
-  const viteBin = join(projectRoot, 'node_modules', '.bin', 'vite');
+async function main() {
+  await verifyNativeModules();
 
-  const nodeProc = spawn(process.execPath, [serverPath], {
-    cwd: projectRoot,
-    stdio: 'inherit',
-    env: process.env
-  });
+  if (command === 'dev') {
+    process.env.PHANTOM_DEV = 'true';
+    const serverPath = join(projectRoot, 'server', 'index.js');
+    const viteBin = join(projectRoot, 'node_modules', '.bin', 'vite');
 
-  const viteProc = spawn(viteBin, ['--port', '5173'], {
-    cwd: projectRoot,
-    stdio: 'inherit',
-    env: process.env
-  });
+    const nodeProc = spawn(process.execPath, [serverPath], {
+      cwd: projectRoot,
+      stdio: 'inherit',
+      env: process.env
+    });
 
-  const cleanup = () => {
-    nodeProc.kill();
-    viteProc.kill();
-    process.exit(0);
-  };
+    const viteProc = spawn(viteBin, ['--port', '5173'], {
+      cwd: projectRoot,
+      stdio: 'inherit',
+      env: process.env
+    });
 
-  process.on('SIGINT', cleanup);
-  process.on('SIGTERM', cleanup);
-} else {
-  const serverPath = join(projectRoot, 'server', 'index.js');
-  const child = spawn(process.execPath, [serverPath], {
-    cwd: projectRoot,
-    stdio: 'inherit',
-    env: process.env
-  });
+    const cleanup = () => {
+      nodeProc.kill();
+      viteProc.kill();
+      process.exit(0);
+    };
 
-  child.on('exit', (code) => {
-    process.exit(code ?? 0);
-  });
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
+  } else {
+    const serverPath = join(projectRoot, 'server', 'index.js');
+    const child = spawn(process.execPath, [serverPath], {
+      cwd: projectRoot,
+      stdio: 'inherit',
+      env: process.env
+    });
+
+    child.on('exit', (code) => {
+      process.exit(code ?? 0);
+    });
+  }
 }
+
+main().catch(err => {
+  console.error('[PHANTOM CLI Error]', err);
+  process.exit(1);
+});
