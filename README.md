@@ -191,6 +191,22 @@ PHANTOM incorporates a persistent, compounding cross-session memory engine based
 - **Hybrid RRF Search Engine**: Combines FTS5 BM25 keyword matching with vector similarity embeddings and Ebbinghaus recency decay (`score = RRF * importance * access_frequency * recency_factor`).
 - **Contradiction Resolution & Auto-Upsert**: Auto-reconciles conflicting facts when keys are updated.
 
+## 🛡️ Reverse-Skill Security Pack (zhaoxuya520/reverse-skill)
+
+PHANTOM comes bundled by default with the complete **Reverse-Skill Pack** ([zhaoxuya520/reverse-skill](https://github.com/zhaoxuya520/reverse-skill)) featuring **43+ specialist security and reverse engineering skills**:
+
+- **Binary & Reverse Engineering**: `reverse-engineering`, `ghidra-reverse`, `ida-reverse`, `radare2`, `binary-diff`, `dotnet-reverse`, `go-rust-reverse`, `macos-reverse`.
+- **Exploitation & Bypasses**: `pwn-chain`, `patch-diff-exploit`, `edr-bypass-re`, `code-audit`, `hardware-security`, `firmware-pentest`.
+- **Mobile & Web/API**: `apk-reverse`, `mobile-reverse`, `js-reverse`, `browser-extension-reverse`, `api-security`, `llm-security`.
+- **Red Team & Forensics**: `attack-chain`, `pentest-tools`, `windows-ad`, `cloud-k8s`, `digital-forensics`, `threat-hunting`.
+
+## ⚡ Autonomous Tool Auto-Installation Policy
+
+Whenever PHANTOM needs any tool, library, binary, or CLI package that is not pre-installed on the host system (e.g. `gdb`, `pwntools`, `radare2`, `frida`, `apktool`, `jadx`, `ghidra`, `nmap`, `scrapling`, Python/npm/apt/pacman packages):
+
+1. **Zero Setup Required**: PHANTOM autonomously detects missing dependencies and installs them immediately via `install_tool` or auto-sudo `execute_command`.
+2. **Seamless Execution**: PHANTOM never halts or asks the user to manually install tools — it installs what it needs and finishes the task autonomously.
+
 ## 🌐 Internet Crawling (Agent Reach)
 
 PHANTOM integrates zero-config internet crawling capabilities inspired by [Agent Reach](https://github.com/Panniantong/agent-reach), giving the AI agent eyes to see the entire internet. **No API keys, no cookies, no configuration needed** — these tools work out of the box:

@@ -32,74 +32,56 @@ export async function bootstrapSession() {
  * or .zip files (use filename as name).
  */
 async function loadSkills() {
-  const skillsDir = path.resolve(process.cwd(), 'skills');
+  const dirsToScan = [
+    '/home/oki/.gemini/config/skills',
+    path.resolve(process.cwd(), 'skills'),
+  ];
 
-  try {
-    await fs.promises.access(skillsDir);
-  } catch {
-    return [];
+  const seen = new Set();
+  const allSkills = [];
+
+  for (const dir of dirsToScan) {
+    try {
+      await fs.promises.access(dir);
+      const entries = await fs.promises.readdir(dir);
+
+      for (const entry of entries) {
+        if (seen.has(entry)) continue;
+        const fullPath = path.join(dir, entry);
+
+        try {
+          const stat = await fs.promises.stat(fullPath);
+          if (stat.isDirectory()) {
+            seen.add(entry);
+            let name = entry;
+            let description = 'Skill folder';
+
+            // Try skill.json
+            try {
+              const content = await fs.promises.readFile(path.join(fullPath, 'skill.json'), 'utf8');
+              const meta = JSON.parse(content);
+              name = meta.name || name;
+              description = meta.description || description;
+            } catch {}
+
+            // Try SKILL.md
+            try {
+              const content = await fs.promises.readFile(path.join(fullPath, 'SKILL.md'), 'utf8');
+              const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
+              if (match) {
+                const descMatch = match[1].match(/description:\s*(.+)/);
+                if (descMatch) description = descMatch[1].trim();
+              }
+            } catch {}
+
+            allSkills.push({ name, description, type: 'folder' });
+          }
+        } catch {}
+      }
+    } catch {}
   }
 
-  const entries = await fs.promises.readdir(skillsDir);
-  const skillsPromises = entries.map(async (entry) => {
-    const fullPath = path.join(skillsDir, entry);
-
-    try {
-      const stat = await fs.promises.stat(fullPath);
-
-      if (stat.isDirectory()) {
-        const metaPath = path.join(fullPath, 'skill.json');
-        const readmePath = path.join(fullPath, 'README.md');
-
-        try {
-          const content = await fs.promises.readFile(metaPath, 'utf8');
-          const meta = JSON.parse(content);
-          return {
-            name: meta.name || entry,
-            description: meta.description || 'No description',
-            version: meta.version || '1.0.0',
-            type: 'folder',
-          };
-        } catch (err) {
-          if (err.code !== 'ENOENT') throw err;
-        }
-
-        try {
-          const content = await fs.promises.readFile(readmePath, 'utf8');
-          const lines = content.split('\n');
-          const name = lines[0].replace(/^#+\s*/, '').trim() || entry;
-          const description = lines.find(l => l.trim() && !l.startsWith('#')) || 'No description';
-          return { name, description: description.trim(), type: 'folder' };
-        } catch (err) {
-          if (err.code !== 'ENOENT') throw err;
-        }
-
-        return { name: entry, description: 'Skill folder', type: 'folder' };
-      } else if (entry.endsWith('.json')) {
-        const content = await fs.promises.readFile(fullPath, 'utf8');
-        const meta = JSON.parse(content);
-        return {
-          name: meta.name || entry.replace('.json', ''),
-          description: meta.description || 'No description',
-          version: meta.version || '1.0.0',
-          type: 'json',
-        };
-      } else if (entry.endsWith('.zip')) {
-        return {
-          name: entry.replace('.zip', ''),
-          description: 'Packaged skill',
-          type: 'zip',
-        };
-      }
-    } catch (err) {
-      return { name: entry, description: `Could not read: ${err.message}`, type: 'unknown' };
-    }
-
-    return null;
-  });
-
-  const skills = await Promise.all(skillsPromises);
-  return skills.filter(Boolean);
+  return allSkills;
 }
 
 /**
