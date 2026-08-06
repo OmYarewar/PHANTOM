@@ -540,17 +540,36 @@ async function webRequest({ url, method = 'GET', headers = {}, body, follow_redi
 
 /**
  * Search the web using Exa Neural Search MCP, DuckDuckGo Lite, HTML, system curl, and Jina search fallbacks.
- * Zero-config, free, and guaranteed to return rich neural search results without error.
+ * Dynamically grounded with current date, month, and year context for maximum temporal accuracy.
  */
 async function searchWeb({ query }) {
   if (!query || typeof query !== 'string' || !query.trim()) {
     return 'Please provide a valid search query.';
   }
 
-  const encoded = encodeURIComponent(query.trim());
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthYear = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const currentDateISO = now.toISOString().split('T')[0];
+
+  let effectiveQuery = query.trim();
+  const hasSpecificYear = /\b(19|20)\d{2}\b/.test(effectiveQuery);
+  const isTimeSensitive = /\b(latest|news|today|current|trending|recent|update|price|weather|events|now|2026|2025)\b/i.test(effectiveQuery);
+
+  // If query is time-sensitive and doesn't specify a year, append current year for temporal grounding
+  if (isTimeSensitive && !hasSpecificYear) {
+    effectiveQuery += ` ${currentYear}`;
+  }
+
+  const encoded = encodeURIComponent(effectiveQuery);
 
   // Engine 1: Exa MCP Free Neural Search (Highest Quality Neural Search)
   try {
+    const exaArgs = { query: effectiveQuery, numResults: 10 };
+    if (isTimeSensitive) {
+      exaArgs.startPublishedDate = `${currentYear - 1}-01-01`;
+    }
+
     const exaRes = await fetch('https://mcp.exa.ai/mcp', {
       method: 'POST',
       headers: {
@@ -563,7 +582,7 @@ async function searchWeb({ query }) {
         method: 'tools/call',
         params: {
           name: 'web_search_exa',
-          arguments: { query: query.trim(), numResults: 8 }
+          arguments: exaArgs
         }
       }),
       signal: AbortSignal.timeout(15000),
@@ -576,7 +595,7 @@ async function searchWeb({ query }) {
         const parsed = JSON.parse(dataMatch[1]);
         const content = parsed?.result?.content?.[0]?.text;
         if (content && content.trim()) {
-          return `Search results for "${query}":\n\n${content.trim()}`;
+          return `Search results for "${query}" (As of ${currentMonthYear}, ${currentDateISO}):\n\n${content.trim()}`;
         }
       }
     }
