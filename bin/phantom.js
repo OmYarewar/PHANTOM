@@ -10,22 +10,37 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..');
 
-// Check and auto-repair native module NODE_MODULE_VERSION mismatch
+// Check and auto-repair native module NODE_MODULE_VERSION/sharp mismatch
 async function verifyNativeModules() {
+  let needsRebuild = false;
+
   try {
     const Database = (await import('better-sqlite3')).default;
     const testDb = new Database(':memory:');
     testDb.close();
   } catch (err) {
     if (err.code === 'ERR_DLOPEN_FAILED' || err.message?.includes('NODE_MODULE_VERSION')) {
-      console.log(`\n\x1b[38;2;234;179;8m⚠️ Native addon mismatch detected for Node.js ${process.version}.\x1b[0m`);
-      console.log(`\x1b[38;2;6;182;212m🔧 Auto-rebuilding native sqlite3 module...\x1b[0m\n`);
-      try {
-        execSync('npm rebuild better-sqlite3', { cwd: projectRoot, stdio: 'inherit' });
-        console.log(`\x1b[38;2;16;185;129m✓ Auto-rebuild complete!\x1b[0m\n`);
-      } catch (rebuildErr) {
-        console.error('⚠️ Auto-rebuild failed:', rebuildErr.message);
-      }
+      needsRebuild = true;
+    }
+  }
+
+  try {
+    const sharp = (await import('sharp')).default;
+    sharp(Buffer.from([0, 0, 0, 0]));
+  } catch (err) {
+    if (err.code === 'ERR_DLOPEN_FAILED' || err.message?.includes('sharp') || err.message?.includes('NODE_MODULE_VERSION')) {
+      needsRebuild = true;
+    }
+  }
+
+  if (needsRebuild) {
+    console.log(`\n\x1b[38;2;234;179;8m⚠️ Native addon issue/mismatch detected for Node.js ${process.version}.\x1b[0m`);
+    console.log(`\x1b[38;2;6;182;212m🔧 Auto-rebuilding native modules (better-sqlite3, sharp)...\x1b[0m\n`);
+    try {
+      execSync('npm rebuild better-sqlite3 sharp', { cwd: projectRoot, stdio: 'inherit' });
+      console.log(`\x1b[38;2;16;185;129m✓ Auto-rebuild complete!\x1b[0m\n`);
+    } catch (rebuildErr) {
+      console.error('⚠️ Auto-rebuild failed:', rebuildErr.message);
     }
   }
 }
