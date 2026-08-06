@@ -38,6 +38,13 @@
     "uuid": "^11.1.0",
     "ws": "^8.18.0"
   },
+  "optionalDependencies": {
+    "@img/sharp-linux-x64": "^0.33.5",
+    "@img/sharp-libvips-linux-x64": "^1.0.4",
+    "@img/sharp-linux-arm64": "^0.33.5",
+    "@img/sharp-darwin-x64": "^0.33.5",
+    "@img/sharp-darwin-arm64": "^0.33.5"
+  },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "eslint": "^9.21.0",

@@ -69,7 +69,8 @@ cd "$INSTALL_DIR"
 echo -e "  ${C}➜ Installing dependencies (npm install)...${RST}"
 npm install --quiet
 
-echo -e "  ${C}➜ Building native bindings (better-sqlite3 & sharp)...${RST}"
+echo -e "  ${C}➜ Building native bindings & prebuilt packages (sharp & sqlite3)...${RST}"
+npm install --os=linux --cpu=x64 sharp @img/sharp-linux-x64 @img/sharp-libvips-linux-x64 --quiet || true
 npm rebuild better-sqlite3 sharp --quiet || true
 
 # Ensure executable permissions on bin/phantom.js

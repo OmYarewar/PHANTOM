@@ -25,8 +25,7 @@ async function verifyNativeModules() {
   }
 
   try {
-    const sharp = (await import('sharp')).default;
-    sharp(Buffer.from([0, 0, 0, 0]));
+    await import('@xenova/transformers');
   } catch (err) {
     if (err.code === 'ERR_DLOPEN_FAILED' || err.message?.includes('sharp') || err.message?.includes('NODE_MODULE_VERSION')) {
       needsRebuild = true;
@@ -35,12 +34,12 @@ async function verifyNativeModules() {
 
   if (needsRebuild) {
     console.log(`\n\x1b[38;2;234;179;8m⚠️ Native addon issue/mismatch detected for Node.js ${process.version}.\x1b[0m`);
-    console.log(`\x1b[38;2;6;182;212m🔧 Auto-rebuilding native modules (better-sqlite3, sharp)...\x1b[0m\n`);
+    console.log(`\x1b[38;2;6;182;212m🔧 Auto-repairing native binaries (better-sqlite3, sharp)...\x1b[0m\n`);
     try {
-      execSync('npm rebuild better-sqlite3 sharp', { cwd: projectRoot, stdio: 'inherit' });
-      console.log(`\x1b[38;2;16;185;129m✓ Auto-rebuild complete!\x1b[0m\n`);
+      execSync('npm install --os=linux --cpu=x64 sharp @img/sharp-linux-x64 @img/sharp-libvips-linux-x64 --quiet && npm rebuild better-sqlite3 sharp --quiet', { cwd: projectRoot, stdio: 'inherit' });
+      console.log(`\x1b[38;2;16;185;129m✓ Auto-repair complete!\x1b[0m\n`);
     } catch (rebuildErr) {
-      console.error('⚠️ Auto-rebuild failed:', rebuildErr.message);
+      console.error('⚠️ Auto-repair failed:', rebuildErr.message);
     }
   }
 }
