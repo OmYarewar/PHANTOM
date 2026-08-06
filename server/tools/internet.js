@@ -395,12 +395,19 @@ function formatNumber(num) {
  * Supports Twitter, Reddit, XiaoHongShu, LinkedIn, Instagram.
  * All requests are made DIRECTLY to the target platform using local fetch + saved cookies.
  */
-export async function socialMediaCrawl({ platform, action = 'read', url, query, max_results = 10 }) {
+export async function socialMediaCrawl({ platform, action, url, query, max_results = 10 }) {
   const cookieKey = `ar_cookie_${platform}`;
   const cookie = getSetting(cookieKey) || '';
 
-  // Twitter can work zero-config via Guest Tokens & Syndication API even without cookie!
-  if (!cookie && platform !== 'twitter') {
+  // Auto-infer action if missing or contradictory
+  if (!action || (action !== 'read' && action !== 'search')) {
+    action = url ? 'read' : 'search';
+  }
+  if (!query && url && action === 'search') action = 'read';
+  if (!url && query && action === 'read') action = 'search';
+
+  // Twitter, Instagram & Reddit can work zero-config via Embed APIs & Index Search without cookies!
+  if (!cookie && !['twitter', 'instagram', 'reddit'].includes(platform)) {
     return `Error: ${platform} is not configured. The user needs to paste their ${platform} cookies in Settings → Agent Reach → ${platform}. They can export cookies using the Cookie-Editor Chrome extension (Header String format).`;
   }
 
@@ -576,13 +583,19 @@ async function searchPlatformViaIndex(domain, query, maxResults = 10) {
 
 // ─── Twitter / X (Pure Data Extractor) ───
 
-async function crawlTwitter(cookie, action, url, query, maxResults) {
+async function crawlTwitter(cookie, action, url, query, maxResults = 10) {
   const ct0Match = cookie ? cookie.match(/ct0=([^;]+)/) : null;
   const ct0 = ct0Match ? ct0Match[1].trim() : '';
 
+  // Normalize action & params
+  if (!action || (action !== 'read' && action !== 'search')) {
+    action = url ? 'read' : 'search';
+  }
+  if (!query && url && action === 'search') action = 'read';
+  if (!url && query && action === 'read') action = 'search';
+
   // Action 1: Read a specific Tweet or Profile URL
   if (action === 'read' && url) {
-    // Extract Tweet ID if status URL
     const tweetIdMatch = url.match(/status\/(\d+)/);
     if (tweetIdMatch) {
       const tweetId = tweetIdMatch[1];
@@ -590,7 +603,6 @@ async function crawlTwitter(cookie, action, url, query, maxResults) {
       if (syndicationData) return syndicationData;
     }
 
-    // Extract username if profile URL (e.g. x.com/elonmusk)
     const profileMatch = url.match(/(?:x|twitter)\.com\/([a-zA-Z0-9_]+)\/?$/);
     if (profileMatch && !['search', 'home', 'explore', 'settings', 'notifications'].includes(profileMatch[1].toLowerCase())) {
       const username = profileMatch[1];
@@ -598,7 +610,6 @@ async function crawlTwitter(cookie, action, url, query, maxResults) {
       if (profileData) return profileData;
     }
 
-    // Direct fetch with headers if cookie present
     if (cookie) {
       const headers = buildTwitterHeaders(cookie, ct0);
       validateUrlForSSRF(url);
@@ -612,25 +623,39 @@ async function crawlTwitter(cookie, action, url, query, maxResults) {
   }
 
   // Action 2: Search Tweets
-  if (action === 'search' && query) {
-    // 1. Try Twitter API v1.1 adaptive search with ct0 if cookie present
+  if (action === 'search' || query) {
+    const searchQuery = query || url || 'trending';
+
+    // 1. Try Twitter API v1.1 adaptive search if cookie present
     if (ct0) {
-      const apiData = await searchTwitterApi(cookie, ct0, query, maxResults);
+      const apiData = await searchTwitterApi(cookie, ct0, searchQuery, maxResults);
       if (apiData) return apiData;
     }
 
-    // 2. Try Twitter API with Guest Token (works zero-config, no user login required!)
-    const guestData = await searchTwitterGuestToken(query, maxResults);
+    // 2. Try Twitter API with Guest Token
+    const guestData = await searchTwitterGuestToken(searchQuery, maxResults);
     if (guestData) return guestData;
 
-    // 3. Try Nitter public instance mirror for pure HTML search
-    const nitterData = await searchTwitterNitter(query, maxResults);
+    // 3. Try Nitter public instance mirror
+    const nitterData = await searchTwitterNitter(searchQuery, maxResults);
     if (nitterData) return nitterData;
 
-    // 4. Try site index search + deep Tweet fetcher via syndication CDN
-    const indexResults = await searchPlatformViaIndex('x.com', query, maxResults);
+    // 4. Try site index search on x.com
+    let indexResults = await searchPlatformViaIndex('x.com', searchQuery, maxResults);
+
+    // 5. Try site index search on twitter.com
+    if (!indexResults || indexResults.length === 0) {
+      indexResults = await searchPlatformViaIndex('twitter.com', searchQuery, maxResults);
+    }
+
+    // 6. Try simplified query if original query had too many words
+    if ((!indexResults || indexResults.length === 0) && searchQuery.split(' ').length > 3) {
+      const simplifiedQuery = searchQuery.split(' ').slice(0, 3).join(' ');
+      indexResults = await searchPlatformViaIndex('x.com', simplifiedQuery, maxResults);
+    }
+
     if (indexResults && indexResults.length > 0) {
-      let output = `# Twitter/X Search Results for "${query}"\n\nFound ${indexResults.length} tweets\n\n---\n\n`;
+      let output = `# Twitter/X Search Results for "${searchQuery}"\n\nFound ${indexResults.length} tweets & topics\n\n---\n\n`;
       for (let i = 0; i < indexResults.length; i++) {
         const item = indexResults[i];
         const statusMatch = item.url.match(/status\/(\d+)/);
@@ -650,7 +675,7 @@ async function crawlTwitter(cookie, action, url, query, maxResults) {
     }
   }
 
-  return `Twitter search/read completed for query: "${query || url}".`;
+  return `Twitter search completed for query: "${query || url}". No tweets found or rate limited.`;
 }
 
 function buildTwitterHeaders(cookie, ct0) {
@@ -1089,6 +1114,13 @@ async function crawlInstagram(cookie, action, url, query, maxResults = 10) {
     'x-requested-with': 'XMLHttpRequest',
   };
 
+  // Normalize action & params
+  if (!action || (action !== 'read' && action !== 'search')) {
+    action = url ? 'read' : 'search';
+  }
+  if (!query && url && action === 'search') action = 'read';
+  if (!url && query && action === 'read') action = 'search';
+
   // Read Action
   if (action === 'read' && url) {
     const shortcodeMatch = url.match(/(?:p|reel|reels)\/([a-zA-Z0-9_-]+)/);
@@ -1108,15 +1140,17 @@ async function crawlInstagram(cookie, action, url, query, maxResults = 10) {
   }
 
   // Search Action
-  if (action === 'search' && query) {
+  if (action === 'search' || query) {
+    const searchQuery = query || url || 'trending';
+
     // 1. Try Tag Web Info API if hashtag query
-    const tagPosts = await searchInstagramTagApi(cookie, query, maxResults);
+    const tagPosts = await searchInstagramTagApi(cookie, searchQuery, maxResults);
     if (tagPosts) return tagPosts;
 
     // 2. Try Topsearch API if cookie configured
     if (cookie) {
       try {
-        const searchUrl = `https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}`;
+        const searchUrl = `https://www.instagram.com/api/v1/web/search/topsearch/?context=blended&query=${encodeURIComponent(searchQuery)}`;
         validateUrlForSSRF(searchUrl);
         const res = await fetch(searchUrl, { headers, signal: AbortSignal.timeout(15000) });
         if (res.ok) {
@@ -1125,7 +1159,7 @@ async function crawlInstagram(cookie, action, url, query, maxResults = 10) {
           const hashtags = data.hashtags || [];
 
           if (users.length > 0 || hashtags.length > 0) {
-            let output = `# Instagram Search Results for "${query}"\n\n`;
+            let output = `# Instagram Search Results for "${searchQuery}"\n\n`;
             if (users.length > 0) {
               output += `## Profiles & Users\n\n`;
               for (const u of users.slice(0, 10)) {
@@ -1148,10 +1182,17 @@ async function crawlInstagram(cookie, action, url, query, maxResults = 10) {
       }
     }
 
-    // 3. Multi-Engine Index Search + Embed Extractor for each post
-    const indexResults = await searchPlatformViaIndex('instagram.com', query, maxResults);
+    // 3. Multi-Engine Index Search on instagram.com
+    let indexResults = await searchPlatformViaIndex('instagram.com', searchQuery, maxResults);
+
+    // 4. Try simplified query if original query had too many words
+    if ((!indexResults || indexResults.length === 0) && searchQuery.split(' ').length > 3) {
+      const simplifiedQuery = searchQuery.split(' ').slice(0, 3).join(' ');
+      indexResults = await searchPlatformViaIndex('instagram.com', simplifiedQuery, maxResults);
+    }
+
     if (indexResults && indexResults.length > 0) {
-      let output = `# Instagram Search Results for "${query}"\n\nFound ${indexResults.length} posts & profiles\n\n---\n\n`;
+      let output = `# Instagram Search Results for "${searchQuery}"\n\nFound ${indexResults.length} posts & profiles\n\n---\n\n`;
       for (let i = 0; i < indexResults.length; i++) {
         const item = indexResults[i];
         const shortcodeMatch = item.url.match(/(?:p|reel|reels)\/([a-zA-Z0-9_-]+)/);
@@ -1171,7 +1212,7 @@ async function crawlInstagram(cookie, action, url, query, maxResults = 10) {
     }
   }
 
-  return `Instagram crawl completed for: "${query || url}". No public post data found or blocked.`;
+  return `Instagram search completed for: "${query || url}". No public post data found or blocked.`;
 }
 
 async function searchInstagramTagApi(cookie, tagQuery, maxResults) {

@@ -105,14 +105,44 @@ export async function executeTool(name, args, onProgress) {
     case 'youtube_get_subtitles': return await youtubeGetSubtitles(args);
     case 'rss_read_feed': return await rssReadFeed(args);
     case 'v2ex_browse': return await v2exBrowse(args);
-    case 'social_media_crawl': return await socialMediaCrawl(args);
-    case 'twitter_crawl': return await socialMediaCrawl({ platform: 'twitter', ...args });
-    case 'reddit_crawl': return await socialMediaCrawl({ platform: 'reddit', ...args });
-    case 'linkedin_crawl': return await socialMediaCrawl({ platform: 'linkedin', ...args });
-    case 'instagram_crawl': return await socialMediaCrawl({ platform: 'instagram', ...args });
+    case 'social_media_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, args?.platform || 'twitter'));
+    case 'twitter_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, 'twitter'));
+    case 'reddit_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, 'reddit'));
+    case 'linkedin_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, 'linkedin'));
+    case 'instagram_crawl': return await socialMediaCrawl(normalizeSocialArgs(args, 'instagram'));
     default:
       return `Unknown tool: ${name}`;
   }
+}
+
+/**
+ * Normalizes tool parameters for social media crawl tools (handles raw strings, missing actions, etc.)
+ */
+function normalizeSocialArgs(args, platform) {
+  if (!args) return { platform, action: 'search', query: 'trending' };
+
+  if (typeof args === 'string') {
+    return { platform, action: 'search', query: args };
+  }
+
+  let norm = typeof args === 'object' && args !== null ? { ...args, platform } : { platform };
+
+  if (norm.query || norm.topic || norm.keyword) {
+    if (!norm.query) norm.query = norm.topic || norm.keyword;
+    if (!norm.action || norm.action === 'read') {
+      norm.action = norm.url ? 'read' : 'search';
+    }
+  }
+
+  if (norm.url && !norm.action) {
+    norm.action = 'read';
+  }
+
+  if (!norm.action) {
+    norm.action = norm.url ? 'read' : 'search';
+  }
+
+  return norm;
 }
 
 /**
