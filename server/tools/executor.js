@@ -3,7 +3,7 @@ import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
 import { dirname, resolve, join, sep } from 'path';
 import os from 'os';
-import { saveMemory, searchMemories, hybridSearchMemories, getMemoryStats, searchConversations, createConversation } from '../memory/store.js';
+import { saveMemory, hybridSearchMemories, getMemoryStats, searchConversations, createConversation } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
 import config from '../config.js';
 import { getSystemCapabilities } from './self_awareness.js';
@@ -805,7 +805,7 @@ async function editSourceCode({ file_path, content, description }) {
  */
 async function saveTrace({ task, approach, outcome, score, notes }) {
   try {
-    const { writeFile: wf, mkdirSync: mkd } = await import('fs');
+    const { mkdirSync: mkd } = await import('fs');
     const { writeFile: wfp } = await import('fs/promises');
     const tracesDir = join(config.workspace, '.traces');
     try {

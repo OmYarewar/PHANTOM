@@ -47,7 +47,7 @@ describe('Database Store Initialization', () => {
   });
 
   test('getDB should return the database instance', () => {
-    const db1 = initDB(':memory:');
+    initDB(':memory:');
     const db2 = getDB();
     assert.ok(db2, 'getDB should return a truthy database instance proxy');
   });

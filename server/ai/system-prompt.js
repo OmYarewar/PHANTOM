@@ -1,6 +1,6 @@
 import os from 'os';
 import config from '../config.js';
-import { readFileSync, existsSync, readdirSync, promises as fsPromises } from 'fs';
+import { existsSync, promises as fsPromises } from 'fs';
 import path, { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 

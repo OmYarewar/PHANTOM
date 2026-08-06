@@ -16,7 +16,7 @@ const heartbeatInterval = setInterval(() => {
     ws.isAlive = false;
     try {
       ws.ping();
-    } catch (err) {
+    } catch {
       // Ignore ping send errors on closing sockets
     }
   });

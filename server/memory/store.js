@@ -352,8 +352,9 @@ export async function hybridSearchMemories(query, category = null, limit = 10) {
   });
 
   return topResults.map(m => {
-    const { vector_embedding, _finalScore, ...rest } = m;
-    return rest;
+    delete m.vector_embedding;
+    delete m._finalScore;
+    return m;
   });
 }
 
@@ -466,7 +467,7 @@ export function searchConversations(query) {
 
 
 export async function recallMemory(query, options = {}) {
-  const { limit = 10, orderBy = 'relevance' } = options;
+  const { limit = 10 } = options;
 
   // If no query, return most recent entries
   if (!query || query.trim() === '') {

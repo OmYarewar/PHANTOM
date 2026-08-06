@@ -1,6 +1,6 @@
 import { CommClient } from 'caspian-sdk';
 import { processMessage } from '../ai/llm-client.js';
-import { startSession, stopSession, getSession, resetSession, getHistory, setActiveTelegramSession, clearActiveTelegramSession, markSessionBootstrapped } from '../telegram/session.js';
+import { startSession, stopSession, getSession, resetSession, markSessionBootstrapped } from '../telegram/session.js';
 import { bootstrapSession } from '../telegram/bootstrap.js';
 import config from '../config.js';
 import { getToolDefinitions } from '../tools/registry.js';
@@ -122,10 +122,10 @@ export function startCaspianBot(cfg) {
             (chunk) => {
                 aiFullResponse += chunk;
             },
-            (toolCall) => {
+            () => {
                 // optional: could notify of tool call start
             },
-            (toolResult) => {
+            () => {
                 // optional: could notify of tool result
             },
             (err) => {

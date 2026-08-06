@@ -833,7 +833,7 @@ async function searchTwitterNitter(query, maxResults) {
   return null;
 }
 
-function parseTwitterHtml(html, url) {
+function parseTwitterHtml(html, _url) {
   if (!html) return null;
   // If HTML contains anti-bot JS block error message, skip
   if (html.includes('Something went wrong') && html.includes('privacy related extensions')) {
@@ -1196,7 +1196,7 @@ function parseInstagramHtml(html, targetUrl) {
 
 // ─── XiaoHongShu ───
 
-async function crawlXiaoHongShu(cookie, action, url, query, maxResults) {
+async function crawlXiaoHongShu(cookie, action, url, query, _maxResults) {
   const headers = {
     'Cookie': cookie,
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',

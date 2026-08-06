@@ -38,7 +38,7 @@ try {
   if (!existsSync(config.workspace)) {
     mkdirSync(config.workspace, { recursive: true });
   }
-} catch (e) {
+} catch {
   // Ignore permission errors in restricted environments
 }
 
@@ -56,7 +56,7 @@ export function updateConfig(updates) {
       if (!existsSync(config.workspace)) {
         mkdirSync(config.workspace, { recursive: true });
       }
-    } catch (e) {}
+    } catch {}
   }
 }
 
@@ -85,7 +85,7 @@ export function loadPersistedSettings(getSetting) {
       if (!existsSync(config.workspace)) {
         mkdirSync(config.workspace, { recursive: true });
       }
-    } catch (e) {}
+    } catch {}
   }
 }
 

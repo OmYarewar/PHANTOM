@@ -1,8 +1,8 @@
 import { getToolDefinitions } from '../tools/registry.js';
 import { executeTool } from '../tools/executor.js';
 import { buildSystemPrompt } from './system-prompt.js';
-import { addMessage, getMessages, saveMemory, searchMemories, saveToolResult } from '../memory/store.js';
-import config, { updateConfig } from '../config.js';
+import { addMessage, getMessages, searchMemories, saveToolResult } from '../memory/store.js';
+import config from '../config.js';
 import OpenAI from 'openai';
 
 let openaiClient = null;

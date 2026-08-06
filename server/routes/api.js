@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import config, { updateConfig } from '../config.js';
-import { resetClient, testConnection, processMessage } from '../ai/llm-client.js';
+import { resetClient, testConnection } from '../ai/llm-client.js';
 import {
   createConversation, getConversations, getConversation, deleteConversation,
   updateConversationTitle, getMessages,
@@ -13,7 +13,7 @@ import { validateUrlForSSRF } from '../tools/executor.js';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { statSync, rmSync, mkdirSync, existsSync, promises as fsPromises } from 'fs';
+import { rmSync, mkdirSync, existsSync, promises as fsPromises } from 'fs';
 
 const execAsync = promisify(exec);
 import { join, basename, resolve, sep } from 'path';
@@ -270,7 +270,7 @@ router.get('/conversations/:id/export', (req, res) => {
               const argsStr = typeof c.args === 'object' ? JSON.stringify(c.args, null, 2) : c.args;
               markdown += `> **🔧 Tool Call:** \`${c.name}\`\n> \`\`\`json\n> ${argsStr.replace(/\n/g, '\n> ')}\n> \`\`\`\n\n`;
             });
-          } catch (e) {
+          } catch {
             // Ignore parsing errors for malformed tool_calls
           }
         }
@@ -395,7 +395,7 @@ router.post('/sudo/validate', async (req, res) => {
       // Password is correct — store it
       setSetting('sudo_password', password);
       res.json({ valid: true, message: 'Sudo access granted ✅' });
-    } catch (err) {
+    } catch {
       res.json({ valid: false, message: 'Incorrect sudo password' });
     }
   } catch (err) {

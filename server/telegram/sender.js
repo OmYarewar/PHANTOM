@@ -313,7 +313,7 @@ export function toTelegramMarkdown(text) {
   let converted;
   try {
     converted = telegramifyMarkdown(text, 'escape');
-  } catch (err) {
+  } catch {
     // Library failed — do manual escaping as fallback
     converted = manualEscape(text);
   }
