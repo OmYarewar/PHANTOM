@@ -29,10 +29,17 @@ function sanitizeToolCalls(toolCalls) {
 }
 
 function getClient() {
-  if (!openaiClient || openaiClient.baseURL !== config.api.baseUrl) {
+  const apiKey = config.api.apiKey || 'sk-placeholder';
+  const baseURL = config.api.baseUrl || 'https://api.openai.com/v1';
+
+  if (!openaiClient || openaiClient.baseURL !== baseURL || openaiClient.apiKey !== apiKey) {
     openaiClient = new OpenAI({
-      apiKey: config.api.apiKey || 'sk-placeholder',
-      baseURL: config.api.baseUrl,
+      apiKey,
+      baseURL,
+      defaultHeaders: {
+        'HTTP-Referer': 'https://phantom.ai',
+        'X-Title': 'PHANTOM Security Center',
+      }
     });
   }
   return openaiClient;
@@ -353,11 +360,14 @@ export async function processMessage(conversationId, userMessage, sessionContext
       // If aborted, don't show as error
       if (abortSignal?.aborted) {
         const abortMsg = '[PHANTOM] ⏹ Operation stopped by user.';
-        onChunk(abortMsg);
+        if (typeof onChunk === 'function') onChunk(abortMsg);
         return abortMsg;
       }
-      const errMsg = `LLM Error: ${error.message}`;
-      onError(errMsg);
+      const errMsg = `⚠️ LLM Error: ${error.message}`;
+      if (typeof onError === 'function') onError(errMsg);
+      if (typeof onChunk === 'function') {
+        onChunk(`\n\n⚠️ **LLM Connection Error**: ${error.message}\n\nPlease check your API key, model selection (\`${targetModel}\`), or Base URL in **Manage (⚙️ Settings)**.`);
+      }
       addMessage(conversationId, { role: 'assistant', content: errMsg });
       return errMsg;
     }

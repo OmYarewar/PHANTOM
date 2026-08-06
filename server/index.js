@@ -55,18 +55,60 @@ wss.on('connection', (ws) => {
       }
       if (!payload || !payload.message) return;
 
+      const conversationId = payload.conversationId;
+
+      // 1. Notify frontend response start
+      if (ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'response_start', conversationId }));
+      }
+
       await processMessage(
-        payload.conversationId,
+        conversationId,
         payload.message,
         payload.context,
+        // onChunk
         (chunk) => {
-          if (ws.readyState === 1) { // OPEN
-            ws.send(JSON.stringify({ type: 'chunk', data: chunk }));
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'chunk', content: chunk, data: chunk, conversationId }));
           }
         },
-        null, null, null, null,
-        abortController.signal
+        // onToolCall
+        (toolCall) => {
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'tool_call', ...toolCall, conversationId }));
+          }
+        },
+        // onToolResult
+        (toolResult) => {
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'tool_result', ...toolResult, conversationId }));
+          }
+        },
+        // onError
+        (errorMsg) => {
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'error', message: errorMsg, conversationId }));
+          }
+        },
+        // onThinking
+        (thinkingText) => {
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'thinking', content: thinkingText, conversationId }));
+          }
+        },
+        abortController.signal,
+        // onToolProgress
+        (progress) => {
+          if (ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'tool_progress', ...progress, conversationId }));
+          }
+        }
       );
+
+      // 2. Notify frontend response complete
+      if (ws.readyState === 1) {
+        ws.send(JSON.stringify({ type: 'response_end', conversationId }));
+      }
     } catch (err) {
       if (ws.readyState === 1) {
         ws.send(JSON.stringify({ type: 'error', message: err.message }));

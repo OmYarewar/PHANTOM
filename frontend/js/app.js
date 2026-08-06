@@ -256,7 +256,7 @@
         break;
 
       case 'chunk':
-        Chat.appendChunk(msg.content);
+        Chat.appendChunk(msg.content || msg.data || '');
         break;
 
       case 'tool_call':
