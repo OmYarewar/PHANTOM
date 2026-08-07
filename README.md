@@ -21,7 +21,7 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 
 </div>
 
-## ⚡ Quick 1-Line Installation (Linux / macOS / Windows)
+## ⚡ Installation (Linux / macOS / Windows)
 
 Install **PHANTOM** and configure the `phantom` CLI command across any terminal in a single command:
 
