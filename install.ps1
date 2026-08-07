@@ -55,9 +55,10 @@ if (-not (Test-Path $binDir)) {
     New-Item -ItemType Directory -Path $binDir -Force | Out-Null
 }
 
-$srcCmd = Join-Path $installDir 'bin\phantom.cmd'
+$targetJs = Join-Path $installDir 'bin\phantom.js'
 $destCmd = Join-Path $binDir 'phantom.cmd'
-Copy-Item -Path $srcCmd -Destination $destCmd -Force
+$cmdContent = "@echo off`r`nnode `"$targetJs`" %*"
+[System.IO.File]::WriteAllText($destCmd, $cmdContent)
 
 # Add binDir to User PATH if not already present
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
