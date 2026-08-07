@@ -195,7 +195,11 @@ router.get('/conversations', (req, res) => {
 
 router.post('/conversations', (req, res) => {
   try {
-    const conv = createConversation(req.body.title || 'New Conversation');
+    const title = req.body.title || 'New Conversation';
+    if (typeof title !== 'string' || title.trim() === '' || title.length > 200) {
+      return res.status(400).json({ error: 'Invalid title' });
+    }
+    const conv = createConversation(title);
     res.json(conv);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -224,7 +228,11 @@ router.delete('/conversations/:id', (req, res) => {
 
 router.put('/conversations/:id/title', (req, res) => {
   try {
-    updateConversationTitle(req.params.id, req.body.title);
+    const title = req.body.title;
+    if (typeof title !== 'string' || title.trim() === '' || title.length > 200) {
+      return res.status(400).json({ error: 'Invalid title' });
+    }
+    updateConversationTitle(req.params.id, title);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -363,37 +371,41 @@ router.delete('/mcp/servers/:id', (req, res) => {
 
 // ─── Sudo Validation ───
 router.post('/sudo/validate', async (req, res) => {
-  if (process.platform === 'win32') {
-    const isAdmin = isWindowsAdmin();
-    return res.json({
-      valid: true,
-      isWindows: true,
-      isElevated: isAdmin,
-      message: isAdmin ? 'Running in Windows Administrative mode 🛡️' : 'Running in Windows Normal User mode 💻'
-    });
-  }
-
-  const { password } = req.body;
-  if (!password) {
-    return res.json({ valid: false, message: 'No password provided' });
-  }
-
   try {
-    // Test sudo password by running a harmless command without blocking event loop
-    const escapedPass = password.replace(/'/g, "'\\''");
-    try {
-      await execAsync(`echo '${escapedPass}' | sudo -S -p '' echo 'phantom_sudo_ok' 2>&1`, {
-        encoding: 'utf8',
-        timeout: 15000,
+    if (process.platform === 'win32') {
+      const isAdmin = isWindowsAdmin();
+      return res.json({
+        valid: true,
+        isWindows: true,
+        isElevated: isAdmin,
+        message: isAdmin ? 'Running in Windows Administrative mode 🛡️' : 'Running in Windows Normal User mode 💻'
       });
-      // Password is correct — store it
-      setSetting('sudo_password', password);
-      res.json({ valid: true, message: 'Sudo access granted ✅' });
-    } catch {
-      res.json({ valid: false, message: 'Incorrect sudo password' });
+    }
+
+    const { password } = req.body;
+    if (!password) {
+      return res.json({ valid: false, message: 'No password provided' });
+    }
+
+    try {
+      // Test sudo password by running a harmless command without blocking event loop
+      const escapedPass = password.replace(/'/g, "'\\''");
+      try {
+        await execAsync(`echo '${escapedPass}' | sudo -S -p '' echo 'phantom_sudo_ok' 2>&1`, {
+          encoding: 'utf8',
+          timeout: 15000,
+        });
+        // Password is correct — store it
+        setSetting('sudo_password', password);
+        res.json({ valid: true, message: 'Sudo access granted ✅' });
+      } catch {
+        res.json({ valid: false, message: 'Incorrect sudo password' });
+      }
+    } catch (err) {
+      res.json({ valid: false, message: `Validation error: ${err.message}` });
     }
   } catch (err) {
-    res.json({ valid: false, message: `Validation error: ${err.message}` });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -428,41 +440,51 @@ router.get('/system/check-update', async (req, res) => {
 });
 
 router.post('/system/update', async (req, res) => {
-  // Use SSE to send progress
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-
-  const sendProgress = (msg) => {
-    res.write(`data: ${JSON.stringify({ progress: msg })}\n\n`);
-  };
-
   try {
-    sendProgress('Fetching latest updates from GitHub...');
-    await execAsync('git fetch origin main', { encoding: 'utf8' });
-    sendProgress('Resetting to latest changes...');
-    const pullResult = await execAsync('git reset --hard origin/main', { encoding: 'utf8' });
-    sendProgress(pullResult.stdout);
+    // Use SSE to send progress
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
 
-    sendProgress('Installing dependencies...');
-    const npmResult = await execAsync('npm install', { encoding: 'utf8' });
-    sendProgress(npmResult.stdout);
+    const sendProgress = (msg) => {
+      res.write(`data: ${JSON.stringify({ progress: msg })}\n\n`);
+    };
 
-    sendProgress('Update complete! Auto-restarting system...');
-    res.write('data: [DONE]\n\n');
-    res.end();
+    try {
+      sendProgress('Fetching latest updates from GitHub...');
+      await execAsync('git fetch origin main', { encoding: 'utf8' });
+      sendProgress('Resetting to latest changes...');
+      const pullResult = await execAsync('git reset --hard origin/main', { encoding: 'utf8' });
+      sendProgress(pullResult.stdout);
 
-    // Give time for the SSE connection to finish, then trigger auto-restart (exit code 42)
-    setTimeout(() => {
-      console.log('[PHANTOM] Auto-restarting server after update...');
-      process.exit(42);
-    }, 1500);
+      sendProgress('Installing dependencies...');
+      const npmResult = await execAsync('npm install', { encoding: 'utf8' });
+      sendProgress(npmResult.stdout);
+
+      sendProgress('Update complete! Auto-restarting system...');
+      res.write('data: [DONE]\n\n');
+      res.end();
+
+      // Give time for the SSE connection to finish, then trigger auto-restart (exit code 42)
+      setTimeout(() => {
+        console.log('[PHANTOM] Auto-restarting server after update...');
+        process.exit(42);
+      }, 1500);
+    } catch (err) {
+      console.error('Update error:', err);
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
+    }
   } catch (err) {
-    console.error('Update error:', err);
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-    res.write('data: [DONE]\n\n');
-    res.end();
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
+    }
   }
 });
 
