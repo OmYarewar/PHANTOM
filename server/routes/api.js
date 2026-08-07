@@ -453,35 +453,43 @@ router.post('/system/update', async (req, res) => {
 });
 
 // ─── System Info ───
+let cachedSystemInfo = null;
+
 router.get('/system/info', async (req, res) => {
   try {
+    if (!cachedSystemInfo) {
+      cachedSystemInfo = {
+        hostname: os.hostname(),
+        platform: os.platform(),
+        arch: os.arch(),
+        release: os.release(),
+        user: os.userInfo().username,
+        cpus: os.cpus().length,
+      };
+
+      // Run external commands concurrently without blocking the event loop
+      const results = await Promise.allSettled([
+        execAsync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }),
+        execAsync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' })
+      ]);
+
+      if (results[0].status === 'fulfilled' && results[0].value.stdout) {
+        cachedSystemInfo.distro = results[0].value.stdout.trim();
+      }
+      if (results[1].status === 'fulfilled' && results[1].value.stdout) {
+        cachedSystemInfo.ip = results[1].value.stdout.trim();
+      }
+    }
+
     const info = {
-      hostname: os.hostname(),
-      platform: os.platform(),
-      arch: os.arch(),
-      release: os.release(),
-      user: os.userInfo().username,
+      ...cachedSystemInfo,
       uptime: os.uptime(),
       memory: {
         total: os.totalmem(),
         free: os.freemem(),
         used: os.totalmem() - os.freemem(),
       },
-      cpus: os.cpus().length,
     };
-
-    // Run external commands concurrently without blocking the event loop
-    const results = await Promise.allSettled([
-      execAsync('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'', { encoding: 'utf8' }),
-      execAsync("hostname -I 2>/dev/null | awk '{print $1}'", { encoding: 'utf8' })
-    ]);
-
-    if (results[0].status === 'fulfilled' && results[0].value.stdout) {
-      info.distro = results[0].value.stdout.trim();
-    }
-    if (results[1].status === 'fulfilled' && results[1].value.stdout) {
-      info.ip = results[1].value.stdout.trim();
-    }
 
     // Check if sudo password is stored
     info.sudoConfigured = !!getSetting('sudo_password', '');
@@ -542,8 +550,8 @@ router.get('/workspace/file', async (req, res) => {
   try {
     const relPath = req.query.path;
     if (!relPath) return res.status(400).json({ error: 'Missing path parameter' });
-    const fullPath = join(config.workspace, relPath);
-    if (!fullPath.startsWith(config.workspace)) {
+    const fullPath = resolve(config.workspace, relPath);
+    if (!fullPath.startsWith(config.workspace + sep) && fullPath !== config.workspace) {
       return res.status(403).json({ error: 'Access denied: outside workspace' });
     }
     const content = await fsPromises.readFile(fullPath, 'utf8');
