@@ -63,15 +63,17 @@ describe('Security Middlewares', () => {
   it('should enforce rate limiting on /api routes', async () => {
     const rateLimitIp = `192.168.99.${globalIpCounter++}`; // Use a dedicated fresh IP for rate limit test
     // Make 100 requests (the limit)
+    const promises = [];
     for (let i = 0; i < 100; i++) {
-      await request(app).get('/api/settings').set('X-Forwarded-For', rateLimitIp);
+      promises.push(request(app).get('/api/settings').set('X-Forwarded-For', rateLimitIp));
     }
+    await Promise.all(promises);
 
     // The 101st request should be blocked by rate limit
     const res = await request(app).get('/api/settings').set('X-Forwarded-For', rateLimitIp);
     expect(res.status).toBe(429);
     expect(res.body.error).toBe('Too many requests, please try again later.');
-  });
+  }, 20000);
 });
 
 import { initDB, closeDB } from '../server/memory/store.js';

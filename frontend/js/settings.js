@@ -153,6 +153,24 @@ window.Settings = {
 
       // Update model badge
       document.getElementById('current-model').textContent = data.model || 'No Model';
+
+      if (data.isWindows) {
+        const sudoInput = document.getElementById('setting-sudo-password');
+        const sudoWrap = sudoInput?.closest('.setting-item');
+        if (sudoWrap) {
+          const modeText = data.windowsAdmin ? 'PowerShell (Administrator Mode)' : 'PowerShell (Normal User Mode)';
+          const modeColor = data.windowsAdmin ? '#16a34a' : '#eab308';
+          sudoWrap.innerHTML = `
+            <label>Windows Execution Privilege Mode</label>
+            <div style="padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: 6px; font-weight: 600; color: ${modeColor}; display: flex; align-items: center; gap: 8px;">
+              <span>${data.windowsAdmin ? '🛡️' : '💻'}</span> ${modeText}
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+              Windows commands execute in PowerShell under the server process privilege mode without requiring sudo.
+            </p>
+          `;
+        }
+      }
     } catch (err) {
       console.error('Failed to load settings:', err);
     }

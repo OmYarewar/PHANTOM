@@ -589,6 +589,9 @@
     try {
       const res = await fetch('/api/system/info');
       const info = await res.json();
+      if (info.isWindows) {
+        return;
+      }
       if (!info.sudoConfigured) {
         showSudoModal();
       }

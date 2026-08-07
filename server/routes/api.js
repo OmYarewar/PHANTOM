@@ -9,7 +9,7 @@ import {
   getMCPServers, addMCPServer, removeMCPServer,
 } from '../memory/store.js';
 import { getToolDefinitions } from '../tools/registry.js';
-import { validateUrlForSSRF } from '../tools/executor.js';
+import { validateUrlForSSRF, isWindowsAdmin } from '../tools/executor.js';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -46,6 +46,8 @@ router.use((req, res, next) => {
 router.get('/settings', (req, res) => {
   try {
     const settings = getAllSettings();
+    const isWindows = process.platform === 'win32';
+    const windowsAdmin = isWindowsAdmin();
     res.json({
       baseUrl: settings.api_base_url || config.api.baseUrl,
       apiKey: settings.api_key ? '••••••••' + settings.api_key.slice(-4) : '',
@@ -54,7 +56,9 @@ router.get('/settings', (req, res) => {
       temperature: parseFloat(settings.api_temperature || config.api.temperature),
       maxTokens: parseInt(settings.api_max_tokens || config.api.maxTokens),
       workspace: settings.workspace || config.workspace,
-      sudoConfigured: !!settings.sudo_password,
+      sudoConfigured: isWindows ? true : !!settings.sudo_password,
+      isWindows,
+      windowsAdmin,
       telegramBotToken: settings.telegram_bot_token ? '••••••••' : '',
       telegramUserId: settings.telegram_user_id || '',
       systemPrompt: settings.system_prompt || config.systemPrompt || '',
@@ -359,6 +363,16 @@ router.delete('/mcp/servers/:id', (req, res) => {
 
 // ─── Sudo Validation ───
 router.post('/sudo/validate', async (req, res) => {
+  if (process.platform === 'win32') {
+    const isAdmin = isWindowsAdmin();
+    return res.json({
+      valid: true,
+      isWindows: true,
+      isElevated: isAdmin,
+      message: isAdmin ? 'Running in Windows Administrative mode 🛡️' : 'Running in Windows Normal User mode 💻'
+    });
+  }
+
   const { password } = req.body;
   if (!password) {
     return res.json({ valid: false, message: 'No password provided' });
@@ -491,8 +505,9 @@ router.get('/system/info', async (req, res) => {
       },
     };
 
-    // Check if sudo password is stored
-    info.sudoConfigured = !!getSetting('sudo_password', '');
+    info.isWindows = process.platform === 'win32';
+    info.windowsAdmin = isWindowsAdmin();
+    info.sudoConfigured = process.platform === 'win32' ? true : !!getSetting('sudo_password', '');
     info.workspace = config.workspace;
 
     res.json(info);

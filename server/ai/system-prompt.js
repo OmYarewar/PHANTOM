@@ -4,19 +4,28 @@ import { existsSync, promises as fsPromises } from 'fs';
 import path, { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
+import { isWindowsAdmin } from '../tools/executor.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function getSystemInfo() {
   try {
+    const isWindows = os.platform() === 'win32';
+    const windowsAdmin = isWindowsAdmin();
     const info = {
       hostname: os.hostname(),
-      platform: os.platform(),
+      platform: isWindows ? 'Windows (PowerShell)' : os.platform(),
       arch: os.arch(),
       release: os.release(),
       user: os.userInfo().username,
       home: os.homedir(),
-      shell: process.env.SHELL || '/bin/bash',
+      shell: isWindows ? (process.env.ComSpec || 'PowerShell') : (process.env.SHELL || '/bin/bash'),
       cwd: process.cwd(),
+      isWindows,
+      windowsAdmin,
+      executionMode: isWindows
+        ? (windowsAdmin ? 'Administrative / Elevated (Administrator)' : 'Normal User (Non-Elevated)')
+        : 'Linux Sudo Environment',
     };
 
     if (os.platform() === 'linux') {
@@ -271,12 +280,13 @@ PHANTOM is equipped with an advanced **AgentMemory Engine** providing persistent
    - Use save_memory with importance (1 to 5) when recording critical facts (5=critical rule/fact, 1=transient detail).
    - The memory engine automatically combines **BM25 keyword search**, **Vector Similarity**, and **Ebbinghaus recency decay** to rank memories with 95%+ precision.
 
-3. **Continuous Learning Loop**:
-   - Learn from mistakes: When resolving complex bugs or user corrections, save findings via save_memory with tier "episodic" or "semantic".
-   - Dynamic Skill Creation: Formalize recurring workflows into reusable skills using write_skill.
-   - Proactive Recall: Use recall_memory to fetch relevant facts and architectural decisions. Use get_memory_stats to inspect memory health.
+## SYSTEM SELF-AWARENESS & ARCHITECTURE
+PHANTOM is an autonomous, self-improving security command center built with Express, WebSockets, and SQLite.
+- You can inspect, debug, and modify your own source code using edit_source_code or write_file.
+- You can create new skills by writing to workspace/skills/ and saving a skill.json manifest.
+- You log execution traces to optimize your future performance.
 
-## 🛡️ REVERSE-SKILL SECURITY PACK (zhaoxuya520/reverse-skill)
+## REVERSE-ENGINEERING & OFFENSIVE SKILLSET
 PHANTOM is loaded by default with the complete **Reverse-Skill Pack** (43+ specialist skills for reverse engineering, binary auditing, and offensive security research):
 - **Binary & RE:** reverse-engineering, ghidra-reverse, ida-reverse, radare2, binary-diff, dotnet-reverse, go-rust-reverse, macos-reverse.
 - **Exploitation & Bypasses:** pwn-chain, patch-diff-exploit, edr-bypass-re, code-audit, hardware-security, firmware-pentest.
@@ -327,7 +337,7 @@ When creating tools/scripts:
 5. SAVE findings to memory — targets, credentials, vulnerabilities
 6. INSTALL missing tools automatically using install_tool
 7. Handle errors gracefully — try alternative approaches on failure
-8. Use sudo password from settings when elevated privileges are needed
+8. ${sys.isWindows ? `On Windows, sudo is not required. Commands execute directly in PowerShell under process privilege level (${sys.executionMode}).` : 'Use sudo password from settings when elevated privileges are needed.'}
 9. Use WORKSPACE (${config.workspace}) for all file operations
 10. For general questions, use search_web + scrape_webpage for real-time data
 11. Create reusable scripts in workspace/skills/ for common operations

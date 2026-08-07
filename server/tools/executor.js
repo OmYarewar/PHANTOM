@@ -10,6 +10,19 @@ import { getSystemCapabilities } from './self_awareness.js';
 import { jinaReadUrl, youtubeSearch, youtubeGetSubtitles, rssReadFeed, v2exBrowse, socialMediaCrawl } from './internet.js';
 
 /**
+ * Checks if the current process is running with Windows Administrator (Elevated) privileges.
+ */
+export function isWindowsAdmin() {
+  if (process.platform !== 'win32') return false;
+  try {
+    execSync('net session', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Helper to securely escape arguments for bash shell
  */
 function escapeShellArg(arg) {
