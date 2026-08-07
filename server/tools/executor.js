@@ -1,7 +1,7 @@
 import { spawn, execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { readFile, writeFile, mkdir, readdir, stat } from 'fs/promises';
-import { dirname, resolve, join, sep } from 'path';
+import { dirname, resolve, join, sep, delimiter } from 'path';
 import os from 'os';
 import { saveMemory, hybridSearchMemories, getMemoryStats, searchConversations, createConversation } from '../memory/store.js';
 import { getSetting } from '../memory/store.js';
@@ -333,8 +333,13 @@ function getRandomUA() {
 async function executeCommand({ command, timeout = 120, working_directory, use_sudo = false }, onProgress) {
   return new Promise((resolvePromise) => {
     let cmd = command;
+    const isWindows = process.platform === 'win32';
 
-    const needsSudo = use_sudo || command.trim().startsWith('sudo ');
+    if (isWindows && cmd.trim().startsWith('sudo ')) {
+      cmd = cmd.trim().replace(/^sudo\s+/, '');
+    }
+
+    const needsSudo = !isWindows && (use_sudo || command.trim().startsWith('sudo '));
     if (needsSudo) {
       const sudoPass = getSetting('sudo_password', '');
       if (sudoPass) {
@@ -350,7 +355,23 @@ async function executeCommand({ command, timeout = 120, working_directory, use_s
     if (!cwd || !existsSync(cwd)) {
       cwd = os.homedir();
     }
-    const proc = spawn('bash', ['-c', cmd], {
+
+    let shellCmd = 'bash';
+    let shellArgs = ['-c', cmd];
+
+    if (isWindows) {
+      const paths = (process.env.PATH || '').split(delimiter);
+      const hasBash = paths.some(p => existsSync(join(p, 'bash.exe')) || existsSync(join(p, 'bash')));
+      if (hasBash && process.env.PHANTOM_USE_BASH === 'true') {
+        shellCmd = 'bash';
+        shellArgs = ['-c', cmd];
+      } else {
+        shellCmd = 'powershell.exe';
+        shellArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', cmd];
+      }
+    }
+
+    const proc = spawn(shellCmd, shellArgs, {
       cwd,
       timeout: timeout * 1000,
       env: { ...process.env, TERM: 'xterm-256color' },

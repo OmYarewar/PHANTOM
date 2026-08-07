@@ -36,7 +36,11 @@ async function verifyNativeModules() {
     console.log(`\n\x1b[38;2;234;179;8m⚠️ Native addon issue/mismatch detected for Node.js ${process.version}.\x1b[0m`);
     console.log(`\x1b[38;2;6;182;212m🔧 Auto-repairing native binaries (better-sqlite3, sharp)...\x1b[0m\n`);
     try {
-      execSync('npm install --os=linux --cpu=x64 sharp @img/sharp-linux-x64 @img/sharp-libvips-linux-x64 --quiet && npm rebuild better-sqlite3 sharp --quiet', { cwd: projectRoot, stdio: 'inherit' });
+      if (process.platform === 'win32') {
+        execSync('npm rebuild better-sqlite3 sharp --quiet', { cwd: projectRoot, stdio: 'inherit' });
+      } else {
+        execSync('npm install --os=linux --cpu=x64 sharp @img/sharp-linux-x64 @img/sharp-libvips-linux-x64 --quiet && npm rebuild better-sqlite3 sharp --quiet', { cwd: projectRoot, stdio: 'inherit' });
+      }
       console.log(`\x1b[38;2;16;185;129m✓ Auto-repair complete!\x1b[0m\n`);
     } catch (rebuildErr) {
       console.error('⚠️ Auto-repair failed:', rebuildErr.message);
@@ -80,7 +84,8 @@ if (port) {
 
 async function main() {
   const serverPath = join(projectRoot, 'server', 'index.js');
-  const viteBin = join(projectRoot, 'node_modules', '.bin', 'vite');
+  const viteBinName = process.platform === 'win32' ? 'vite.cmd' : 'vite';
+  const viteBin = join(projectRoot, 'node_modules', '.bin', viteBinName);
 
   if (command === 'dev') {
     process.env.PHANTOM_DEV = 'true';
@@ -88,6 +93,7 @@ async function main() {
     const viteProc = spawn(viteBin, ['--port', '5173'], {
       cwd: projectRoot,
       stdio: 'inherit',
+      shell: process.platform === 'win32',
       env: process.env
     });
 

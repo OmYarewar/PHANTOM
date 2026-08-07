@@ -21,12 +21,18 @@ Real-time tool execution • Unlimited autonomous operations • Self-improving 
 
 </div>
 
-## ⚡ Quick 1-Line Installation (Any Terminal)
+## ⚡ Quick 1-Line Installation (Linux / macOS / Windows)
 
 Install **PHANTOM** and configure the `phantom` CLI command across any terminal in a single command:
 
+**Linux & macOS (Bash/Zsh/Fish/etc.):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/OmYarewar/PHANTOM/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/OmYarewar/PHANTOM/main/install.ps1 | iex
 ```
 
 Once installed, launch PHANTOM from **any terminal window** instantly:

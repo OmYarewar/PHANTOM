@@ -7,11 +7,11 @@
     "phantom": "./bin/phantom.js"
   },
   "scripts": {
-    "dev": "bash -c 'if [ -d \"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin\" ]; then export PATH=\"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin:$PATH\"; fi; node bin/phantom.js dev'",
-    "start": "bash -c 'if [ -d \"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin\" ]; then export PATH=\"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin:$PATH\"; fi; node bin/phantom.js start'",
+    "dev": "node bin/phantom.js dev",
+    "start": "node bin/phantom.js start",
     "build": "vite build frontend",
-    "test": "bash -c 'if [ -d \"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin\" ]; then export PATH=\"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin:$PATH\"; fi; vitest run --dir tests'",
-    "test:watch": "bash -c 'if [ -d \"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin\" ]; then export PATH=\"$HOME/.local/share/fnm/node-versions/v24.18.0/installation/bin:$PATH\"; fi; vitest --dir tests'",
+    "test": "vitest run --dir tests",
+    "test:watch": "vitest --dir tests",
     "lint": "eslint server/ frontend/js/"
   },
   "dependencies": {
