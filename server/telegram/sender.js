@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import mime from 'mime-types';
 import telegramifyMarkdown from 'telegramify-markdown';
+import removeMd from 'remove-markdown';
 
 /**
  * THE CORE FUNCTION — converts any AI markdown output to clean Telegram HTML
@@ -71,7 +72,8 @@ export async function sendAIReply(bot, chatId, markdownText) {
  * Used for status updates, errors, and fallback.
  */
 export async function sendPlain(bot, chatId, text) {
-  const chunks = splitIntoChunks(String(text), 4096);
+  const plainText = removeMd(String(text));
+  const chunks = splitIntoChunks(plainText, 4096);
   for (const chunk of chunks) {
     try {
       await bot.sendMessage(chatId, chunk);

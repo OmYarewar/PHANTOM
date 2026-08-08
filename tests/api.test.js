@@ -133,6 +133,37 @@ describe('API Routes', () => {
     expect(res.body.title).toBe('Test Conv');
   });
 
+  it('POST /api/conversations should validate title length', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+    const res = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'a'.repeat(201) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Title must be 200 characters or less');
+  });
+
+  it('PUT /api/conversations/:id/title should validate title length', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+
+    // Create a conversation first
+    const convRes = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'Test Conv' });
+    const convId = convRes.body.id;
+
+    // Test empty string validation
+    const res1 = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: '' });
+    expect(res1.status).toBe(400);
+    expect(res1.body.error).toBe('Title must be a non-empty string');
+
+    // Test length validation
+    const res2 = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: 'a'.repeat(201) });
+    expect(res2.status).toBe(400);
+    expect(res2.body.error).toBe('Title must be 200 characters or less');
+  });
+
   it('GET /api/conversations/:id/export should export conversation to markdown', async () => {
     const octet3 = Math.floor(globalIpCounter / 256);
     const octet4 = globalIpCounter % 256;
