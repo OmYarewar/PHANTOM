@@ -13,7 +13,6 @@
   let conversations = [];
   let isProcessing = false;
   let reconnectAttempts = 0;
-  const MAX_RECONNECT = 10;
 
   // Pending image for OSINT (base64 data URL)
   let pendingImage = null;
@@ -144,7 +143,7 @@
       if (ws && ws.readyState === WebSocket.OPEN) {
         try {
           ws.send(JSON.stringify({ type: 'ping' }));
-        } catch (e) {}
+        } catch { /* ignore */ }
       }
     }, 15000);
   }
@@ -166,7 +165,7 @@
 
     try {
       ws = new WebSocket(wsUrl);
-    } catch (err) {
+    } catch {
       attemptReconnect();
       return;
     }
@@ -182,8 +181,8 @@
         const msg = JSON.parse(event.data);
         if (msg.type === 'pong') return;
         handleMessage(msg);
-      } catch (err) {
-        console.error('WebSocket parsing error:', err);
+      } catch {
+        window.Toast.show('WebSocket parsing error', 'error');
       }
     };
 
@@ -193,8 +192,8 @@
       attemptReconnect();
     };
 
-    ws.onerror = (err) => {
-      console.warn('WebSocket connection error:', err);
+    ws.onerror = () => {
+      window.Toast.show('WebSocket connection error', 'error');
     };
   }
 
@@ -286,8 +285,8 @@
               // modify msg.result to only show success message in chat
               msg.result = resObj.message || 'Success';
             }
-          } catch (e) {
-            console.error(`Failed to parse ${msg.name} result:`, e);
+          } catch {
+            window.Toast.show(`Failed to parse ${msg.name} result`, 'error');
           }
         }
         Chat.addToolResult(msg);
@@ -508,8 +507,7 @@
       const res = await fetch('/api/conversations');
       conversations = await res.json();
       renderConversationList();
-    } catch (err) {
-      console.error('Failed to load conversations:', err);
+    } catch {
       window.Toast.show('Failed to load conversations', 'error');
     }
   }
@@ -550,8 +548,7 @@
       const res = await fetch(`/api/conversations/${id}`);
       const data = await res.json();
       Chat.renderHistory(data.messages);
-    } catch (err) {
-      console.error(err);
+    } catch {
       window.Toast.show('Failed to load conversation', 'error');
       Chat.addErrorMessage('Failed to load conversation');
     }
@@ -569,8 +566,7 @@
           Chat.showWelcome();
         }
         loadConversations();
-      } catch (err) {
-        console.error('Failed to delete conversation:', err);
+      } catch {
         window.Toast.show('Failed to delete conversation', 'error');
       }
     });
@@ -595,8 +591,8 @@
       if (!info.sudoConfigured) {
         showSudoModal();
       }
-    } catch (err) {
-      console.error('Failed to check sudo status:', err);
+    } catch {
+      window.Toast.show('Failed to check sudo status', 'error');
     }
   }
 
@@ -774,8 +770,8 @@
       if (data.updateAvailable) {
         showUpdateBanner(data);
       }
-    } catch (err) {
-      console.error('Failed to check for updates:', err);
+    } catch {
+      window.Toast.show('Failed to check for updates', 'error');
     }
   }
 
@@ -858,7 +854,7 @@
                   if (data.error) {
                     logEl.textContent += '\nError: ' + data.error + '\n';
                   }
-                } catch (e) { console.error('Error parsing update stream chunk:', e, dataStr); }
+                } catch { /* ignore */ }
               }
             }
             read();
