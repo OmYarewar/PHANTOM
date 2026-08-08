@@ -203,6 +203,8 @@ Run the Vitest test suite:
 npm test
 ```
 
+[![Hlido trust score](https://hlido.eu/badge/omyarewar-phantom.svg)](https://hlido.eu/check/?agent=omyarewar-phantom)
+
 ## 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
