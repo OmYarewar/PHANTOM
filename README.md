@@ -9,6 +9,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://www.linux.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge)](https://github.com/pulls)
+[![Hlido trust score](https://hlido.eu/badge/omyarewar-phantom.svg)](https://hlido.eu/check/?agent=omyarewar-phantom)
 
 **An autonomous AI assistant for penetration testing, security research, and general-purpose tasks.**  
 Real-time tool execution • Unlimited autonomous operations • Self-improving AI • Beautiful dark UI
@@ -203,7 +204,6 @@ Run the Vitest test suite:
 npm test
 ```
 
-[![Hlido trust score](https://hlido.eu/badge/omyarewar-phantom.svg)](https://hlido.eu/check/?agent=omyarewar-phantom)
 
 ## 📄 License
 
