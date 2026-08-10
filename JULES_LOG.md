@@ -9,3 +9,9 @@
 - `tests/api.test.js`
 **Tests:** 73 passed / 1 added
 **Commits:** Will be included on push.
+## 2026-08-10 — Session 2
+**What I decided to work on:** Fix XSS Vulnerability in `frontend/js/chat.js`
+**What I built/fixed:** Added HTML escaping to `data.name` and `tc.function.name` before inserting into `.innerHTML` to prevent XSS via maliciously crafted tool names.
+**Files changed:** `frontend/js/chat.js`
+**Tests:** 73 passed
+**Commits:** Will be included on push.
