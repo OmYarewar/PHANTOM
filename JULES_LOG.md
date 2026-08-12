@@ -9,3 +9,12 @@
 - `tests/api.test.js`
 **Tests:** 73 passed / 1 added
 **Commits:** Will be included on push.
+
+## 2025-08-07 — Session 2
+**What I decided to work on:** I noticed a potential XSS vulnerability in `frontend/js/chat.js` during my bug hunt. Specifically, when rendering tool cards, `data.name` and `tc.function.name` were being interpolated into HTML string templates without being properly escaped using the available `this.escapeHtml()` method.
+**What I built/fixed:**
+- Escaped `data.name` and `tc.function.name` inside `innerHTML` template literals using `this.escapeHtml()` in `addToolCall(data)` and `renderMessage(msg)` to prevent XSS.
+**Files changed:**
+- `frontend/js/chat.js`
+**Tests:** 73 passed / 0 added
+**Commits:** Will be included on push.
