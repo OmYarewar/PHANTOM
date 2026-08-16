@@ -9,3 +9,10 @@
 - `tests/api.test.js`
 **Tests:** 73 passed / 1 added
 **Commits:** Will be included on push.
+## 2025-08-07 — Session 2
+**What I decided to work on:** I decided to fix an XSS vulnerability in the frontend tool cards UI (`frontend/js/chat.js`), based on memory context guidelines that indicated `data.name` and `tc.function.name` needed to be properly escaped with `this.escapeHtml()` when injected into HTML templates.
+**What I built/fixed:** Added `this.escapeHtml()` wrapping around `data.name` and `tc.function.name` interpolations within the `frontend/js/chat.js` file, mitigating potential XSS issues when rendering tool execution cards.
+**Files changed:**
+- `frontend/js/chat.js`
+**Tests:** 73 passed
+**Commits:** Will be included on push.
