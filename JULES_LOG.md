@@ -9,3 +9,12 @@
 - `tests/api.test.js`
 **Tests:** 73 passed / 1 added
 **Commits:** Will be included on push.
+
+## 2025-08-07 — Session 2
+**What I decided to work on:** I decided to add input validation to the conversation API endpoints (`POST /conversations` and `PUT /conversations/:id/title`) to ensure titles are non-empty strings and within a sensible character limit (200 chars). This is based on finding no input validation for these user-supplied fields.
+**What I built/fixed:** Added validation logic for `title` parameter, returning 400 Bad Request on failure.
+**Files changed:**
+- `server/routes/api.js`
+- `tests/api.test.js`
+**Tests:** 75 passed / 2 added
+**Commits:** Will be included on push.
