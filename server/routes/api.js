@@ -195,6 +195,11 @@ router.get('/conversations', (req, res) => {
 
 router.post('/conversations', (req, res) => {
   try {
+    const title = req.body.title;
+    if (title !== undefined) {
+      if (typeof title !== 'string' || title.trim() === '') return res.status(400).json({ error: 'Title must be a non-empty string' });
+      if (title.length > 200) return res.status(400).json({ error: 'Title must not exceed 200 characters' });
+    }
     const conv = createConversation(req.body.title || 'New Conversation');
     res.json(conv);
   } catch (err) {
@@ -224,7 +229,10 @@ router.delete('/conversations/:id', (req, res) => {
 
 router.put('/conversations/:id/title', (req, res) => {
   try {
-    updateConversationTitle(req.params.id, req.body.title);
+    const title = req.body.title;
+    if (typeof title !== 'string' || title.trim() === '') return res.status(400).json({ error: 'Title must be a non-empty string' });
+    if (title.length > 200) return res.status(400).json({ error: 'Title must not exceed 200 characters' });
+    updateConversationTitle(req.params.id, title);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
