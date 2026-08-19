@@ -54,8 +54,39 @@
     }
   }
 
+  function initSidebar() {
+    const isCollapsed = localStorage.getItem('phantom_sidebar_collapsed') === 'true';
+    if (isCollapsed) {
+      document.getElementById('app').classList.add('sidebar-collapsed');
+    }
+
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        if (window.innerWidth > 768) {
+          const appEl = document.getElementById('app');
+          appEl.classList.toggle('sidebar-collapsed');
+          localStorage.setItem('phantom_sidebar_collapsed', appEl.classList.contains('sidebar-collapsed'));
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        if (window.innerWidth > 768) {
+          const appEl = document.getElementById('app');
+          appEl.classList.toggle('sidebar-collapsed');
+          localStorage.setItem('phantom_sidebar_collapsed', appEl.classList.contains('sidebar-collapsed'));
+        } else {
+          sidebar.classList.toggle('open');
+        }
+      }
+    });
+  }
+
   // ─── Initialize ───
   initTheme();
+  initSidebar();
   Chat.init();
   Settings.init();
   Management.init();
@@ -709,9 +740,8 @@
   sidebarToggle?.addEventListener('click', () => {
     if (window.innerWidth <= 768) {
       sidebar.classList.toggle('open');
-    } else {
-      document.getElementById('app').classList.toggle('sidebar-collapsed');
     }
+    // Desktop toggle is handled in initSidebar()
   });
 
   function autoResize() {
