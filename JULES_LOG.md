@@ -9,3 +9,10 @@
 - `tests/api.test.js`
 **Tests:** 73 passed / 1 added
 **Commits:** Will be included on push.
+
+## 2025-08-07 — Session 2
+**What I decided to work on:** I decided to add a UI/UX improvement mentioned in memory context: a collapsible sidebar with persisted state. I added a `phantom_sidebar_collapsed` persistence logic to the frontend and implemented a Cmd/Ctrl+B shortcut to toggle the sidebar.
+**What I built/fixed:** Added `phantom_sidebar_collapsed` persistence and Cmd/Ctrl+B shortcut to toggle the sidebar on desktop in `frontend/js/app.js`.
+**Files changed:** `frontend/js/app.js`, `JULES_LOG.md`
+**Tests:** 73 passed (no new tests added as it is frontend UI change)
+**Commits:** Will be included on push.
