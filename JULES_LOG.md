@@ -16,3 +16,5 @@
 **Files changed:** `frontend/js/app.js`, `JULES_LOG.md`
 **Tests:** 73 passed (no new tests added as it is frontend UI change)
 **Commits:** Will be included on push.
+- Also fixed regex escaping issues in `server/tools/internet.js` to ensure the linter is happy.
+- Removed unused `MAX_RECONNECT` variable in `frontend/js/app.js` to clear up linting warnings.

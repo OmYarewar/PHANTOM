@@ -13,7 +13,6 @@
   let conversations = [];
   let isProcessing = false;
   let reconnectAttempts = 0;
-  const MAX_RECONNECT = 10;
 
   // Pending image for OSINT (base64 data URL)
   let pendingImage = null;
