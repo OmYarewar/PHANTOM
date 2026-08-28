@@ -34,6 +34,11 @@
 
   // ─── Theme Initialization ───
   function initTheme() {
+    const isCollapsed = localStorage.getItem('phantom_sidebar_collapsed') === 'true';
+    if (isCollapsed && window.innerWidth > 768) {
+      document.getElementById('app').classList.add('sidebar-collapsed');
+    }
+
     const themeBtn = document.getElementById('theme-toggle-btn');
     const isLight = localStorage.getItem('phantom_theme') === 'light';
     if (isLight) {
@@ -706,11 +711,22 @@
     renderConversationList(searchInput.value);
   });
 
-  sidebarToggle?.addEventListener('click', () => {
+  function toggleSidebar() {
     if (window.innerWidth <= 768) {
       sidebar.classList.toggle('open');
     } else {
-      document.getElementById('app').classList.toggle('sidebar-collapsed');
+      const appEl = document.getElementById('app');
+      appEl.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('phantom_sidebar_collapsed', appEl.classList.contains('sidebar-collapsed'));
+    }
+  }
+
+  sidebarToggle?.addEventListener('click', toggleSidebar);
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+      toggleSidebar();
     }
   });
 
