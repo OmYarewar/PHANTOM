@@ -254,8 +254,8 @@ router.get('/conversations/:id/export', (req, res) => {
               const argsStr = typeof c.args === 'object' ? JSON.stringify(c.args, null, 2) : c.args;
               markdown += `> **🔧 Tool Call:** \`${c.name}\`\n> \`\`\`json\n> ${argsStr.replace(/\n/g, '\n> ')}\n> \`\`\`\n\n`;
             });
-          } catch {
-            // Ignore parsing errors for malformed tool_calls
+          } catch (err) {
+            console.warn('Failed to parse tool_calls in export:', err.message);
           }
         }
       } else if (msg.role === 'tool') {
@@ -389,7 +389,9 @@ router.post('/sudo/validate', async (req, res) => {
       // Password is correct — store it
       setSetting('sudo_password', password);
       res.json({ valid: true, message: 'Sudo access granted ✅' });
-    } catch {
+    } catch (err) {
+      // Do not log err.message as it contains the sudo password used in the command execution string!
+      console.warn('Sudo validation failed (incorrect password).');
       res.json({ valid: false, message: 'Incorrect sudo password' });
     }
   } catch (err) {

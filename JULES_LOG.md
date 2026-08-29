@@ -9,3 +9,15 @@
 - `tests/api.test.js`
 **Tests:** 73 passed / 1 added
 **Commits:** Will be included on push.
+
+## 2025-08-07 — Session 2
+**What I decided to work on:** I decided to fix empty `catch {}` blocks in `server/memory/store.js` and `server/routes/api.js` because ignoring errors silently can lead to hard-to-debug issues and it is bad engineering practice. I also improved the DB schema migration logic in `store.js` by checking for column existence using `PRAGMA table_info` before attempting to alter the table, avoiding expected query failures altogether.
+**What I built/fixed:**
+- Replaced `catch {}` blocks during schema alteration in `server/memory/store.js` with explicit column existence checks and error logging.
+- Logged errors for failed memory access count updates.
+- Added error logging for JSON parsing errors in tool_call exports and sudo password validation in `server/routes/api.js`.
+**Files changed:**
+- `server/memory/store.js`
+- `server/routes/api.js`
+**Tests:** 73 passed (0 added - behavior tested by existing tests)
+**Commits:** Will be included on push.
