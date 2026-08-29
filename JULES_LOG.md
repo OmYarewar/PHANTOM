@@ -21,3 +21,12 @@
 - `server/routes/api.js`
 **Tests:** 73 passed (0 added - behavior tested by existing tests)
 **Commits:** Will be included on push.
+
+## 2025-08-07 — Session 3
+**What I decided to work on:** I noticed a GitHub CI failure during the lint step caused by unnecessary escape characters (`\/` and `\.`) in a regular expression in `server/tools/internet.js`.
+**What I built/fixed:**
+- Removed unnecessary escapes (`\/` and `\.`) in `server/tools/internet.js` to fix the ESLint `no-useless-escape` errors that were failing the build.
+**Files changed:**
+- `server/tools/internet.js`
+**Tests:** 73 passed (0 added)
+**Commits:** Will be included on push.
