@@ -23,3 +23,10 @@
 - `frontend/js/chat.js`
 **Tests:** 73 passed (0 added)
 **Commits:** Will be included on push.
+## 2025-08-07 — Session 3 (CI Fix)
+**What I decided to work on:** Fix CI linter error for unnecessary escape characters.
+**What I built/fixed:** Removed the unnecessary `\/` and `\.` escapes in regular expressions inside `server/tools/internet.js`.
+**Files changed:**
+- `server/tools/internet.js`
+**Tests:** 73 passed (0 added)
+**Commits:** Will be included on push.
