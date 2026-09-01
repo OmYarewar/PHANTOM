@@ -191,6 +191,25 @@ describe('API Routes', () => {
     expect(res.body).toHaveProperty('platform');
   });
 
+  it('POST /api/sudo/validate should reject non-string passwords and handle errors properly', async () => {
+    if (process.platform === 'win32') return; // the endpoint early returns on windows
+
+    // Note: since this endpoint calls execAsync with sudo, we can't easily mock it to succeed without side effects
+    // However, we can verify that it rejects invalid password types properly
+    const res1 = await request(app).post('/api/sudo/validate').send({ password: { $ne: null } }).set('X-Forwarded-For', testIp);
+    // Even if it returns 200, the JSON body should indicate valid: false
+    expect(res1.body).toHaveProperty('valid', false);
+    expect(res1.body).toHaveProperty('message', 'No password provided or invalid format');
+
+    const res2 = await request(app).post('/api/sudo/validate').send({ password: ['some-pass'] }).set('X-Forwarded-For', testIp);
+    expect(res2.body).toHaveProperty('valid', false);
+    expect(res2.body).toHaveProperty('message', 'No password provided or invalid format');
+
+    const res3 = await request(app).post('/api/sudo/validate').send({}).set('X-Forwarded-For', testIp);
+    expect(res3.body).toHaveProperty('valid', false);
+    expect(res3.body).toHaveProperty('message', 'No password provided or invalid format');
+  });
+
   it('GET /api/workspace/file should reject path traversal requests', async () => {
     const res1 = await request(app).get('/api/workspace/file?path=../package.json').set('X-Forwarded-For', testIp);
     expect(res1.status).toBe(403);
