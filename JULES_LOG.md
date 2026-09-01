@@ -20,3 +20,11 @@
 - `tests/api.test.js`
 **Tests:** 74 passed / 1 added
 **Commits:** Will be included on push.
+## 2025-08-07 — Session 3
+**What I decided to work on:** I noticed the CI job failed due to unnecessary escape characters in `server/tools/internet.js`.
+**What I built/fixed:**
+- Removed the unnecessary escape characters `\/` and `\.` in lines 1145 and 1152 in `server/tools/internet.js`.
+**Files changed:**
+- `server/tools/internet.js`
+**Tests:** 74 passed / 0 added
+**Commits:** Will be included on push.
