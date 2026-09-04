@@ -4,7 +4,7 @@
 
 ### AI-Powered Pentesting Command Center
 
-[![CI](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml/badge.svg)](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml)
+[![CI](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml/badge.svg)](https://github.com/OmYarewar110/PHANTOM/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://www.linux.org/)
