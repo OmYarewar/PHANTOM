@@ -4,12 +4,12 @@
 
 ### AI-Powered Pentesting Command Center
 
-[![CI](https://github.com/OmYarewar/PHANTOM/actions/workflows/ci.yml/badge.svg)](https://github.com/OmYarewar110/PHANTOM/actions/workflows/ci.yml)
+[![CI](https://github.com/OmYarewar110/PHANTOM/actions/workflows/ci.yml/badge.svg)](https://github.com/OmYarewar110/PHANTOM/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://www.linux.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge)](https://github.com/pulls)
-[![Hlido trust score](https://hlido.eu/badge/omyarewar-phantom.svg)](https://hlido.eu/check/?agent=omyarewar-phantom)
+[![Hlido trust score](https://hlido.eu/badge/omyarewar110-phantom.svg)](https://hlido.eu/check/?agent=omyarewar110-phantom)
 
 **An autonomous AI assistant for penetration testing, security research, and general-purpose tasks.**  
 Real-time tool execution • Unlimited autonomous operations • Self-improving AI • Beautiful dark UI
@@ -28,12 +28,12 @@ Install **PHANTOM** and configure the `phantom` CLI command across any terminal 
 
 **Linux & macOS (Bash/Zsh/Fish/etc.):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OmYarewar/PHANTOM/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/OmYarewar110/PHANTOM/main/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 ```powershell
-iwr -useb https://raw.githubusercontent.com/OmYarewar/PHANTOM/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/OmYarewar110/PHANTOM/main/install.ps1 | iex
 ```
 
 Once installed, launch PHANTOM from **any terminal window** instantly:
@@ -62,7 +62,7 @@ For developers contributing to PHANTOM or customizing the codebase:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/OmYarewar/PHANTOM.git
+git clone https://github.com/OmYarewar110/PHANTOM.git
 cd PHANTOM
 
 # 2. Install dependencies
