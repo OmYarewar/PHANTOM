@@ -28,3 +28,4 @@
 - `server/tools/self_awareness.js`
 **Tests:** 73 passed (re-ran tests and they pass).
 **Commits:** Will be included on push.
+- Also fixed regex escape character lint errors in server/tools/internet.js
