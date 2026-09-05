@@ -62,7 +62,7 @@ async function loadSkills() {
               const meta = JSON.parse(content);
               name = meta.name || name;
               description = meta.description || description;
-            } catch {}
+            } catch (err) { if (err.code !== 'ENOENT') console.error(err); }
 
             // Try SKILL.md
             try {
@@ -72,13 +72,13 @@ async function loadSkills() {
                 const descMatch = match[1].match(/description:\s*(.+)/);
                 if (descMatch) description = descMatch[1].trim();
               }
-            } catch {}
+            } catch (err) { if (err.code !== 'ENOENT') console.error(err); }
 
             allSkills.push({ name, description, type: 'folder' });
           }
-        } catch {}
+        } catch (err) { if (err.code !== 'ENOENT') console.error(err); }
       }
-    } catch {}
+    } catch (err) { if (err.code !== 'ENOENT') console.error(err); }
   }
 
   return allSkills;
