@@ -15,7 +15,7 @@ function parseSkillMeta(skillPath, folderName) {
       const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
       meta.name = parsed.name || meta.name;
       meta.description = parsed.description || meta.description;
-    } catch {}
+    } catch (err) { console.error(err); }
   }
 
   // 2. Try reading SKILL.md frontmatter if present
@@ -31,13 +31,13 @@ function parseSkillMeta(skillPath, folderName) {
         if (nameMatch) meta.name = nameMatch[1].trim();
         if (descMatch) meta.description = descMatch[1].trim();
       }
-    } catch {}
+    } catch (err) { console.error(err); }
   }
 
   try {
     const files = fs.readdirSync(skillPath);
     meta.files = files.slice(0, 15);
-  } catch {}
+  } catch (err) { console.error(err); }
 
   return meta;
 }

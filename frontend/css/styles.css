@@ -1228,3 +1228,17 @@ html, body {
   border-radius: var(--radius-sm);
   overflow-x: auto;
 }
+
+/* ─── Loading Skeleton ─── */
+.conv-item-skeleton {
+  height: 40px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}

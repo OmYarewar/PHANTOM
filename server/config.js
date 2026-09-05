@@ -56,7 +56,7 @@ export function updateConfig(updates) {
       if (!existsSync(config.workspace)) {
         mkdirSync(config.workspace, { recursive: true });
       }
-    } catch {}
+    } catch (err) { console.error(err); }
   }
 }
 
@@ -85,7 +85,7 @@ export function loadPersistedSettings(getSetting) {
       if (!existsSync(config.workspace)) {
         mkdirSync(config.workspace, { recursive: true });
       }
-    } catch {}
+    } catch (err) { console.error(err); }
   }
 }
 

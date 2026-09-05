@@ -505,6 +505,7 @@
   // ─── Conversations ───
   async function loadConversations() {
     try {
+      convList.innerHTML = '<div class="conv-item-skeleton"></div><div class="conv-item-skeleton"></div><div class="conv-item-skeleton"></div>';
       const res = await fetch('/api/conversations');
       conversations = await res.json();
       renderConversationList();
