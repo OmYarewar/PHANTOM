@@ -131,9 +131,17 @@ export function initDB(dbPath = config.db.path) {
   `);
 
   // Auto-migrate schema for agentmemory upgrade
-  try { db.exec(`ALTER TABLE memories ADD COLUMN importance INTEGER DEFAULT 3;`); } catch {}
-  try { db.exec(`ALTER TABLE memories ADD COLUMN access_count INTEGER DEFAULT 1;`); } catch {}
-  try { db.exec(`ALTER TABLE memories ADD COLUMN last_accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP;`); } catch {}
+  const tableInfo = db.prepare('PRAGMA table_info(memories)').all();
+  const columns = tableInfo.map(col => col.name);
+  if (!columns.includes('importance')) {
+    db.exec(`ALTER TABLE memories ADD COLUMN importance INTEGER DEFAULT 3;`);
+  }
+  if (!columns.includes('access_count')) {
+    db.exec(`ALTER TABLE memories ADD COLUMN access_count INTEGER DEFAULT 1;`);
+  }
+  if (!columns.includes('last_accessed_at')) {
+    db.exec(`ALTER TABLE memories ADD COLUMN last_accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP;`);
+  }
 
   // Backfill if search_index is empty
   const count = getDB().prepare('SELECT count(*) as count FROM search_index').get();
@@ -348,7 +356,9 @@ export async function hybridSearchMemories(query, category = null, limit = 10) {
   topResults.forEach(m => {
     try {
       db.prepare('UPDATE memories SET access_count = access_count + 1, last_accessed_at = CURRENT_TIMESTAMP WHERE id = ?').run(m.id);
-    } catch {}
+    } catch (err) {
+      console.error('[Memory] Failed to touch memory access count:', err.message);
+    }
   });
 
   return topResults.map(m => {

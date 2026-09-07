@@ -62,7 +62,9 @@ async function loadSkills() {
               const meta = JSON.parse(content);
               name = meta.name || name;
               description = meta.description || description;
-            } catch {}
+            } catch (err) {
+              if (err.code !== 'ENOENT') console.error(`[Bootstrap] Failed to parse skill.json for ${fullPath}:`, err.message);
+            }
 
             // Try SKILL.md
             try {
@@ -72,13 +74,19 @@ async function loadSkills() {
                 const descMatch = match[1].match(/description:\s*(.+)/);
                 if (descMatch) description = descMatch[1].trim();
               }
-            } catch {}
+            } catch (err) {
+              if (err.code !== 'ENOENT') console.error(`[Bootstrap] Failed to parse SKILL.md for ${fullPath}:`, err.message);
+            }
 
             allSkills.push({ name, description, type: 'folder' });
           }
-        } catch {}
+        } catch (err) {
+          console.error(`[Bootstrap] Failed to stat ${fullPath}:`, err.message);
+        }
       }
-    } catch {}
+    } catch (err) {
+      if (err.code !== 'ENOENT') console.error(`[Bootstrap] Failed to access/read dir ${dir}:`, err.message);
+    }
   }
 
   return allSkills;
