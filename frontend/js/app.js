@@ -54,8 +54,18 @@
     }
   }
 
+
+  // ─── Sidebar Initialization ───
+  function initSidebar() {
+    const isCollapsed = localStorage.getItem('phantom_sidebar_collapsed') === 'true';
+    if (isCollapsed) {
+      document.getElementById('app').classList.add('sidebar-collapsed');
+    }
+  }
+
   // ─── Initialize ───
   initTheme();
+  initSidebar();
   Chat.init();
   Settings.init();
   Management.init();
@@ -710,11 +720,28 @@
     if (window.innerWidth <= 768) {
       sidebar.classList.toggle('open');
     } else {
-      document.getElementById('app').classList.toggle('sidebar-collapsed');
+      const appEl = document.getElementById('app');
+      appEl.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('phantom_sidebar_collapsed', appEl.classList.contains('sidebar-collapsed'));
+    }
+  });
+
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      if (window.innerWidth <= 768) {
+        sidebar.classList.toggle('open');
+      } else {
+        const appEl = document.getElementById('app');
+        appEl.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('phantom_sidebar_collapsed', appEl.classList.contains('sidebar-collapsed'));
+      }
     }
   });
 
   function autoResize() {
+
     messageInput.style.height = 'auto';
     messageInput.style.height = Math.min(messageInput.scrollHeight, 200) + 'px';
   }

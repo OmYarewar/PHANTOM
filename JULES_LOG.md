@@ -9,3 +9,11 @@
 - `tests/api.test.js`
 **Tests:** 73 passed / 1 added
 **Commits:** Will be included on push.
+
+
+## 2025-08-06 — Session 2
+**What I decided to work on:** I noticed that the frontend sidebar collapsed state wasn't persisting when navigating or reloading the page, which is poor UX for a desktop UI. Also, no hotkey was available to quickly toggle the sidebar.
+**What I built/fixed:** Added logic to `frontend/js/app.js` to persist the `sidebar-collapsed` state to `localStorage` under the `phantom_sidebar_collapsed` key. It now correctly saves the state when using the toggle button and applies it upon initializing the application. Added a `Cmd+B` / `Ctrl+B` keyboard shortcut to rapidly toggle the sidebar.
+**Files changed:** `frontend/js/app.js`
+**Tests:** 73 passed / 0 added
+**Commits:** Will be included on push.
