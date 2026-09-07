@@ -13,7 +13,6 @@
   let conversations = [];
   let isProcessing = false;
   let reconnectAttempts = 0;
-  const MAX_RECONNECT = 10;
 
   // Pending image for OSINT (base64 data URL)
   let pendingImage = null;
@@ -54,8 +53,34 @@
     }
   }
 
+  // ─── Sidebar Initialization ───
+  function initSidebar() {
+    const isCollapsed = localStorage.getItem('phantom_sidebar_collapsed') === 'true';
+    if (isCollapsed && window.innerWidth > 768) {
+      document.getElementById('app').classList.add('sidebar-collapsed');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    });
+  }
+
+  function toggleSidebar() {
+    if (window.innerWidth <= 768) {
+      sidebar.classList.toggle('open');
+    } else {
+      const appEl = document.getElementById('app');
+      appEl.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('phantom_sidebar_collapsed', appEl.classList.contains('sidebar-collapsed'));
+    }
+  }
+
   // ─── Initialize ───
   initTheme();
+  initSidebar();
   Chat.init();
   Settings.init();
   Management.init();
@@ -706,13 +731,7 @@
     renderConversationList(searchInput.value);
   });
 
-  sidebarToggle?.addEventListener('click', () => {
-    if (window.innerWidth <= 768) {
-      sidebar.classList.toggle('open');
-    } else {
-      document.getElementById('app').classList.toggle('sidebar-collapsed');
-    }
-  });
+  sidebarToggle?.addEventListener('click', toggleSidebar);
 
   function autoResize() {
     messageInput.style.height = 'auto';
