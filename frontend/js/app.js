@@ -13,7 +13,6 @@
   let conversations = [];
   let isProcessing = false;
   let reconnectAttempts = 0;
-  const MAX_RECONNECT = 10;
 
   // Pending image for OSINT (base64 data URL)
   let pendingImage = null;
@@ -144,7 +143,9 @@
       if (ws && ws.readyState === WebSocket.OPEN) {
         try {
           ws.send(JSON.stringify({ type: 'ping' }));
-        } catch (e) {}
+        } catch (err) {
+          // ignore
+        }
       }
     }, 15000);
   }
@@ -166,7 +167,7 @@
 
     try {
       ws = new WebSocket(wsUrl);
-    } catch (err) {
+    } catch {
       attemptReconnect();
       return;
     }
