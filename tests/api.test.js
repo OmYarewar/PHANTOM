@@ -133,6 +133,73 @@ describe('API Routes', () => {
     expect(res.body.title).toBe('Test Conv');
   });
 
+  it('POST /api/conversations should reject invalid titles', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+
+    // empty string
+    let res = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: '   ' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Title must be a non-empty string');
+
+    // non-string
+    res = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: { a: 1 } });
+    expect(res.status).toBe(400);
+
+    // too long string
+    const longString = 'a'.repeat(201);
+    res = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: longString });
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT /api/conversations/:id/title should update conversation title', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+
+    // Create conversation
+    const convRes = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'Old Title' });
+    const convId = convRes.body.id;
+
+    // Update title
+    const updateRes = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: 'New Title' });
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.success).toBe(true);
+
+    // Verify update
+    const getRes = await request(app).get(`/api/conversations/${convId}`).set('X-Forwarded-For', uniqueTestIp);
+    expect(getRes.status).toBe(200);
+    expect(getRes.body.title).toBe('New Title');
+  });
+
+  it('PUT /api/conversations/:id/title should reject invalid titles', async () => {
+    const octet3 = Math.floor(globalIpCounter / 256);
+    const octet4 = globalIpCounter % 256;
+    const uniqueTestIp = `192.168.${octet3}.${octet4}`;
+    globalIpCounter++;
+
+    // Create conversation
+    const convRes = await request(app).post('/api/conversations').set('X-Forwarded-For', uniqueTestIp).send({ title: 'Old Title' });
+    const convId = convRes.body.id;
+
+    // empty string
+    let res = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: '   ' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Title must be a non-empty string');
+
+    // non-string
+    res = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: 123 });
+    expect(res.status).toBe(400);
+
+    // too long string
+    const longString = 'a'.repeat(201);
+    res = await request(app).put(`/api/conversations/${convId}/title`).set('X-Forwarded-For', uniqueTestIp).send({ title: longString });
+    expect(res.status).toBe(400);
+  });
+
   it('GET /api/conversations/:id/export should export conversation to markdown', async () => {
     const octet3 = Math.floor(globalIpCounter / 256);
     const octet4 = globalIpCounter % 256;
