@@ -34,6 +34,16 @@ const apiLimiter = rateLimit({
 import helmet from 'helmet';
 
 app.use(helmet({ contentSecurityPolicy: false }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    console.log(`[API] ${req.method} ${req.originalUrl} - ${res.statusCode} (${Date.now() - start}ms)`);
+  });
+  next();
+});
+
 app.use('/api', apiLimiter);
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
