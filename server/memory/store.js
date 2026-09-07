@@ -131,9 +131,20 @@ export function initDB(dbPath = config.db.path) {
   `);
 
   // Auto-migrate schema for agentmemory upgrade
-  try { db.exec(`ALTER TABLE memories ADD COLUMN importance INTEGER DEFAULT 3;`); } catch {}
-  try { db.exec(`ALTER TABLE memories ADD COLUMN access_count INTEGER DEFAULT 1;`); } catch {}
-  try { db.exec(`ALTER TABLE memories ADD COLUMN last_accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP;`); } catch {}
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(memories)").all();
+    if (!tableInfo.find(c => c.name === 'importance')) {
+      db.exec(`ALTER TABLE memories ADD COLUMN importance INTEGER DEFAULT 3;`);
+    }
+    if (!tableInfo.find(c => c.name === 'access_count')) {
+      db.exec(`ALTER TABLE memories ADD COLUMN access_count INTEGER DEFAULT 1;`);
+    }
+    if (!tableInfo.find(c => c.name === 'last_accessed_at')) {
+      db.exec(`ALTER TABLE memories ADD COLUMN last_accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP;`);
+    }
+  } catch (err) {
+    console.error('[Memory] Auto-migration failed:', err.message);
+  }
 
   // Backfill if search_index is empty
   const count = getDB().prepare('SELECT count(*) as count FROM search_index').get();
@@ -348,7 +359,9 @@ export async function hybridSearchMemories(query, category = null, limit = 10) {
   topResults.forEach(m => {
     try {
       db.prepare('UPDATE memories SET access_count = access_count + 1, last_accessed_at = CURRENT_TIMESTAMP WHERE id = ?').run(m.id);
-    } catch {}
+    } catch (err) {
+      console.warn('[Memory] Failed to update access count:', err.message);
+    }
   });
 
   return topResults.map(m => {
