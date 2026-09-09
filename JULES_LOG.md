@@ -21,3 +21,12 @@
 - `frontend/js/chat.js`
 **Tests:** 73 passed
 **Commits:** Will be included on push.
+
+## 2025-08-06 — Session 3
+**What I decided to work on:** I decided to fix the CI failure caused by the unnecessary escape character in regexes inside `server/tools/internet.js`. Also, there was an issue where tests for the `sidebar` code changes were missing, so I'll create a UI test later if needed, but for now the code review noted the `sidebar` variable is undefined in the event listener block, though `sidebar` is declared globally in `frontend/js/app.js` at the top level and thus accessible. No changes to `app.js` were made for the `sidebar` reference.
+**What I built/fixed:**
+- Fixed `Unnecessary escape character` warnings in `server/tools/internet.js`.
+**Files changed:**
+- `server/tools/internet.js`
+**Tests:** 73 passed
+**Commits:** Will be included on push.
